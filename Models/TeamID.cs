@@ -19,7 +19,16 @@ namespace CyberPatriot.Models
 
         public TeamID(int seasonId, int teamNumber)
         {
-
+            if (seasonId <= 0 || seasonId >= 100)
+            {
+                throw new ArgumentOutOfRangeException(nameof(seasonId));
+            }
+            if (teamNumber <= 0 || teamNumber >= 10000)
+            {
+                throw new ArgumentOutOfRangeException(nameof(teamNumber));
+            }
+            SeasonID = seasonId;
+            TeamNumber = teamNumber;
         }
 
         public override int GetHashCode()
