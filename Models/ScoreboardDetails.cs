@@ -13,5 +13,7 @@ namespace CyberPatriot.Models
         public ScoreboardSummary Summary { get; set; }
         public TimeSpan ScoreTime { get; set; }
         public List<ScoreboardImageDetails> Images { get; set; } = new List<ScoreboardImageDetails>();
+        // FIXME: multi detail origin (hash property? null Uri?)
+        public Uri OriginUri { get; set; }
     }
 }

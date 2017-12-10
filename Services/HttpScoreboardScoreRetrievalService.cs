@@ -67,9 +67,10 @@ namespace CyberPatriot.DiscordBot.Services
             }
 
             string detailsPage;
+            Uri detailsUri = BuildDetailsUri(team);
             try
             {
-                detailsPage = await Client.GetStringAsync(BuildDetailsUri(team));
+                detailsPage = await Client.GetStringAsync(detailsUri);
             }
             catch (HttpRequestException)
             {
@@ -78,7 +79,8 @@ namespace CyberPatriot.DiscordBot.Services
 
             ScoreboardDetails retVal = new ScoreboardDetails();
             retVal.Summary = new ScoreboardSummary();
-
+            retVal.OriginUri = detailsUri;
+            
             HtmlDocument doc = new HtmlDocument();
             doc.LoadHtml(detailsPage);
             var timestampHeader = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/h2[2]")?.InnerText;

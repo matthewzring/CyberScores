@@ -48,6 +48,7 @@ namespace CyberPatriot.DiscordBot
                 .AddSingleton(new LiteDatabase("bot.db"))
                 // CyPat
                 .AddSingleton<IScoreRetrievalService, HttpScoreboardScoreRetrievalService>(prov => new HttpScoreboardScoreRetrievalService(_config["defaultScoreboardHostname"]))
+                .AddSingleton<FlagProviderService>()
                 .BuildServiceProvider();
         }
 
