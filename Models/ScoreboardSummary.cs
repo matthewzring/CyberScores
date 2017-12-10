@@ -12,5 +12,6 @@ namespace CyberPatriot.Models
         public TimeSpan PlayTime { get; set; }
         public int TotalScore { get; set; }
         public ScoreWarnings Warnings { get; set; }
+        public DateTimeOffset SnapshotTimestamp { get; set; }
     }
 }

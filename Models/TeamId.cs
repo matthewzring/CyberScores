@@ -73,17 +73,28 @@ namespace CyberPatriot.Models
         public static bool TryParse(string idString, out TeamId teamId)
         {
             teamId = null;
-            if (idString == null) {
+            if (idString == null)
+            {
                 return false;
             }
             var regexMatch = ParseRegex.Match(idString);
-            if (!regexMatch.Success) {
+            if (!regexMatch.Success)
+            {
                 return false;
             }
 
             teamId = new TeamId(int.Parse(regexMatch.Groups[1].Value), int.Parse(regexMatch.Groups[2].Value));
 
             return true;
+        }
+
+        public static TeamId Parse(string s)
+        {
+            if (!TryParse(s, out TeamId retVal))
+            {
+                throw new ArgumentException();
+            }
+            return retVal;
         }
 
         public static bool operator ==(TeamId a, TeamId b)
