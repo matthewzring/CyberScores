@@ -10,6 +10,6 @@ namespace CyberPatriot.DiscordBot.Services
         IAsyncEnumerable<ScoreboardSummary> GetScoreboard();
         IAsyncEnumerable<ScoreboardSummary> GetScoreboard(Division divisionFilter);
         IAsyncEnumerable<ScoreboardSummary> GetScoreboard(Division divisionFilter, string tierFilter);
-        Task<ScoreboardDetails> GetDetails(TeamID team);
+        Task<ScoreboardDetails> GetDetails(TeamId team);
     }
 }

@@ -5,9 +5,9 @@ namespace CyberPatriot.Models
 {
     public class ScoreboardDetails
     {
-        public TeamID TeamID
+        public TeamId TeamId
         {
-            get => Summary?.TeamID;
+            get => Summary?.TeamId;
         }
 
         public ScoreboardSummary Summary { get; set; }

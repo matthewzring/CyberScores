@@ -45,10 +45,10 @@ namespace CyberPatriot.DiscordBot.Services
 
         protected virtual async Task<IEnumerable<ScoreboardSummary>> ProcessSummaries(Uri scoreboardUri)
         {
-            
+            throw new NotImplementedException();
         }
 
-        public async Task<ScoreboardDetails> GetDetails(TeamID team)
+        public async Task<ScoreboardDetails> GetDetails(TeamId team)
         {
             throw new System.NotImplementedException();
         }

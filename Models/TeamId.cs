@@ -4,20 +4,12 @@ namespace CyberPatriot.Models
     /// <summary>
     /// An immutable team identifier.
     /// </summary>
-    public class TeamID : IComparable<TeamID>
+    public class TeamId : IComparable<TeamId>
     {
-        public int SeasonID { get; }
+        public int SeasonId { get; }
         public int TeamNumber { get; }
 
-        public TeamID(string teamIdStr)
-        {
-            if (teamIdStr == null)
-            {
-                throw new ArgumentNullException(nameof(teamIdStr));
-            }
-        }
-
-        public TeamID(int seasonId, int teamNumber)
+        public TeamId(int seasonId, int teamNumber)
         {
             if (seasonId <= 0 || seasonId >= 100)
             {
@@ -27,8 +19,23 @@ namespace CyberPatriot.Models
             {
                 throw new ArgumentOutOfRangeException(nameof(teamNumber));
             }
-            SeasonID = seasonId;
+            SeasonId = seasonId;
             TeamNumber = teamNumber;
+        }
+
+        public int CompareTo(TeamId other)
+        {
+            if (other == null)
+            {
+                throw new ArgumentNullException(nameof(other));
+            }
+
+            if (SeasonId != other.SeasonId)
+            {
+                throw new ArgumentException("Cannot compare team IDs from different seasons.");
+            }
+
+            return TeamNumber.CompareTo(other.TeamNumber);
         }
 
         public override int GetHashCode()
@@ -37,7 +44,7 @@ namespace CyberPatriot.Models
             // 1 <= seasonID < 100
             // 1 <= teamNumber < 10000
             // not sure how this affects distribution of hashcodes
-            return SeasonID << 16 | TeamNumber;
+            return SeasonId << 16 | TeamNumber;
         }
 
         public override bool Equals(object obj)
@@ -47,35 +54,39 @@ namespace CyberPatriot.Models
                 return false;
             }
 
-            if (!(obj is TeamID t))
+            if (!(obj is TeamId t))
             {
                 return false;
             }
 
-            return t.SeasonID == SeasonID && t.TeamNumber == TeamNumber;
+            return t.SeasonId == SeasonId && t.TeamNumber == TeamNumber;
         }
 
         public override string ToString()
         {
-            return string.Format("{0:00}-{1:0000}", SeasonID, TeamNumber);
+            return string.Format("{0:00}-{1:0000}", SeasonId, TeamNumber);
         }
 
-        public int CompareTo(TeamID other)
+
+        private static readonly System.Text.RegularExpressions.Regex ParseRegex = new System.Text.RegularExpressions.Regex(@"^(\d{2})-(\d{4})$");
+
+        public static bool TryParse(string idString, out TeamId teamId)
         {
-            if (other == null)
-            {
-                throw new ArgumentNullException(nameof(other));
+            teamId = null;
+            if (idString == null) {
+                return false;
+            }
+            var regexMatch = ParseRegex.Match(idString);
+            if (!regexMatch.Success) {
+                return false;
             }
 
-            if (SeasonID != other.SeasonID)
-            {
-                throw new ArgumentException("Cannot compare team IDs from different seasons.");
-            }
+            teamId = new TeamId(int.Parse(regexMatch.Groups[1].Value), int.Parse(regexMatch.Groups[2].Value));
 
-            return TeamNumber.CompareTo(other.TeamNumber);
+            return true;
         }
 
-        public static bool operator ==(TeamID a, TeamID b)
+        public static bool operator ==(TeamId a, TeamId b)
         {
             if (object.ReferenceEquals(a, null))
             {
@@ -84,27 +95,27 @@ namespace CyberPatriot.Models
             return a.Equals(b);
         }
 
-        public static bool operator !=(TeamID a, TeamID b)
+        public static bool operator !=(TeamId a, TeamId b)
         {
             return !(a == b);
         }
 
-        public static bool operator <(TeamID a, TeamID b)
+        public static bool operator <(TeamId a, TeamId b)
         {
             return (a ?? throw new NullReferenceException()).CompareTo(b) < 0;
         }
 
-        public static bool operator >(TeamID a, TeamID b)
+        public static bool operator >(TeamId a, TeamId b)
         {
             return (a ?? throw new NullReferenceException()).CompareTo(b) > 0;
         }
 
-        public static bool operator <=(TeamID a, TeamID b)
+        public static bool operator <=(TeamId a, TeamId b)
         {
             return (a ?? throw new NullReferenceException()).CompareTo(b) <= 0;
         }
 
-        public static bool operator >=(TeamID a, TeamID b)
+        public static bool operator >=(TeamId a, TeamId b)
         {
             return (a ?? throw new NullReferenceException()).CompareTo(b) >= 0;
         }

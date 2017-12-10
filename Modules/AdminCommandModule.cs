@@ -18,7 +18,7 @@ namespace CyberPatriot.DiscordBot.Modules
         {
             public LiteDatabase Database { get; set; }
 
-            [Command, Alias("set")]
+            [Command("set")]
             [RequireUserPermission(GuildPermission.Administrator)]
             [RequireContext(ContextType.Guild)]
             public async Task SetPrefixAsync(string newPrefix)
@@ -30,10 +30,10 @@ namespace CyberPatriot.DiscordBot.Modules
                 await ReplyAsync("Updated prefix.");
             }
 
-            [Command("remove"), Alias("delete")]
+            [Command("remove"), Alias("delete", "unset")]
             [RequireUserPermission(GuildPermission.Administrator)]
             [RequireContext(ContextType.Guild)]
-            public async Task RemoveAsync(string newPrefix)
+            public async Task RemoveAsync()
             {
                 var guildCollection = Database.GetCollection<Models.Guild>();
                 Models.Guild guildSettings = guildCollection.FindOne(g => g.Id == Context.Guild.Id) ?? new Models.Guild() { Id = Context.Guild.Id };

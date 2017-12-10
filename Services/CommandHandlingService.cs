@@ -28,6 +28,7 @@ namespace CyberPatriot.DiscordBot.Services
         public async Task InitializeAsync(IServiceProvider provider)
         {
             _provider = provider;
+            _commands.AddTypeReader<CyberPatriot.Models.TeamId>(new TeamIdTypeReader());
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
         }
 
@@ -52,23 +53,24 @@ namespace CyberPatriot.DiscordBot.Services
                     // try it with no prefix
                     argPos = 0;
                 }
-
-                if (argPos == -1)
-                {
-                    return;
-                }
-
-                var context = new SocketCommandContext(_discord, message);
-                var result = await _commands.ExecuteAsync(context, argPos, _provider);
-
-                if (result.Error.HasValue &&
-                    result.Error.Value == CommandError.UnknownCommand)
-                    return;
-
-                if (result.Error.HasValue &&
-                    result.Error.Value != CommandError.UnknownCommand)
-                    await context.Channel.SendMessageAsync(result.ToString());
             }
+
+            if (argPos == -1)
+            {
+                return;
+            }
+
+            var context = new SocketCommandContext(_discord, message);
+            var result = await _commands.ExecuteAsync(context, argPos, _provider);
+
+            if (result.Error.HasValue &&
+                result.Error.Value == CommandError.UnknownCommand)
+                return;
+
+            if (result.Error.HasValue &&
+                result.Error.Value != CommandError.UnknownCommand)
+                await context.Channel.SendMessageAsync(result.ToString());
         }
+
     }
 }
