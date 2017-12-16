@@ -2,7 +2,7 @@ using System;
 
 namespace CyberPatriot.Models
 {
-    public class ScoreboardSummary
+    public class ScoreboardSummaryEntry
     {
         public TeamId TeamId { get; set; }
         public string Location { get; set; }
@@ -12,6 +12,5 @@ namespace CyberPatriot.Models
         public TimeSpan PlayTime { get; set; }
         public int TotalScore { get; set; }
         public ScoreWarnings Warnings { get; set; }
-        public DateTimeOffset SnapshotTimestamp { get; set; }
     }
 }

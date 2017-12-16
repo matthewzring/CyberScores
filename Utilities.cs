@@ -35,10 +35,28 @@ namespace CyberPatriot
             // works nicely but we put it here in case it doesn't
             return TimeSpan.Parse(hhmm?.Trim() ?? throw new ArgumentNullException(nameof(hhmm)));
         }
-        public static bool IsFakeTier(this CyberPatriot.Models.ScoreboardSummary summary)
+        public static bool IsFakeTier(string tierString)
         {
-            string tier = (summary ?? throw new NullReferenceException()).Tier?.Trim().ToLower();
+            if (string.IsNullOrWhiteSpace(tierString))
+            {
+                return true;
+            }
+            string tier = tierString.Trim().ToLower();
             return tier == "high school" || tier == "middle school";
+        }
+
+        public static string ToConciseString(this Models.ScoreWarnings warnings)
+        {
+            StringBuilder resBuild = new StringBuilder(2);
+            if ((warnings & Models.ScoreWarnings.MultiImage) == Models.ScoreWarnings.MultiImage)
+            {
+                resBuild.Append('M');
+            }
+            if ((warnings & Models.ScoreWarnings.TimeOver) == Models.ScoreWarnings.TimeOver)
+            {
+                resBuild.Append('T');
+            }
+            return resBuild.ToString();
         }
     }
 }

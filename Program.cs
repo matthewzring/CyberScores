@@ -52,7 +52,7 @@ namespace CyberPatriot.DiscordBot
                 // CyPat
                 .AddSingleton<IScoreRetrievalService, HttpScoreboardScoreRetrievalService>(prov => new HttpScoreboardScoreRetrievalService(_config["defaultScoreboardHostname"]))
                 .AddSingleton<FlagProviderService>()
-                .AddSingleton<ScoreboardEmbedBuilderService>()
+                .AddSingleton<ScoreboardMessageBuilderService>()
                 .BuildServiceProvider();
         }
 

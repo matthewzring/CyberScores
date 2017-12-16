@@ -4,5 +4,6 @@ namespace CyberPatriot.DiscordBot.Models
     {
         public ulong Id { get; set; }
         public string Prefix { get; set; }
+        public string TimeZone { get; set; }
     }
 }

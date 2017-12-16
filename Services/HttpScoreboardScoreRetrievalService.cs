@@ -54,12 +54,64 @@ namespace CyberPatriot.DiscordBot.Services
             return builder.Uri;
         }
 
-        protected virtual async Task<IEnumerable<ScoreboardSummary>> ProcessSummaries(Uri scoreboardUri)
+        protected virtual async Task<HtmlDocument> GetHtmlDocumentForScoreboard(Uri scoreboardUri)
         {
-            throw new NotImplementedException();
+            string scoreboardPage;
+            try
+            {
+                scoreboardPage = await Client.GetStringAsync(scoreboardUri);
+            }
+            catch (HttpRequestException)
+            {
+                throw new InvalidOperationException("Error getting scoreboard page, perhaps the scoreboard is offline?");
+            }
+
+            // potentially cpu-bound
+            return await Task.Run(() =>
+            {
+                HtmlDocument doc = new HtmlDocument();
+                doc.LoadHtml(scoreboardPage);
+                return doc;
+            });
         }
 
-        public async Task<ScoreboardDetails> GetDetails(TeamId team)
+        protected virtual IEnumerable<ScoreboardSummaryEntry> ProcessSummaries(HtmlDocument doc, out DateTimeOffset processTimestamp)
+        {
+            var timestampHeader = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/h2[2]")?.InnerText;
+            processTimestamp = timestampHeader == null ? DateTimeOffset.UtcNow : DateTimeOffset.Parse(timestampHeader.Replace("Generated At: ", string.Empty).Replace("UTC", "+0:00"));
+
+            var teamsTable = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/table").ChildNodes.Where(n => n.Name != "#text").ToArray();
+
+            IEnumerable<ScoreboardSummaryEntry> SummaryProcess()
+            {
+
+                for (int i = 1; i < teamsTable.Length; i++)
+                {
+                    string[] dataEntries = teamsTable[i].ChildNodes.Select(n => n.InnerText.Trim()).ToArray();
+                    ScoreboardSummaryEntry summary = new ScoreboardSummaryEntry();
+                    summary.TeamId = TeamId.Parse(dataEntries[0]);
+                    summary.Location = dataEntries[1];
+                    if (Utilities.TryParseEnumSpaceless<Division>(dataEntries[2], out Division division))
+                    {
+                        summary.Division = division;
+                    }
+                    if (!Utilities.IsFakeTier(dataEntries[3]))
+                    {
+                        summary.Tier = dataEntries[3];
+                    }
+                    summary.ImageCount = int.Parse(dataEntries[4]);
+                    summary.PlayTime = Utilities.ParseHourMinuteTimespan(dataEntries[5]);
+                    summary.TotalScore = int.Parse(dataEntries[6]);
+                    summary.Warnings |= dataEntries[7].Contains("T") ? ScoreWarnings.TimeOver : 0;
+                    summary.Warnings |= dataEntries[7].Contains("M") ? ScoreWarnings.MultiImage : 0;
+                    yield return summary;
+                }
+            }
+
+            return SummaryProcess();
+        }
+
+        public async Task<ScoreboardDetails> GetDetailsAsync(TeamId team)
         {
             if (team == null)
             {
@@ -71,6 +123,11 @@ namespace CyberPatriot.DiscordBot.Services
             try
             {
                 detailsPage = await Client.GetStringAsync(detailsUri);
+                // hacky, cause they don't return a proper error page for nonexistant teams
+                if (!detailsPage.Contains(@"<div id='chart_div' class='chart'>"))
+                {
+                    throw new ArgumentException("The given team does not exist.");
+                }
             }
             catch (HttpRequestException)
             {
@@ -78,13 +135,13 @@ namespace CyberPatriot.DiscordBot.Services
             }
 
             ScoreboardDetails retVal = new ScoreboardDetails();
-            retVal.Summary = new ScoreboardSummary();
+            retVal.Summary = new ScoreboardSummaryEntry();
             retVal.OriginUri = detailsUri;
-            
+
             HtmlDocument doc = new HtmlDocument();
             doc.LoadHtml(detailsPage);
             var timestampHeader = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/h2[2]")?.InnerText;
-            retVal.Summary.SnapshotTimestamp = timestampHeader == null ? DateTimeOffset.UtcNow : DateTimeOffset.Parse(timestampHeader.Replace("Generated At: ", string.Empty).Replace("UTC", "+0:00"));
+            retVal.SnapshotTimestamp = timestampHeader == null ? DateTimeOffset.UtcNow : DateTimeOffset.Parse(timestampHeader.Replace("Generated At: ", string.Empty).Replace("UTC", "+0:00"));
             var summaryRow = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/table[1]/tr[2]");
             // ID, Division (labeled location, their bug), Location (labeled division, their bug), tier, scored img, play time, score time, current score, warn
             retVal.Summary.TeamId = TeamId.Parse(summaryRow.ChildNodes[0].InnerText);
@@ -94,6 +151,10 @@ namespace CyberPatriot.DiscordBot.Services
             }
             retVal.Summary.Location = summaryRow.ChildNodes[2].InnerText;
             retVal.Summary.Tier = summaryRow.ChildNodes[3].InnerText;
+            if (Utilities.IsFakeTier(retVal.Summary.Tier))
+            {
+                retVal.Summary.Tier = null;
+            }
             retVal.Summary.ImageCount = int.Parse(summaryRow.ChildNodes[4].InnerText.Trim());
             retVal.Summary.PlayTime = Utilities.ParseHourMinuteTimespan(summaryRow.ChildNodes[5].InnerText);
             retVal.ScoreTime = Utilities.ParseHourMinuteTimespan(summaryRow.ChildNodes[6].InnerText);
@@ -120,20 +181,21 @@ namespace CyberPatriot.DiscordBot.Services
             }
             return retVal;
         }
-
-        public IAsyncEnumerable<ScoreboardSummary> GetScoreboard()
+        public virtual async Task<CompleteScoreboardSummary> GetScoreboardAsync(Division? divisionFilter, string tierFilter)
         {
-            return new AsyncSyncEnumerableWrapper<ScoreboardSummary>(ProcessSummaries(BuildScoreboardUri(null, null)));
-        }
+            Uri scoreboardUri = BuildScoreboardUri(divisionFilter, tierFilter);
 
-        public IAsyncEnumerable<ScoreboardSummary> GetScoreboard(Division divisionFilter)
-        {
-            return new AsyncSyncEnumerableWrapper<ScoreboardSummary>(ProcessSummaries(BuildScoreboardUri(divisionFilter, null)));
-        }
+            var doc = await GetHtmlDocumentForScoreboard(scoreboardUri);
+            var summaries = ProcessSummaries(doc, out DateTimeOffset snapshotTime);
 
-        public IAsyncEnumerable<ScoreboardSummary> GetScoreboard(Division divisionFilter, string tierFilter)
-        {
-            return new AsyncSyncEnumerableWrapper<ScoreboardSummary>(ProcessSummaries(BuildScoreboardUri(divisionFilter, tierFilter)));
+            return new CompleteScoreboardSummary()
+            {
+                DivisionFilter = divisionFilter,
+                TierFilter = tierFilter,
+                TeamList = AsyncEnumerable.ToAsyncEnumerable(summaries),
+                SnapshotTimestamp = snapshotTime,
+                OriginUri = scoreboardUri
+            };
         }
     }
 }
