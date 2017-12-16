@@ -55,15 +55,15 @@ namespace CyberPatriot.DiscordBot.Services
             stringBuilder.AppendLine("```");
 
             scoreboard.TeamList.Skip(pageNumber * pageSize).Take(pageSize)
-            .ForEach(team =>
+            .ForEach((team, i) =>
             {
-                if (scoreboard.DivisionFilter.HasValue && scoreboard.TierFilter != null)
-                {
-                    // division and tier known
-                    stringBuilder.AppendFormat("{0:-9}{1,3}{2,8}{3,7:hh\\:mm}{4,4}", team.TeamId, team.Location, team.TotalScore, team.PlayTime, team.Warnings.ToConciseString()).AppendLine();
-                }
+                stringBuilder.AppendFormat("#{0,-4}{1}{2,4}{3,20}{4,7:hh\\:mm}{5,4}", i + 1 + (pageNumber * pageSize), team.TeamId, team.Location, team.TotalScore, team.PlayTime, team.Warnings.ToConciseString()).AppendLine();
             });
             stringBuilder.AppendLine("```");
+            if (scoreboard.OriginUri != null)
+            {
+                stringBuilder.AppendLine(scoreboard.OriginUri.ToString());
+            }
             return stringBuilder.ToString();
         }
 
