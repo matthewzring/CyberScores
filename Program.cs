@@ -25,7 +25,10 @@ namespace CyberPatriot.DiscordBot
 
             var services = ConfigureServices();
             services.GetRequiredService<LogService>();
-            await services.GetRequiredService<CommandHandlingService>().InitializeAsync(services);
+            await Task.WhenAll(
+                services.GetRequiredService<CommandHandlingService>().InitializeAsync(services),
+                services.GetRequiredService<IDataPersistenceService>().InitializeAsync(services)
+            );
 
             await _client.LoginAsync(Discord.TokenType.Bot, _config["token"]);
             await _client.StartAsync();
@@ -45,7 +48,7 @@ namespace CyberPatriot.DiscordBot
                 .AddSingleton<LogService>()
                 // Extra
                 .AddSingleton(_config)
-                .AddSingleton(new LiteDatabase("bot.db"))
+                .AddSingleton<IDataPersistenceService, LiteDbDataPersistenceService>(prov => new LiteDbDataPersistenceService(new LiteDatabase(_config["databaseFilename"])))
                 // CyPat
                 .AddSingleton<IScoreRetrievalService, HttpScoreboardScoreRetrievalService>(prov => new HttpScoreboardScoreRetrievalService(_config["defaultScoreboardHostname"]))
                 .AddSingleton<FlagProviderService>()
