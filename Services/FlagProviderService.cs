@@ -10,9 +10,6 @@ namespace CyberPatriot.DiscordBot.Services
     public class FlagProviderService
     {
         public HttpClient Client { get; } = new HttpClient();
-
-        public IConfiguration Config { get; set; }
-
         public string GetFlagUri(string locationCode)
         {
             if (locationCode == null)
