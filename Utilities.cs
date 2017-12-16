@@ -32,8 +32,21 @@ namespace CyberPatriot
         }
         public static TimeSpan ParseHourMinuteTimespan(string hhmm)
         {
-            // works nicely but we put it here in case it doesn't
-            return TimeSpan.Parse(hhmm?.Trim() ?? throw new ArgumentNullException(nameof(hhmm)));
+            // works nicely in normal cases but we put it here in case it doesn't
+            //return TimeSpan.Parse(hhmm?.Trim() ?? throw new ArgumentNullException(nameof(hhmm)));
+
+            // some teams run > 24 hours
+            // these time penalties mean I need an additional half dozen lines of code :(
+            if (string.IsNullOrWhiteSpace(hhmm))
+            {
+                throw new ArgumentNullException(nameof(hhmm));
+            }
+
+            string[] hhmmSplit = hhmm.Split(':');
+
+            return new TimeSpan(int.Parse(hhmmSplit[0]),    // hours
+                           int.Parse(hhmmSplit[1]),         // minutes
+                           0);                              // seconds
         }
         public static bool IsFakeTier(string tierString)
         {
