@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using LiteDB;
 
 namespace CyberPatriot.DiscordBot.Services
 {
@@ -13,9 +12,9 @@ namespace CyberPatriot.DiscordBot.Services
         private readonly DiscordSocketClient _discord;
         private readonly CommandService _commands;
         private IServiceProvider _provider;
-        private LiteDatabase _database;
+        private IDataPersistenceService _database;
 
-        public CommandHandlingService(IServiceProvider provider, DiscordSocketClient discord, CommandService commands, LiteDatabase database)
+        public CommandHandlingService(IServiceProvider provider, DiscordSocketClient discord, CommandService commands, IDataPersistenceService database)
         {
             _discord = discord;
             _commands = commands;
@@ -44,9 +43,15 @@ namespace CyberPatriot.DiscordBot.Services
                 if (message.Channel is SocketGuildChannel messageGuildChannel)
                 {
                     // check server prefix
-                    Models.Guild guildSettings = _database.GetCollection<Models.Guild>().FindOne(g => g.Id == messageGuildChannel.Id);
+                    Models.Guild guildSettings = await _database.FindOneAsync<Models.Guild>(g => g.Id == messageGuildChannel.Guild.Id);
                     // intentional empty statement
-                    if (guildSettings != null && message.HasStringPrefix(guildSettings.Prefix, ref argPos)) ;
+                    if (guildSettings?.Prefix != null)
+                    {
+                        if (!message.HasStringPrefix(guildSettings.Prefix, ref argPos))
+                        {
+                            argPos = -1;
+                        }
+                    }
                 }
                 else if (message.Channel is SocketDMChannel)
                 {
