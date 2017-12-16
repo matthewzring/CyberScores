@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace CyberPatriot
 {
-    public class AsyncSyncEnumerableWrapper<T> : IAsyncEnumerable<T>
+    public class AsyncEnumerableTaskWrapper<T> : IAsyncEnumerable<T>
     {
         protected Task<IEnumerable<T>> EnumerableRetrieveTask { get; set; }
 
-        public AsyncSyncEnumerableWrapper(Task<IEnumerable<T>> enumerableRetrieveTask)
+        public AsyncEnumerableTaskWrapper(Task<IEnumerable<T>> enumerableRetrieveTask)
         {
             EnumerableRetrieveTask = enumerableRetrieveTask ?? throw new ArgumentNullException(nameof(enumerableRetrieveTask));
         }

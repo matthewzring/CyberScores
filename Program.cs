@@ -50,7 +50,7 @@ namespace CyberPatriot.DiscordBot
                 .AddSingleton(_config)
                 .AddSingleton<IDataPersistenceService, LiteDbDataPersistenceService>(prov => new LiteDbDataPersistenceService(new LiteDatabase(_config["databaseFilename"])))
                 // CyPat
-                .AddSingleton<IScoreRetrievalService, HttpScoreboardScoreRetrievalService>(prov => new HttpScoreboardScoreRetrievalService(_config["defaultScoreboardHostname"]))
+                .AddSingleton<IScoreRetrievalService, CachingScoreRetrievalService>(prov => new CachingScoreRetrievalService(new HttpScoreboardScoreRetrievalService(_config["defaultScoreboardHostname"])))
                 .AddSingleton<FlagProviderService>()
                 .AddSingleton<ScoreboardMessageBuilderService>()
                 .BuildServiceProvider();

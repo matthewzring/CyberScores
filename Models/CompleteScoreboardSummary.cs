@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace CyberPatriot.Models
 {
-    public class CompleteScoreboardSummary
+    public class CompleteScoreboardSummary : ICloneable
     {
         public IAsyncEnumerable<ScoreboardSummaryEntry> TeamList { get; set; }
         public DateTimeOffset SnapshotTimestamp { get; set; }
@@ -12,7 +12,24 @@ namespace CyberPatriot.Models
         public string TierFilter { get; set; }
         public Uri OriginUri { get; set; }
 
-        public CompleteScoreboardSummary Filter(Division? newDivisionFilter, string newTierFilter)
+        public CompleteScoreboardSummary Clone()
+        {
+            return new CompleteScoreboardSummary
+            {
+                TeamList = TeamList,
+                SnapshotTimestamp = SnapshotTimestamp,
+                DivisionFilter = DivisionFilter,
+                TierFilter = TierFilter,
+                OriginUri = OriginUri
+            };
+        }
+
+        object ICloneable.Clone()
+        {
+            return Clone();
+        }
+
+        public CompleteScoreboardSummary WithFilter(Division? newDivisionFilter, string newTierFilter)
         {
             if (DivisionFilter.HasValue && DivisionFilter != newDivisionFilter)
             {
@@ -31,13 +48,19 @@ namespace CyberPatriot.Models
             {
                 newTeamList = newTeamList.Where(summary => summary.Tier == newTierFilter);
             }
-            return new CompleteScoreboardSummary
+            TeamList = newTeamList;
+            return this;
+        }
+
+        public async System.Threading.Tasks.Task<CompleteScoreboardSummary> WithInternalListAsync()
+        {
+            if (!(TeamList is IList<ScoreboardSummaryEntry>))
             {
-                TeamList = newTeamList,
-                SnapshotTimestamp = SnapshotTimestamp,
-                DivisionFilter = newDivisionFilter,
-                TierFilter = newTierFilter
-            };
+                // ToAsyncEnumerable uses an optimized IAsyncEnumerable which implements IList
+                TeamList = (await TeamList.ToList()).ToAsyncEnumerable();
+            }
+
+            return this;
         }
     }
 }
