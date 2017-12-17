@@ -5,6 +5,7 @@ namespace CyberPatriot.Models
 {
     public class ScoreboardDetails
     {
+        [Newtonsoft.Json.JsonIgnore]
         public TeamId TeamId
         {
             get => Summary?.TeamId;

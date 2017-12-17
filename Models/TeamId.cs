@@ -4,6 +4,7 @@ namespace CyberPatriot.Models
     /// <summary>
     /// An immutable team identifier.
     /// </summary>
+    [Newtonsoft.Json.JsonConverter(typeof(TeamIdJsonConverter))]
     public class TeamId : IComparable<TeamId>
     {
         public int SeasonId { get; }
