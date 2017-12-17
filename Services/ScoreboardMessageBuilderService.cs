@@ -57,7 +57,7 @@ namespace CyberPatriot.DiscordBot.Services
             scoreboard.TeamList.Skip(pageNumber * pageSize).Take(pageSize)
             .ForEach((team, i) =>
             {
-                stringBuilder.AppendFormat("#{0,-4}{1}{2,4}{3,20}{4,7:hh\\:mm}{5,4}", i + 1 + (pageNumber * pageSize), team.TeamId, team.Location, team.TotalScore, team.PlayTime, team.Warnings.ToConciseString()).AppendLine();
+                stringBuilder.AppendFormat("#{0,-4}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + 1 + (pageNumber * pageSize), team.TeamId, team.Location, team.TotalScore, team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine();
             });
             stringBuilder.AppendLine("```");
             if (scoreboard.OriginUri != null)

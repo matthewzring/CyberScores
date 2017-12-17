@@ -71,5 +71,20 @@ namespace CyberPatriot
             }
             return resBuild.ToString();
         }
+
+        public static string ToConciseString(this Models.Division division)
+        {
+            switch (division)
+            {
+                case Models.Division.Open:
+                    return "Open";
+                case Models.Division.AllService:
+                    return "A.S.";
+                case Models.Division.MiddleSchool:
+                    return "M.S.";
+            }
+
+            throw new ArgumentOutOfRangeException();
+        }
     }
 }

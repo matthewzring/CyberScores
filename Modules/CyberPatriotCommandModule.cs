@@ -28,7 +28,7 @@ namespace CyberPatriot.DiscordBot.Modules
         [Command("scoreboard"), Alias("leaderboard", "top")]
         public async Task GetLeaderboardAsync()
         {
-            CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(Division.Open, "High School");
+            CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(null, null);
             if (teamScore == null)
             {
                 throw new Exception("Error obtaining scoreboard.");
