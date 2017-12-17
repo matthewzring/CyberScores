@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Discord;
 using CyberPatriot.Models;
+using System.Threading.Tasks;
 
 namespace CyberPatriot.DiscordBot.Services
 {
@@ -16,15 +17,16 @@ namespace CyberPatriot.DiscordBot.Services
             FlagProvider = flagProvider;
         }
 
-        public string CreateTopLeaderboardEmbed(CompleteScoreboardSummary scoreboard, TimeZoneInfo timeZone = null, int pageNumber = 1, int pageSize = 15)
+        public async Task<string> CreateTopLeaderboardEmbedAsync(CompleteScoreboardSummary scoreboard, TimeZoneInfo timeZone = null, int pageNumber = 1, int pageSize = 15)
         {
             if (pageSize <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(pageSize));
             }
 
-            // can't easily check upper bound
-            if (--pageNumber < 0)
+            int pageCount = (int)(Math.Ceiling((((double)await scoreboard.TeamList.Count().ConfigureAwait(false))/pageSize)));
+
+            if (--pageNumber < 0 || pageNumber >= pageCount)
             {
                 throw new ArgumentOutOfRangeException(nameof(pageNumber));
             }
@@ -43,9 +45,9 @@ namespace CyberPatriot.DiscordBot.Services
             {
                 stringBuilder.Append(", ").Append(scoreboard.TierFilter).Append(" Tier");
             }
-            if (pageNumber > 0)
+            if (pageCount > 1)
             {
-                stringBuilder.Append(" (Page ").Append(pageNumber + 1).Append(')');
+                stringBuilder.Append(" (Page ").Append(pageNumber + 1).Append(" of ").Append(pageCount).Append(')');
             }
             stringBuilder.AppendLine("**");
             stringBuilder.Append("*As of: ");
@@ -54,11 +56,11 @@ namespace CyberPatriot.DiscordBot.Services
             stringBuilder.Append(' ').Append(timeZone?.DisplayName ?? "UTC").AppendLine("*");
             stringBuilder.AppendLine("```");
 
-            scoreboard.TeamList.Skip(pageNumber * pageSize).Take(pageSize)
-            .ForEach((team, i) =>
+            await scoreboard.TeamList.Skip(pageNumber * pageSize).Take(pageSize)
+            .ForEachAsync((team, i) =>
             {
-                stringBuilder.AppendFormat("#{0,-4}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + 1 + (pageNumber * pageSize), team.TeamId, team.Location, team.TotalScore, team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine();
-            });
+                stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + 1 + (pageNumber * pageSize), team.TeamId, team.Location, team.TotalScore, team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine();
+            }).ConfigureAwait(false);
             stringBuilder.AppendLine("```");
             if (scoreboard.OriginUri != null)
             {

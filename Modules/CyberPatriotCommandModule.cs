@@ -26,14 +26,14 @@ namespace CyberPatriot.DiscordBot.Modules
         }
 
         [Command("scoreboard"), Alias("leaderboard", "top")]
-        public async Task GetLeaderboardAsync()
+        public async Task GetLeaderboardAsync(int pageNumber = 1)
         {
             CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(null, null);
             if (teamScore == null)
             {
                 throw new Exception("Error obtaining scoreboard.");
             }
-            await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore));
+            await ReplyAsync(await ScoreEmbedBuilder.CreateTopLeaderboardEmbedAsync(teamScore, pageNumber: pageNumber));
         }
     }
 }
