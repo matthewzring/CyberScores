@@ -141,84 +141,36 @@ namespace CyberPatriot.DiscordBot.Services
         #region Scoreboard Summary
         protected SemaphoreSlim scoreboardCacheLock = new SemaphoreSlim(1);
 
-        protected struct FilterInfo
-        {
-            public static readonly FilterInfo NoFilter = new FilterInfo(null, null);
+        protected ConcurrentDictionary<ScoreboardFilterInfo, CompleteScoreboardSummary> cachedScoreboards = new ConcurrentDictionary<ScoreboardFilterInfo, CompleteScoreboardSummary>();
 
-            public FilterInfo(Division? divFilter, string tierFilter)
-            {
-                Division = divFilter;
-                Tier = tierFilter;
-            }
-
-            public Division? Division;
-            public string Tier;
-
-            public override bool Equals(object obj)
-            {
-                if (obj == null || !(obj is FilterInfo other))
-                {
-                    return false;
-                }
-
-                return Division == other.Division && Tier == other.Tier;
-            }
-
-            public override int GetHashCode()
-            {
-                unchecked
-                {
-                    int hashCode = 19;
-                    hashCode = (hashCode * 401) ^ (Division.HasValue ? Division.Value.GetHashCode() : 0);
-                    hashCode = (hashCode * 401) ^ (!string.IsNullOrEmpty(Tier) ? Tier.GetHashCode() : 0);
-                    return hashCode;
-                }
-            }
-
-            public static bool operator ==(FilterInfo a, FilterInfo b)
-            {
-                // value type, no null check
-                return a.Equals(b);
-            }
-
-            public static bool operator !=(FilterInfo a, FilterInfo b)
-            {
-                // value type, no null check
-                return !a.Equals(b);
-            }
-        }
-
-        protected ConcurrentDictionary<FilterInfo, CompleteScoreboardSummary> cachedScoreboards = new ConcurrentDictionary<FilterInfo, CompleteScoreboardSummary>();
-
-        public async Task<CompleteScoreboardSummary> GetScoreboardAsync(Division? divisionFilter, string tierFilter)
+        public async Task<CompleteScoreboardSummary> GetScoreboardAsync(ScoreboardFilterInfo filter)
         {
             await scoreboardCacheLock.WaitAsync();
             try
             {
-                var filter = new FilterInfo(divisionFilter, tierFilter);
                 if (!cachedScoreboards.TryGetValue(filter, out CompleteScoreboardSummary scoreboard) || DateTimeOffset.UtcNow - scoreboard.SnapshotTimestamp >= MaxCompleteScoreboardLifespan)
                 {
                     // need to replace cached for this entry
                     // try querying the "master" cached scoreboard before querying the backend
 
-                    if (filter != FilterInfo.NoFilter && cachedScoreboards.TryGetValue(FilterInfo.NoFilter, out CompleteScoreboardSummary masterScoreboard) && DateTimeOffset.UtcNow - scoreboard.SnapshotTimestamp < MaxCompleteScoreboardLifespan)
+                    if (filter != ScoreboardFilterInfo.NoFilter && cachedScoreboards.TryGetValue(ScoreboardFilterInfo.NoFilter, out CompleteScoreboardSummary masterScoreboard) && DateTimeOffset.UtcNow - scoreboard.SnapshotTimestamp < MaxCompleteScoreboardLifespan)
                     {
                         // we have a fresh complete scoreboard, just create the more specialized one
-                        scoreboard = await masterScoreboard.Clone().WithFilter(filter.Division, filter.Tier).WithInternalListAsync();
+                        scoreboard = masterScoreboard.Clone().WithFilter(filter);
                         cachedScoreboards[filter] = scoreboard;
                     }
                     else
                     {
                         // we need a new master scoreboard
-                        masterScoreboard = await (await Backend.GetScoreboardAsync(null, null)).WithInternalListAsync();
-                        cachedScoreboards[FilterInfo.NoFilter] = masterScoreboard;
-                        if (filter == FilterInfo.NoFilter)
+                        masterScoreboard = await Backend.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter);
+                        cachedScoreboards[ScoreboardFilterInfo.NoFilter] = masterScoreboard;
+                        if (filter == ScoreboardFilterInfo.NoFilter)
                         {
                             scoreboard = masterScoreboard;
                         }
                         else
                         {
-                            scoreboard = await masterScoreboard.Clone().WithFilter(filter.Division, filter.Tier).WithInternalListAsync();
+                            scoreboard = masterScoreboard.Clone().WithFilter(filter);
                             cachedScoreboards[filter] = scoreboard;
                         }
                     }

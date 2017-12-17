@@ -6,11 +6,27 @@ namespace CyberPatriot.Models
 {
     public class CompleteScoreboardSummary : ICloneable
     {
-        public IAsyncEnumerable<ScoreboardSummaryEntry> TeamList { get; set; }
+        public IList<ScoreboardSummaryEntry> TeamList { get; set; }
         public DateTimeOffset SnapshotTimestamp { get; set; }
-        public Division? DivisionFilter { get; set; }
-        public string TierFilter { get; set; }
         public Uri OriginUri { get; set; }
+
+        private ScoreboardFilterInfo filterInfo = ScoreboardFilterInfo.NoFilter;
+        public ScoreboardFilterInfo Filter
+        {
+            get
+            {
+                return filterInfo;
+            }
+            set
+            {
+                if (value == null)
+                {
+                    throw new ArgumentNullException(nameof(value));
+                }
+                filterInfo = value;
+            }
+        }
+
 
         public CompleteScoreboardSummary Clone()
         {
@@ -18,8 +34,7 @@ namespace CyberPatriot.Models
             {
                 TeamList = TeamList,
                 SnapshotTimestamp = SnapshotTimestamp,
-                DivisionFilter = DivisionFilter,
-                TierFilter = TierFilter,
+                Filter = Filter,
                 OriginUri = OriginUri
             };
         }
@@ -29,17 +44,48 @@ namespace CyberPatriot.Models
             return Clone();
         }
 
-        public CompleteScoreboardSummary WithFilter(Division? newDivisionFilter, string newTierFilter)
+        public CompleteScoreboardSummary WithFilter(ScoreboardFilterInfo filter)
         {
-            if (DivisionFilter.HasValue && DivisionFilter != newDivisionFilter)
+            if (filter == null)
+            {
+                throw new ArgumentNullException(nameof(filter));
+            }
+            
+            if (Filter.Division.HasValue && Filter.Division != filter.Division)
             {
                 throw new ArgumentException("Cannot change an existing DivisionFilter.");
             }
-            if (TierFilter != null && TierFilter != newTierFilter)
+            if (Filter.Tier != null && Filter.Tier != filter.Tier)
             {
                 throw new ArgumentException("Cannot change an existing TierFilter.");
             }
-            IAsyncEnumerable<ScoreboardSummaryEntry> newTeamList = TeamList;
+            IEnumerable<ScoreboardSummaryEntry> newTeamList = TeamList;
+
+            if (filter.Division.HasValue)
+            {
+                newTeamList = newTeamList.Where(summary => summary.Division == filter.Division.Value);
+            }
+            if (filter.Tier != null)
+            {
+                newTeamList = newTeamList.Where(summary => summary.Tier == filter.Tier);
+            }
+            
+            Filter = filter;
+            TeamList = newTeamList.ToIList();
+            return this;
+        }
+        
+        public CompleteScoreboardSummary WithFilter(Division? newDivisionFilter, string newTierFilter)
+        {
+            if (Filter.Division.HasValue && Filter.Division != newDivisionFilter)
+            {
+                throw new ArgumentException("Cannot change an existing DivisionFilter.");
+            }
+            if (Filter.Tier != null && Filter.Tier != newTierFilter)
+            {
+                throw new ArgumentException("Cannot change an existing TierFilter.");
+            }
+            IEnumerable<ScoreboardSummaryEntry> newTeamList = TeamList;
             if (newDivisionFilter != null)
             {
                 newTeamList = newTeamList.Where(summary => summary.Division == newDivisionFilter.Value);
@@ -48,18 +94,8 @@ namespace CyberPatriot.Models
             {
                 newTeamList = newTeamList.Where(summary => summary.Tier == newTierFilter);
             }
-            TeamList = newTeamList;
-            return this;
-        }
-
-        public async System.Threading.Tasks.Task<CompleteScoreboardSummary> WithInternalListAsync()
-        {
-            if (!(TeamList is IList<ScoreboardSummaryEntry>))
-            {
-                // ToAsyncEnumerable uses an optimized IAsyncEnumerable which implements IList
-                TeamList = (await TeamList.ToList()).ToAsyncEnumerable();
-            }
-
+            Filter = new ScoreboardFilterInfo(newDivisionFilter, newTierFilter);
+            TeamList = newTeamList.ToIList();
             return this;
         }
     }

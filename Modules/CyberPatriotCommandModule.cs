@@ -24,13 +24,13 @@ namespace CyberPatriot.DiscordBot.Modules
             {
                 throw new Exception("Error obtaining team score.");
             }
-            await ReplyAsync(string.Empty, embed: (await ScoreEmbedBuilder.CreateTeamDetailsEmbedAsync(teamScore, await ScoreRetrievalService.GetScoreboardAsync(teamScore.Summary.Division, teamScore.Summary.Tier))).Build());
+            await ReplyAsync(string.Empty, embed: ScoreEmbedBuilder.CreateTeamDetailsEmbed(teamScore, await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(teamScore.Summary.Division, teamScore.Summary.Tier))).Build());
         }
 
         [Command("scoreboard"), Alias("leaderboard", "top")]
         public async Task GetLeaderboardAsync(int pageNumber = 1)
         {
-            CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(null, null);
+            CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter);
             if (teamScore == null)
             {
                 throw new Exception("Error obtaining scoreboard.");
@@ -41,7 +41,7 @@ namespace CyberPatriot.DiscordBot.Modules
             {
                 tz = TimeZoneInfo.FindSystemTimeZoneById(tzId);
             }
-            await ReplyAsync(await ScoreEmbedBuilder.CreateTopLeaderboardEmbedAsync(teamScore, pageNumber: pageNumber, timeZone: tz));
+            await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, timeZone: tz));
         }
     }
 }

@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace CyberPatriot
 {
@@ -104,7 +107,7 @@ namespace CyberPatriot
 
         public static string AppendOrdinalSuffix(int number) => number + GetOrdinalSuffix(number);
 
-        public static int IndexOfWhere<T>(this System.Collections.Generic.IEnumerable<T> enumerable, Func<T, bool> predicate)
+        public static int IndexOfWhere<T>(this IEnumerable<T> enumerable, Func<T, bool> predicate)
         {
             int index = 0;
             foreach (var item in enumerable)
@@ -118,19 +121,61 @@ namespace CyberPatriot
             return -1;
         }
 
-        public static string Pluralize(string noun, int quantity)
+        public static string Pluralize(string noun, int quantity, bool prependQuantity = true)
         {
             if (quantity == 1)
             {
-                return noun;
+                return prependQuantity ? quantity + " " + noun : noun;
             }
 
             if (noun.EndsWith("ch") || noun.EndsWith("sh") || noun.EndsWith("s") || noun.EndsWith("x") || noun.EndsWith("z"))
             {
-                return noun + "es";
+                return (prependQuantity ? quantity + " " : string.Empty) + noun + "es";
             }
 
-            return noun + "s";
+            return (prependQuantity ? quantity + " " : string.Empty) + noun + "s";
+        }
+
+        public static void Consume<T>(this IEnumerable<T> enumerable)
+        {
+            if (enumerable == null)
+            {
+                throw new ArgumentNullException(nameof(enumerable));
+            }
+
+            using (var enumerator = enumerable.GetEnumerator())
+            {
+                while (enumerator.MoveNext()) ;
+            }
+        }
+
+        public static IList<T> ToIList<T>(this IEnumerable<T> enumerable)
+        {
+            if (enumerable is IList<T> list)
+            {
+                return list;
+            }
+
+            return enumerable.ToList();
+        }
+
+        public static class PeriodicTask
+        {
+            public static async Task Run<TState>(Func<TState, Task> action, TimeSpan period, TState state, System.Threading.CancellationToken cancellationToken)
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    await Task.Delay(period, cancellationToken).ConfigureAwait(false);
+
+                    if (!cancellationToken.IsCancellationRequested)
+                        await action(state).ConfigureAwait(false);
+                }
+            }
+
+            public static Task Run<TState>(Func<TState, Task> action, TimeSpan period, TState state)
+            {
+                return Run(action, period, state, System.Threading.CancellationToken.None);
+            }
         }
     }
 }

@@ -181,18 +181,17 @@ namespace CyberPatriot.DiscordBot.Services
             }
             return retVal;
         }
-        public virtual async Task<CompleteScoreboardSummary> GetScoreboardAsync(Division? divisionFilter, string tierFilter)
+        public virtual async Task<CompleteScoreboardSummary> GetScoreboardAsync(ScoreboardFilterInfo filter)
         {
-            Uri scoreboardUri = BuildScoreboardUri(divisionFilter, tierFilter);
+            Uri scoreboardUri = BuildScoreboardUri(filter.Division, filter.Tier);
 
             var doc = await GetHtmlDocumentForScoreboard(scoreboardUri);
             var summaries = ProcessSummaries(doc, out DateTimeOffset snapshotTime);
 
             return new CompleteScoreboardSummary()
             {
-                DivisionFilter = divisionFilter,
-                TierFilter = tierFilter,
-                TeamList = AsyncEnumerable.ToAsyncEnumerable(summaries),
+                Filter = filter,
+                TeamList = summaries.ToIList(),
                 SnapshotTimestamp = snapshotTime,
                 OriginUri = scoreboardUri
             };

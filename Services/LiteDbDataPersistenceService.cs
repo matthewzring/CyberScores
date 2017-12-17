@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using CyberPatriot.Models;
 using LiteDB;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -29,6 +30,12 @@ namespace CyberPatriot.DiscordBot.Services
             // this is code specific to this program, the rest of this class is fairly generic
             // index each model
             GetCollection<Models.Guild>().EnsureIndex(g => g.Id, true);
+
+            Database.Mapper.RegisterType<TeamId>
+            (
+                serialize: (teamID) => teamID.ToString(),
+                deserialize: (bson) => TeamId.Parse(bson.AsString)
+            );
 
             return Task.CompletedTask;
         }

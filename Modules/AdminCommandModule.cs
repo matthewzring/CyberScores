@@ -1,11 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using CyberPatriot.DiscordBot;
+using CyberPatriot.DiscordBot.Models;
 using CyberPatriot.DiscordBot.Services;
+using CyberPatriot.Models;
 
 namespace CyberPatriot.DiscordBot.Modules
 {
@@ -82,6 +86,102 @@ namespace CyberPatriot.DiscordBot.Modules
                 guildSettings.TimeZone = null;
                 await Database.SaveAsync(guildSettings);
                 await ReplyAsync("Removed timezone. Displayed times will now be in UTC.");
+            }
+        }
+        
+        [Group("teammonitor")]
+        public class TeamMonitorModule : ModuleBase
+        {
+            public IDataPersistenceService Database { get; set; }
+
+            [Command("list")]
+            [RequireUserPermission(ChannelPermission.ManageChannel)]
+            [RequireContext(ContextType.Guild)]
+            public async Task ListTeamsAsync()
+            {
+                Models.Guild guildSettings = await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id);
+                Models.Channel channelSettings =
+                    guildSettings?.ChannelSettings?.SingleOrDefault(chan => chan.Id == Context.Channel.Id);
+                if (channelSettings?.MonitoredTeams == null || channelSettings.MonitoredTeams.Count == 0)
+                {
+                    await ReplyAsync("This channel is not monitoring any teams.");
+                }
+                else
+                {
+                    var retVal = new StringBuilder();
+                    retVal.AppendLine($"This channel is monitoring {Utilities.Pluralize("team", channelSettings.MonitoredTeams.Count)}");
+                    foreach (var teamId in channelSettings.MonitoredTeams)
+                    {
+                        retVal.AppendLine(teamId.ToString());
+                    }
+                    await ReplyAsync(retVal.ToString());
+                }
+            }
+
+            [Command("remove"), Alias("delete", "unwatch")]
+            [RequireUserPermission(ChannelPermission.ManageChannel)]
+            [RequireContext(ContextType.Guild)]
+            public async Task RemoveTeamAsync(TeamId team)
+            {
+                Models.Guild guildSettings = await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id) ?? new Models.Guild() { Id = Context.Guild.Id };
+                Models.Channel channelSettings =
+                    guildSettings?.ChannelSettings?.SingleOrDefault(chan => chan.Id == Context.Channel.Id);
+                if (channelSettings == null)
+                {
+                    if (guildSettings.ChannelSettings == null)
+                    {
+                        guildSettings.ChannelSettings = new List<Channel>();
+                    }
+                    guildSettings.ChannelSettings.RemoveAll(chan => chan.Id == Context.Channel.Id);
+                    channelSettings = new Models.Channel() { Id = Context.Channel.Id };
+                    guildSettings.ChannelSettings.Add(channelSettings);
+                }
+                if (channelSettings.MonitoredTeams == null || !channelSettings.MonitoredTeams.Contains(team))
+                {
+                    await ReplyAsync("Could not unwatch that team; it was not being watched.");
+                }
+                else
+                {
+                    channelSettings.MonitoredTeams.Remove(team);
+                    await ReplyAsync($"Unwatching team {team}");
+                }
+                
+                await Database.SaveAsync(guildSettings);
+            }
+            
+            [Command("add"), Alias("watch")]
+            [RequireUserPermission(ChannelPermission.ManageChannel)]
+            [RequireContext(ContextType.Guild)]
+            public async Task WatchTeamAsync(TeamId team)
+            {
+                Models.Guild guildSettings = await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id) ?? new Models.Guild() { Id = Context.Guild.Id };
+                Models.Channel channelSettings =
+                    guildSettings?.ChannelSettings?.SingleOrDefault(chan => chan.Id == Context.Channel.Id);
+                if (channelSettings == null)
+                {
+                    if (guildSettings.ChannelSettings == null)
+                    {
+                        guildSettings.ChannelSettings = new List<Channel>();
+                    }
+                    guildSettings.ChannelSettings.RemoveAll(chan => chan.Id == Context.Channel.Id);
+                    channelSettings = new Models.Channel() { Id = Context.Channel.Id };
+                    guildSettings.ChannelSettings.Add(channelSettings);
+                }
+                if (channelSettings.MonitoredTeams != null && channelSettings.MonitoredTeams.Contains(team))
+                {
+                    await ReplyAsync("Could not watch that team; it is already being watched.");
+                }
+                else
+                {
+                    if (channelSettings.MonitoredTeams == null)
+                    {
+                        channelSettings.MonitoredTeams = new List<TeamId>();
+                    }
+                    channelSettings.MonitoredTeams.Add(team);
+                    await ReplyAsync($"Watching team {team}");
+                }
+                
+                await Database.SaveAsync(guildSettings);
             }
         }
 

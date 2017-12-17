@@ -27,7 +27,8 @@ namespace CyberPatriot.DiscordBot
             services.GetRequiredService<LogService>();
             await Task.WhenAll(
                 services.GetRequiredService<CommandHandlingService>().InitializeAsync(services),
-                services.GetRequiredService<IDataPersistenceService>().InitializeAsync(services)
+                services.GetRequiredService<IDataPersistenceService>().InitializeAsync(services),
+                services.GetRequiredService<CyberPatriotEventHandlingService>().InitializeAsync(services)
             );
 
             await _client.LoginAsync(Discord.TokenType.Bot, _config["token"]);
@@ -52,6 +53,7 @@ namespace CyberPatriot.DiscordBot
                 // CyPat
                 .AddSingleton<IScoreRetrievalService, CachingScoreRetrievalService>(prov => new CachingScoreRetrievalService(new HttpScoreboardScoreRetrievalService(_config["defaultScoreboardHostname"])))
                 .AddSingleton<FlagProviderService>()
+                .AddSingleton<CyberPatriotEventHandlingService>()
                 .AddSingleton<ScoreboardMessageBuilderService>()
                 .BuildServiceProvider();
         }
