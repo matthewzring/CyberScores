@@ -14,6 +14,8 @@ namespace CyberPatriot.DiscordBot.Modules
 
         public ScoreboardMessageBuilderService ScoreEmbedBuilder { get; set; }
 
+        public IDataPersistenceService Database { get; set; }
+
         [Command("team"), Alias("getteam")]
         public async Task GetTeamAsync(TeamId team)
         {
@@ -33,7 +35,13 @@ namespace CyberPatriot.DiscordBot.Modules
             {
                 throw new Exception("Error obtaining scoreboard.");
             }
-            await ReplyAsync(await ScoreEmbedBuilder.CreateTopLeaderboardEmbedAsync(teamScore, pageNumber: pageNumber));
+            string tzId = (await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id)).TimeZone;
+            TimeZoneInfo tz = null;
+            if (tzId != null)
+            {
+                tz = TimeZoneInfo.FindSystemTimeZoneById(tzId);
+            }
+            await ReplyAsync(await ScoreEmbedBuilder.CreateTopLeaderboardEmbedAsync(teamScore, pageNumber: pageNumber, timeZone: tz));
         }
     }
 }

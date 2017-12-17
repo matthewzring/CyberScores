@@ -53,7 +53,7 @@ namespace CyberPatriot.DiscordBot.Services
             stringBuilder.Append("*As of: ");
             DateTimeOffset timestamp = timeZone == null ? scoreboard.SnapshotTimestamp : TimeZoneInfo.ConvertTime(scoreboard.SnapshotTimestamp, timeZone);
             stringBuilder.AppendFormat("{0:g}", timestamp);
-            stringBuilder.Append(' ').Append(timeZone?.DisplayName ?? "UTC").AppendLine("*");
+            stringBuilder.Append(' ').Append(timeZone == null ? "UTC" : TimeZoneNames.TZNames.GetAbbreviationsForTimeZone(timeZone.Id, "en-US").Generic).AppendLine("*");
             stringBuilder.AppendLine("```");
 
             await scoreboard.TeamList.Skip(pageNumber * pageSize).Take(pageSize)
