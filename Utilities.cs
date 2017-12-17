@@ -86,5 +86,51 @@ namespace CyberPatriot
 
             throw new ArgumentOutOfRangeException();
         }
+
+        public static string GetOrdinalSuffix(int number)
+        {
+            switch (number)
+            {
+                case 1:
+                    return "st";
+                case 2:
+                    return "nd";
+                case 3:
+                    return "rd";
+                default:
+                    return "th";
+            }
+        }
+
+        public static string AppendOrdinalSuffix(int number) => number + GetOrdinalSuffix(number);
+
+        public static int IndexOfWhere<T>(this System.Collections.Generic.IEnumerable<T> enumerable, Func<T, bool> predicate)
+        {
+            int index = 0;
+            foreach (var item in enumerable)
+            {
+                if (predicate(item))
+                {
+                    return index;
+                }
+                index++;
+            }
+            return -1;
+        }
+
+        public static string Pluralize(string noun, int quantity)
+        {
+            if (quantity == 1)
+            {
+                return noun;
+            }
+
+            if (noun.EndsWith("ch") || noun.EndsWith("sh") || noun.EndsWith("s") || noun.EndsWith("x") || noun.EndsWith("z"))
+            {
+                return noun + "es";
+            }
+
+            return noun + "s";
+        }
     }
 }

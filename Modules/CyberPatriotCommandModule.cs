@@ -24,7 +24,7 @@ namespace CyberPatriot.DiscordBot.Modules
             {
                 throw new Exception("Error obtaining team score.");
             }
-            await ReplyAsync(string.Empty, embed: ScoreEmbedBuilder.CreateTeamDetailsEmbed(teamScore).Build());
+            await ReplyAsync(string.Empty, embed: (await ScoreEmbedBuilder.CreateTeamDetailsEmbedAsync(teamScore, await ScoreRetrievalService.GetScoreboardAsync(teamScore.Summary.Division, teamScore.Summary.Tier))).Build());
         }
 
         [Command("scoreboard"), Alias("leaderboard", "top")]

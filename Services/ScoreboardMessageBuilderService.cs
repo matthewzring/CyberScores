@@ -24,7 +24,7 @@ namespace CyberPatriot.DiscordBot.Services
                 throw new ArgumentOutOfRangeException(nameof(pageSize));
             }
 
-            int pageCount = (int)(Math.Ceiling((((double)await scoreboard.TeamList.Count().ConfigureAwait(false))/pageSize)));
+            int pageCount = (int)(Math.Ceiling((((double)await scoreboard.TeamList.Count().ConfigureAwait(false)) / pageSize)));
 
             if (--pageNumber < 0 || pageNumber >= pageCount)
             {
@@ -69,7 +69,7 @@ namespace CyberPatriot.DiscordBot.Services
             return stringBuilder.ToString();
         }
 
-        public EmbedBuilder CreateTeamDetailsEmbed(ScoreboardDetails teamScore)
+        public async Task<EmbedBuilder> CreateTeamDetailsEmbedAsync(ScoreboardDetails teamScore, CompleteScoreboardSummary totalScoreboard = null)
         {
             if (teamScore == null)
             {
@@ -110,6 +110,37 @@ namespace CyberPatriot.DiscordBot.Services
                     warningAppendage += multiimage ? multiImageStr : overTimeStr;
                 }
                 builder.AddField('`' + item.ImageName + $": {item.Score}pts`", $"{item.Score} points ({item.VulnerabilitiesFound}/{item.VulnerabilitiesFound + item.VulnerabilitiesRemaining} vulns{penaltyAppendage}) in {item.PlayTime:hh\\:mm}{warningAppendage}");
+            }
+
+            builder.AddInlineField("Total Score", $"{teamScore.Summary.TotalScore} points in {teamScore.Summary.PlayTime:hh\\:mm}");
+            if (totalScoreboard != null)
+            {
+                // filter to peer teams
+                totalScoreboard.WithFilter(teamScore.Summary.Division, teamScore.Summary.Tier);
+                // descending order
+                List<ScoreboardSummaryEntry> peerTeams = await totalScoreboard.TeamList.ToList();
+                if (peerTeams.Count > 0)
+                {
+                    int myIndexInPeerList = peerTeams.IndexOfWhere(entr => entr.TeamId == teamScore.TeamId);
+                    double rawPercentile = ((double)peerTeams.Count(peer => peer.TotalScore >= teamScore.Summary.TotalScore)) / peerTeams.Count;
+                    builder.AddInlineField("Rank", Utilities.AppendOrdinalSuffix(myIndexInPeerList + 1) + " of " + peerTeams.Count + " peer teams");
+                    builder.AddInlineField("Percentile", Math.Round(rawPercentile * 1000) / 10 + "th percentile");
+                    StringBuilder marginBuilder = new StringBuilder();
+                    int marginUnderFirst = peerTeams[0].TotalScore - teamScore.Summary.TotalScore;
+                    marginBuilder.AppendLine($"{marginUnderFirst} {Utilities.Pluralize("point", marginUnderFirst)} under 1st place");
+                    if (myIndexInPeerList >= 2)
+                    {
+                        int marginUnderAbove = peerTeams[myIndexInPeerList - 1].TotalScore - teamScore.Summary.TotalScore;
+                        marginBuilder.AppendLine($"{marginUnderAbove} {Utilities.Pluralize("point", marginUnderAbove)} under {Utilities.AppendOrdinalSuffix(myIndexInPeerList)} place");
+                    }
+                    if (myIndexInPeerList < peerTeams.Count - 1)
+                    {
+                        int marginAboveUnder = teamScore.Summary.TotalScore - peerTeams[myIndexInPeerList + 1].TotalScore;
+                        marginBuilder.AppendLine($"{marginAboveUnder} {Utilities.Pluralize("point", marginAboveUnder)} above {Utilities.AppendOrdinalSuffix(myIndexInPeerList + 1)} place");
+                    }
+                    // TODO division- and round-specific margins
+                    builder.AddInlineField("Margin", marginBuilder.ToString());
+                }
             }
 
             return builder;

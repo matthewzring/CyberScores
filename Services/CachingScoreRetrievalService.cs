@@ -224,7 +224,8 @@ namespace CyberPatriot.DiscordBot.Services
                     }
                 }
 
-                return scoreboard;
+                // dont want client alterations to affect cached copy
+                return scoreboard.Clone();
             }
             finally
             {
