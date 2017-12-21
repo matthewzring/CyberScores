@@ -90,7 +90,7 @@ namespace CyberPatriot.DiscordBot.Services
             // TODO image lookup for location? e.g. thumbnail with flag?
             foreach (var item in teamScore.Images)
             {
-                string penaltyAppendage = item.Penalties > 0 ? " - " + item.Penalties + " penalties" : string.Empty;
+                string penaltyAppendage = item.Penalties > 0 ? " - " + Utilities.Pluralize("penalty", item.Penalties) : string.Empty;
                 bool overtime = (item.Warnings & ScoreWarnings.TimeOver) == ScoreWarnings.TimeOver;
                 bool multiimage = (item.Warnings & ScoreWarnings.MultiImage) == ScoreWarnings.MultiImage;
                 string warningAppendage = string.Empty;
