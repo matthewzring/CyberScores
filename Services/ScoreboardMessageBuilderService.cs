@@ -108,7 +108,9 @@ namespace CyberPatriot.DiscordBot.Services
                 {
                     warningAppendage += multiimage ? multiImageStr : overTimeStr;
                 }
-                builder.AddField('`' + item.ImageName + $": {item.Score}pts`", $"{item.Score} points ({item.VulnerabilitiesFound}/{item.VulnerabilitiesFound + item.VulnerabilitiesRemaining} vulns{penaltyAppendage}) in {item.PlayTime:hh\\:mm}{warningAppendage}");
+                string vulnsString = !(item.VulnerabilitiesFound == 0 && item.VulnerabilitiesRemaining == 0) ? $" ({item.VulnerabilitiesFound}/{item.VulnerabilitiesFound + item.VulnerabilitiesRemaining} vulns{penaltyAppendage})" : string.Empty;
+                string playTimeStr = item.PlayTime == TimeSpan.Zero ? string.Empty : $" in {item.PlayTime:hh\\:mm}";
+                builder.AddField('`' + item.ImageName + $": {item.Score}pts`", $"{item.Score} points{vulnsString}{playTimeStr}{warningAppendage}");
             }
 
             builder.AddInlineField("Total Score", $"{teamScore.Summary.TotalScore} points in {teamScore.Summary.PlayTime:hh\\:mm}");
@@ -121,12 +123,15 @@ namespace CyberPatriot.DiscordBot.Services
                 if (peerTeams.Count > 0)
                 {
                     int myIndexInPeerList = peerTeams.IndexOfWhere(entr => entr.TeamId == teamScore.TeamId);
-                    double rawPercentile = ((double)peerTeams.Count(peer => peer.TotalScore >= teamScore.Summary.TotalScore)) / peerTeams.Count;
+                    double rawPercentile = 1.0 - (((double)peerTeams.Count(peer => peer.TotalScore >= teamScore.Summary.TotalScore)) / peerTeams.Count);
                     builder.AddInlineField("Rank", Utilities.AppendOrdinalSuffix(myIndexInPeerList + 1) + " of " + peerTeams.Count + " peer teams");
                     builder.AddInlineField("Percentile", Math.Round(rawPercentile * 1000) / 10 + "th percentile");
                     StringBuilder marginBuilder = new StringBuilder();
-                    int marginUnderFirst = peerTeams[0].TotalScore - teamScore.Summary.TotalScore;
-                    marginBuilder.AppendLine($"{Utilities.Pluralize("point", marginUnderFirst)} under 1st place");
+                    if (myIndexInPeerList > 0)
+                    {
+                        int marginUnderFirst = peerTeams[0].TotalScore - teamScore.Summary.TotalScore;
+                        marginBuilder.AppendLine($"{Utilities.Pluralize("point", marginUnderFirst)} under 1st place");
+                    }
                     if (myIndexInPeerList >= 2)
                     {
                         int marginUnderAbove = peerTeams[myIndexInPeerList - 1].TotalScore - teamScore.Summary.TotalScore;
@@ -135,7 +140,7 @@ namespace CyberPatriot.DiscordBot.Services
                     if (myIndexInPeerList < peerTeams.Count - 1)
                     {
                         int marginAboveUnder = teamScore.Summary.TotalScore - peerTeams[myIndexInPeerList + 1].TotalScore;
-                        marginBuilder.AppendLine($"{Utilities.Pluralize("point", marginAboveUnder)} above {Utilities.AppendOrdinalSuffix(myIndexInPeerList + 1)} place");
+                        marginBuilder.AppendLine($"{Utilities.Pluralize("point", marginAboveUnder)} above {Utilities.AppendOrdinalSuffix(myIndexInPeerList + 2)} place");
                     }
                     // TODO division- and round-specific margins
                     builder.AddInlineField("Margin", marginBuilder.ToString());
