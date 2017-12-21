@@ -26,7 +26,24 @@ namespace CyberPatriot.DiscordBot.Services
 
         protected Dictionary<TeamId, ScoreboardDetails> teamInfo = new Dictionary<TeamId, ScoreboardDetails>();
 
-        Task IScoreRetrievalService.InitializeAsync(IServiceProvider provider) => InitializeFromConfiguredCsvAsync(provider);
+        public Task InitializeAsync(IServiceProvider provider)
+        {
+            Task csvInit = InitializeFromConfiguredCsvAsync(provider);
+
+            // hacky implementation of a decent idea
+            // add decimals at format level to embed creator
+            var embedBuilder = provider.GetService<ScoreboardMessageBuilderService>();
+            if (embedBuilder != null)
+            {
+                // set format options to display decimals, overriding anything else that may have been set :(
+                embedBuilder.FormattingOptions.FormatScore = rawScore => (rawScore / 100.0m).ToString();
+                embedBuilder.FormattingOptions.FormatLabeledScoreDifference = rawScore => (rawScore / 100.0m) + " point" + (rawScore == 100 ? string.Empty : "s"); 
+                embedBuilder.FormattingOptions.TimeDisplay = ScoreboardMessageBuilderService.MessageFormattingOptions.NumberDisplayCriteria.Never;
+                embedBuilder.FormattingOptions.VulnerabilityDisplay = ScoreboardMessageBuilderService.MessageFormattingOptions.NumberDisplayCriteria.Never;
+            }
+
+            return csvInit;
+        }
 
         public Task<SpreadsheetScoreRetrievalService> InitializeFromConfiguredCsvAsync(IServiceProvider serviceProvider)
         {
@@ -65,7 +82,7 @@ namespace CyberPatriot.DiscordBot.Services
                 DateTimeOffset snapshotTimestamp = DateTimeOffset.UtcNow;
 
                 Uri originUri = null;
-                
+
                 for (int i = 0; i < lines.Length; i++)
                 {
                     string line = lines[i];
@@ -83,7 +100,7 @@ namespace CyberPatriot.DiscordBot.Services
                                 continue;
                             }
                             string coreLine = line.Substring(1).TrimStart();
-                            string[] kvp = coreLine.Split(new char[]{'='}, 2);
+                            string[] kvp = coreLine.Split(new char[] { '=' }, 2);
                             switch (kvp[0].TrimEnd())
                             {
                                 case "timestamp":
@@ -173,7 +190,7 @@ namespace CyberPatriot.DiscordBot.Services
                                     PlayTime = TimeSpan.Zero,
                                     VulnerabilitiesFound = 0,
                                     VulnerabilitiesRemaining = 0,
-                                    Score = (int) (data[j].Trim().Length > 0 ? decimal.Parse(data[j]) * 100m : 0m)
+                                    Score = (int)(data[j].Trim().Length > 0 ? decimal.Parse(data[j]) * 100m : 0m)
                                 };
                                 totalScore += image.Score;
                                 teamInfo.Images.Add(image);
