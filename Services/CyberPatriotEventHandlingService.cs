@@ -148,7 +148,7 @@ namespace CyberPatriot.DiscordBot.Services
                                     announceMessage.Append(" place**.");
                                     await chan.SendMessageAsync(announceMessage.ToString(), embed: _messageBuilder
                                         .CreateTeamDetailsEmbed(
-                                            await _scoreRetriever.GetDetailsAsync(monitored), peerScoreboard)
+                                            await _scoreRetriever.GetDetailsAsync(monitored), masterScoreboard)
                                         .Build());
                                 }
                             }

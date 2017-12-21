@@ -142,7 +142,7 @@ namespace CyberPatriot.DiscordBot.Services
             return stringBuilder.ToString();
         }
 
-        public EmbedBuilder CreateTeamDetailsEmbed(ScoreboardDetails teamScore, CompleteScoreboardSummary totalScoreboard = null)
+        public EmbedBuilder CreateTeamDetailsEmbed(ScoreboardDetails teamScore, CompleteScoreboardSummary peerScoreboard = null)
         {
             if (teamScore == null)
             {
@@ -194,17 +194,33 @@ namespace CyberPatriot.DiscordBot.Services
             }
 
             builder.AddInlineField("Total Score", $"{FormattingOptions.FormatScore(teamScore.Summary.TotalScore)} points" + totalScoreTimeAppendage);
-            if (totalScoreboard != null)
+            if (peerScoreboard != null)
             {
+                // don't pollute upstream
+                CompleteScoreboardSummary totalDivisionScoreboard = peerScoreboard.Clone();
+                if (totalDivisionScoreboard.Filter.Tier == null)
+                {
+                    // can't filter if it already has a tier filter
+                    totalDivisionScoreboard.WithFilter(teamScore.Summary.Division, null);
+                }
+
                 // filter to peer teams
-                totalScoreboard.WithFilter(teamScore.Summary.Division, teamScore.Summary.Tier);
+                peerScoreboard = peerScoreboard.Clone().WithFilter(teamScore.Summary.Division, teamScore.Summary.Tier);
                 // descending order
-                IList<ScoreboardSummaryEntry> peerTeams = totalScoreboard.TeamList;
+                IList<ScoreboardSummaryEntry> peerTeams = peerScoreboard.TeamList;
                 if (peerTeams.Count > 0)
                 {
                     int myIndexInPeerList = peerTeams.IndexOfWhere(entr => entr.TeamId == teamScore.TeamId);
+
+                    StringBuilder rankEmbedBuilder = new StringBuilder();
+                    rankEmbedBuilder.AppendLine(Utilities.AppendOrdinalSuffix(myIndexInPeerList + 1) + " of " + Utilities.Pluralize("peer team", peerTeams.Count));
+                    if (totalDivisionScoreboard.Filter.Tier == null && totalDivisionScoreboard.Filter != peerScoreboard.Filter)
+                    {
+                        rankEmbedBuilder.AppendLine(Utilities.AppendOrdinalSuffix(totalDivisionScoreboard.TeamList.IndexOf(teamScore.Summary) + 1) + " of " + Utilities.Pluralize("team", totalDivisionScoreboard.TeamList.Count) + " in division");
+                    }
+                    builder.AddInlineField("Rank", rankEmbedBuilder.ToString());
+
                     double rawPercentile = 1.0 - (((double)peerTeams.Count(peer => peer.TotalScore >= teamScore.Summary.TotalScore)) / peerTeams.Count);
-                    builder.AddInlineField("Rank", Utilities.AppendOrdinalSuffix(myIndexInPeerList + 1) + " of " + peerTeams.Count + " peer teams");
                     builder.AddInlineField("Percentile", Math.Round(rawPercentile * 1000) / 10 + "th percentile");
                     StringBuilder marginBuilder = new StringBuilder();
                     if (myIndexInPeerList > 0)
