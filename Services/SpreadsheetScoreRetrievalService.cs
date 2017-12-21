@@ -195,8 +195,8 @@ namespace CyberPatriot.DiscordBot.Services
                 scoreboardSummary.SnapshotTimestamp = snapshotTimestamp;
                 scoreboardSummary.TeamList = scoreDetailsOrdered.Select(details => details.Summary).ToList();
                 scoreboardSummary.Filter = new ScoreboardFilterInfo(
-                    scoreboardSummary.TeamList.Select(sum => sum.Division).Cast<Division?>().SingleIfOne(),
-                    scoreboardSummary.TeamList.Select(sum => sum.Tier).SingleIfOne());
+                    scoreboardSummary.TeamList.Select(sum => sum.Division).Distinct().Cast<Division?>().SingleIfOne(),
+                    scoreboardSummary.TeamList.Select(sum => sum.Tier).Distinct().SingleIfOne());
 
                 if (this.summariesByFilter.TryGetValue(scoreboardSummary.Filter,
                     out CompleteScoreboardSummary existingSummary))
@@ -234,13 +234,13 @@ namespace CyberPatriot.DiscordBot.Services
             // TODO cache filtered lists?
             if (summariesByFilter.TryGetValue(filter, out CompleteScoreboardSummary summary))
             {
-                return Task.FromResult(summary);
+                return Task.FromResult(summary.Clone());
             }
             if (summariesByFilter.TryGetValue(new ScoreboardFilterInfo(filter.Division, null), out summary))
             {
-                return Task.FromResult(summary.WithFilter(filter));
+                return Task.FromResult(summary.Clone().WithFilter(filter));
             }
-            return Task.FromResult(summariesByFilter[ScoreboardFilterInfo.NoFilter].WithFilter(filter));
+            return Task.FromResult(summariesByFilter[ScoreboardFilterInfo.NoFilter].Clone().WithFilter(filter));
         }
 
         public Task<ScoreboardDetails> GetDetailsAsync(TeamId team)
