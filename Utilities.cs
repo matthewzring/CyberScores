@@ -90,6 +90,34 @@ namespace CyberPatriot
             throw new ArgumentOutOfRangeException();
         }
 
+        public static T Max<T>(params T[] args) where T : struct, IComparable<T>
+        {
+            T max = default(T);
+            for (int i = 0; i < args.Length; i++)
+            {
+                T entry = args[i];
+                if (entry.CompareTo(max) > 0)
+                {
+                    max = entry;
+                }
+            }
+            return max;
+        }
+        
+        public static T Min<T>(params T[] args) where T : struct, IComparable<T>
+        {
+            T min = default(T);
+            for (int i = 0; i < args.Length; i++)
+            {
+                T entry = args[i];
+                if (entry.CompareTo(min) < 0)
+                {
+                    min = entry;
+                }
+            }
+            return min;
+        }
+
         public static string GetOrdinalSuffix(int number)
         {
             switch (number)
@@ -133,6 +161,17 @@ namespace CyberPatriot
                 return (prependQuantity ? quantity + " " : string.Empty) + noun + "es";
             }
 
+            // "penalty"
+            if (noun.Length >= 2)
+            {
+                char penultimate = noun[noun.Length - 2];
+                if (noun.EndsWith('y') && penultimate != 'a' && penultimate != 'e' && penultimate != 'i' &&
+                    penultimate != 'o' && penultimate != 'u')
+                {
+                    return (prependQuantity ? quantity + " " : string.Empty) + noun.Substring(0, noun.Length - 1) + "ies";
+                }
+
+            }
             return (prependQuantity ? quantity + " " : string.Empty) + noun + "s";
         }
 
