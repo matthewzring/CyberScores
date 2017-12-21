@@ -21,6 +21,8 @@ namespace CyberPatriot.DiscordBot.Services
             Deserialize(jsonContents);
         }
 
+        Task IScoreRetrievalService.InitializeAsync(IServiceProvider provider) => Task.CompletedTask;
+
         public static string Serialize(CompleteScoreboardSummary summary,
             IDictionary<TeamId, ScoreboardDetails> teamDetails)
         {

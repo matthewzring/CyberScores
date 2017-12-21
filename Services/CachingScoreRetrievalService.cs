@@ -21,6 +21,8 @@ namespace CyberPatriot.DiscordBot.Services
             Backend = backend;
         }
 
+        Task IScoreRetrievalService.InitializeAsync(IServiceProvider provider) => Task.CompletedTask;
+
         protected class HitTrackingCachedObject<TCachee>
         {
             public TCachee Value;

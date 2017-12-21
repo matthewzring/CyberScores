@@ -92,7 +92,7 @@ namespace CyberPatriot
 
         public static T Max<T>(params T[] args) where T : struct, IComparable<T>
         {
-            T max = default(T);
+            T max = args[0];
             for (int i = 0; i < args.Length; i++)
             {
                 T entry = args[i];
@@ -103,10 +103,10 @@ namespace CyberPatriot
             }
             return max;
         }
-        
+
         public static T Min<T>(params T[] args) where T : struct, IComparable<T>
         {
-            T min = default(T);
+            T min = args[0];
             for (int i = 0; i < args.Length; i++)
             {
                 T entry = args[i];
@@ -116,6 +116,24 @@ namespace CyberPatriot
                 }
             }
             return min;
+        }
+
+        public static T SingleIfOne<T>(this IEnumerable<T> sequence, T defVal = default(T))
+        {
+            using (var enumerator = sequence.GetEnumerator())
+            {
+                if (!enumerator.MoveNext())
+                {
+                    return defVal;
+                }
+                T value = enumerator.Current;
+                if (enumerator.MoveNext())
+                {
+                    // more than one
+                    return defVal;
+                }
+                return value;
+            }
         }
 
         public static string GetOrdinalSuffix(int number)

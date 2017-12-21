@@ -5,6 +5,8 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using CyberPatriot.Models;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CyberPatriot.DiscordBot.Services
 {
@@ -15,7 +17,7 @@ namespace CyberPatriot.DiscordBot.Services
     /// </summary>
     public class SpreadsheetScoreRetrievalService : IScoreRetrievalService
     {
-        private SpreadsheetScoreRetrievalService()
+        public SpreadsheetScoreRetrievalService()
         {
         }
 
@@ -24,15 +26,20 @@ namespace CyberPatriot.DiscordBot.Services
 
         protected Dictionary<TeamId, ScoreboardDetails> teamInfo = new Dictionary<TeamId, ScoreboardDetails>();
 
-        public static async Task<SpreadsheetScoreRetrievalService> FromCsvAsync(params string[] filenames)
+        Task IScoreRetrievalService.InitializeAsync(IServiceProvider provider) => InitializeFromConfiguredCsvAsync(provider);
+
+        public Task<SpreadsheetScoreRetrievalService> InitializeFromConfiguredCsvAsync(IServiceProvider serviceProvider)
+        {
+            var conf = serviceProvider.GetRequiredService<IConfiguration>();
+            return InitializeFromCsvAsync(conf.GetSection("csvSources").Get<string[]>());
+        }
+
+        public async Task<SpreadsheetScoreRetrievalService> InitializeFromCsvAsync(params string[] filenames)
         {
             if (filenames == null)
             {
                 throw new ArgumentNullException(nameof(filenames));
             }
-
-            var newService = new SpreadsheetScoreRetrievalService();
-
             List<Task<string[]>> fileReadTasks =
                 filenames.Select(filename => File.ReadAllLinesAsync(filename)).ToList();
 
@@ -46,9 +53,9 @@ namespace CyberPatriot.DiscordBot.Services
                 int state = 0;
 
                 string[] headers = null;
-                int teamIdInd, divInd, locInd, tierInd;
+                int teamIdInd = -1, divInd = -1, locInd = -1, tierInd = -1;
 
-                int lowerDataBound, upperDataBound;
+                int lowerDataBound = 0, upperDataBound = 0;
 
                 List<ScoreboardDetails> scoreDetailsOrdered = new List<ScoreboardDetails>();
 
@@ -166,7 +173,7 @@ namespace CyberPatriot.DiscordBot.Services
                                     PlayTime = TimeSpan.Zero,
                                     VulnerabilitiesFound = 0,
                                     VulnerabilitiesRemaining = 0,
-                                    Score = (int) (decimal.Parse(data[j]) * 100m)
+                                    Score = (int) (data[j].Trim().Length > 0 ? decimal.Parse(data[j]) * 100m : 0m)
                                 };
                                 totalScore += image.Score;
                                 teamInfo.Images.Add(image);
@@ -177,7 +184,7 @@ namespace CyberPatriot.DiscordBot.Services
                             scoreDetailsOrdered.Add(teamInfo);
 
                             // add to service
-                            newService.teamInfo[teamInfo.TeamId] = teamInfo;
+                            this.teamInfo[teamInfo.TeamId] = teamInfo;
 
                             break;
                     }
@@ -188,10 +195,10 @@ namespace CyberPatriot.DiscordBot.Services
                 scoreboardSummary.SnapshotTimestamp = snapshotTimestamp;
                 scoreboardSummary.TeamList = scoreDetailsOrdered.Select(details => details.Summary).ToList();
                 scoreboardSummary.Filter = new ScoreboardFilterInfo(
-                    scoreboardSummary.TeamList.Select(sum => sum.Division).Cast<Division?>().SingleOrDefault(),
-                    scoreboardSummary.TeamList.Select(sum => sum.Tier).SingleOrDefault());
+                    scoreboardSummary.TeamList.Select(sum => sum.Division).Cast<Division?>().SingleIfOne(),
+                    scoreboardSummary.TeamList.Select(sum => sum.Tier).SingleIfOne());
 
-                if (newService.summariesByFilter.TryGetValue(scoreboardSummary.Filter,
+                if (this.summariesByFilter.TryGetValue(scoreboardSummary.Filter,
                     out CompleteScoreboardSummary existingSummary))
                 {
                     // take newer timestamp for composite data
@@ -203,23 +210,23 @@ namespace CyberPatriot.DiscordBot.Services
                 }
                 else
                 {
-                    newService.summariesByFilter[scoreboardSummary.Filter] = scoreboardSummary;
+                    this.summariesByFilter[scoreboardSummary.Filter] = scoreboardSummary;
                 }
             }
 
-            if (!newService.summariesByFilter.ContainsKey(ScoreboardFilterInfo.NoFilter))
+            if (!this.summariesByFilter.ContainsKey(ScoreboardFilterInfo.NoFilter))
             {
                 // create a composite score list from all data we have
                 CompleteScoreboardSummary completeSummary = new CompleteScoreboardSummary();
-                var existingSummaries = newService.summariesByFilter.Values;
+                var existingSummaries = this.summariesByFilter.Values;
                 completeSummary.SnapshotTimestamp = existingSummaries.Max(sum => sum.SnapshotTimestamp);
                 completeSummary.Filter = ScoreboardFilterInfo.NoFilter;
                 completeSummary.TeamList = existingSummaries.SelectMany(sum => sum.TeamList).Distinct()
                     .OrderByDescending(team => team.TotalScore).ToList();
-                newService.summariesByFilter[ScoreboardFilterInfo.NoFilter] = completeSummary;
+                this.summariesByFilter[ScoreboardFilterInfo.NoFilter] = completeSummary;
             }
 
-            return newService;
+            return this;
         }
 
         public Task<CompleteScoreboardSummary> GetScoreboardAsync(ScoreboardFilterInfo filter)

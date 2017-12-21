@@ -7,18 +7,35 @@ using System.Collections.Generic;
 using System.Linq;
 using CyberPatriot.Models;
 using HtmlAgilityPack;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CyberPatriot.DiscordBot.Services
 {
     public class HttpScoreboardScoreRetrievalService : IScoreRetrievalService
     {
-        public string Hostname { get; }
-        protected HttpClient Client { get; set; }
+        public string Hostname { get; private set; }
+        protected HttpClient Client { get; }
+
+        public HttpScoreboardScoreRetrievalService() : this(null)
+        {
+
+        }
 
         public HttpScoreboardScoreRetrievalService(string hostname)
         {
-            Hostname = hostname ?? throw new ArgumentNullException(nameof(hostname));
+            Hostname = hostname;
             Client = new HttpClient();
+        }
+
+        public Task InitializeAsync(IServiceProvider provider)
+        {
+            if (Hostname == null)
+            {
+                Hostname = provider.GetRequiredService<IConfiguration>()["defaultScoreboardHostname"];
+            }
+
+            return Task.CompletedTask;
         }
 
         protected virtual Uri BuildScoreboardUri(Division? divisionFilter, string tierFilter)
