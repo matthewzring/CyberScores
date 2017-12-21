@@ -38,6 +38,7 @@ namespace CyberPatriot.DiscordBot.Services
                 // set format options to display decimals, overriding anything else that may have been set :(
                 embedBuilder.FormattingOptions.FormatScore = rawScore => (rawScore / 100.0m).ToString();
                 embedBuilder.FormattingOptions.FormatLabeledScoreDifference = rawScore => (rawScore / 100.0m) + " point" + (rawScore == 100 ? string.Empty : "s"); 
+                embedBuilder.FormattingOptions.FormatScoreForLeaderboard = rawScore => (rawScore / 100.0m).ToString("0.00");
                 embedBuilder.FormattingOptions.TimeDisplay = ScoreboardMessageBuilderService.MessageFormattingOptions.NumberDisplayCriteria.Never;
                 embedBuilder.FormattingOptions.VulnerabilityDisplay = ScoreboardMessageBuilderService.MessageFormattingOptions.NumberDisplayCriteria.Never;
             }

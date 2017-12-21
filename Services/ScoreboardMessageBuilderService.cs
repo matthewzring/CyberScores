@@ -24,6 +24,7 @@ namespace CyberPatriot.DiscordBot.Services
 
             public Func<int, string> FormatScore { get; set; } = i => i.ToString();
             public Func<int, string> FormatLabeledScoreDifference { get; set; } = i => Utilities.Pluralize("point", i);
+            public Func<int, string> FormatScoreForLeaderboard { get; set; } = i => i.ToString();
             public NumberDisplayCriteria TimeDisplay { get; set; } = NumberDisplayCriteria.Always;
             public NumberDisplayCriteria VulnerabilityDisplay { get; set; } = NumberDisplayCriteria.WhenNonZero;
 
@@ -132,7 +133,7 @@ namespace CyberPatriot.DiscordBot.Services
 
             // FIXME time display logic according to FormattingOptions
             scoreboard.TeamList.Skip(pageNumber * pageSize).Take(pageSize)
-                .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + 1 + (pageNumber * pageSize), team.TeamId, team.Location, FormattingOptions.FormatScore(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
+                .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + 1 + (pageNumber * pageSize), team.TeamId, team.Location, FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
                 .Consume();
             stringBuilder.AppendLine("```");
             if (scoreboard.OriginUri != null)
