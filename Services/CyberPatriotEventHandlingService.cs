@@ -60,7 +60,7 @@ namespace CyberPatriot.DiscordBot.Services
                 return Task.CompletedTask;
             };
             _discord.Disconnected += err =>
-            {    
+            {
                 cts.Cancel();
                 return Task.CompletedTask;
             };
@@ -77,7 +77,7 @@ namespace CyberPatriot.DiscordBot.Services
                 while (await guildSettingEnumerator.MoveNext())
                 {
                     Models.Guild guildSettings = guildSettingEnumerator.Current;
-                    
+
                     if (guildSettings?.ChannelSettings == null || guildSettings.ChannelSettings.Count == 0)
                     {
                         return;
@@ -121,7 +121,7 @@ namespace CyberPatriot.DiscordBot.Services
                             }
                             int peerIndex = peerScoreboard.TeamList.IndexOf(monitoredEntry);
                             teamIdsToPeerIndexes[monitored] = peerIndex;
-                            
+
                             // we've obtained all information, now compare to past data
                             if (state.PreviousTeamListIndexes != null &&
                                 state.PreviousTeamListIndexes.TryGetValue(monitored, out int prevPeerIndex))
@@ -146,7 +146,10 @@ namespace CyberPatriot.DiscordBot.Services
                                     announceMessage.Append(" to **");
                                     announceMessage.Append(Utilities.AppendOrdinalSuffix(peerIndex + 1));
                                     announceMessage.Append(" place**.");
-                                    await chan.SendMessageAsync(announceMessage.ToString());
+                                    await chan.SendMessageAsync(announceMessage.ToString(), embed: _messageBuilder
+                                        .CreateTeamDetailsEmbed(
+                                            await _scoreRetriever.GetDetailsAsync(monitored), peerScoreboard)
+                                        .Build());
                                 }
                             }
                         }
