@@ -97,19 +97,21 @@ namespace CyberPatriot.DiscordBot.Modules
             [Command("list")]
             [RequireUserPermission(ChannelPermission.ManageChannel)]
             [RequireContext(ContextType.Guild)]
-            public async Task ListTeamsAsync()
+            public async Task ListTeamsAsync(ITextChannel channel = null)
             {
+                // guaranteed guild context
+                channel = channel ?? (Context.Channel as ITextChannel);
                 Models.Guild guildSettings = await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id);
                 Models.Channel channelSettings =
-                    guildSettings?.ChannelSettings?.SingleOrDefault(chan => chan.Id == Context.Channel.Id);
+                    guildSettings?.ChannelSettings?.SingleOrDefault(chan => chan.Id == channel.Id);
                 if (channelSettings?.MonitoredTeams == null || channelSettings.MonitoredTeams.Count == 0)
                 {
-                    await ReplyAsync("This channel is not monitoring any teams.");
+                    await ReplyAsync($"{channel.Mention} is not monitoring any teams.");
                 }
                 else
                 {
                     var retVal = new StringBuilder();
-                    retVal.AppendLine($"This channel is monitoring {Utilities.Pluralize("team", channelSettings.MonitoredTeams.Count)}");
+                    retVal.AppendLine($"{channel.Mention} is monitoring {Utilities.Pluralize("team", channelSettings.MonitoredTeams.Count)}");
                     foreach (var teamId in channelSettings.MonitoredTeams)
                     {
                         retVal.AppendLine(teamId.ToString());
@@ -121,11 +123,13 @@ namespace CyberPatriot.DiscordBot.Modules
             [Command("remove"), Alias("delete", "unwatch")]
             [RequireUserPermission(ChannelPermission.ManageChannel)]
             [RequireContext(ContextType.Guild)]
-            public async Task RemoveTeamAsync(TeamId team)
+            public async Task RemoveTeamAsync(TeamId team, ITextChannel channel = null)
             {
+                // guaranteed guild context
+                channel = channel ?? (Context.Channel as ITextChannel);
                 Models.Guild guildSettings = await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id) ?? new Models.Guild() { Id = Context.Guild.Id };
                 Models.Channel channelSettings =
-                    guildSettings?.ChannelSettings?.SingleOrDefault(chan => chan.Id == Context.Channel.Id);
+                    guildSettings?.ChannelSettings?.SingleOrDefault(chan => chan.Id == channel.Id);
                 if (channelSettings == null)
                 {
                     if (guildSettings.ChannelSettings == null)
@@ -143,7 +147,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 else
                 {
                     channelSettings.MonitoredTeams.Remove(team);
-                    await ReplyAsync($"Unwatching team {team}");
+                    await ReplyAsync($"Unwatching team {team} in {channel.Mention}");
                 }
                 
                 await Database.SaveAsync(guildSettings);
@@ -152,19 +156,21 @@ namespace CyberPatriot.DiscordBot.Modules
             [Command("add"), Alias("watch")]
             [RequireUserPermission(ChannelPermission.ManageChannel)]
             [RequireContext(ContextType.Guild)]
-            public async Task WatchTeamAsync(TeamId team)
+            public async Task WatchTeamAsync(TeamId team, ITextChannel channel = null)
             {
+                // guaranteed guild context
+                channel = channel ?? (Context.Channel as ITextChannel);
                 Models.Guild guildSettings = await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id) ?? new Models.Guild() { Id = Context.Guild.Id };
                 Models.Channel channelSettings =
-                    guildSettings?.ChannelSettings?.SingleOrDefault(chan => chan.Id == Context.Channel.Id);
+                    guildSettings?.ChannelSettings?.SingleOrDefault(chan => chan.Id == channel.Id);
                 if (channelSettings == null)
                 {
                     if (guildSettings.ChannelSettings == null)
                     {
                         guildSettings.ChannelSettings = new List<Channel>();
                     }
-                    guildSettings.ChannelSettings.RemoveAll(chan => chan.Id == Context.Channel.Id);
-                    channelSettings = new Models.Channel() { Id = Context.Channel.Id };
+                    guildSettings.ChannelSettings.RemoveAll(chan => chan.Id == channel.Id);
+                    channelSettings = new Models.Channel() { Id = channel.Id };
                     guildSettings.ChannelSettings.Add(channelSettings);
                 }
                 if (channelSettings.MonitoredTeams != null && channelSettings.MonitoredTeams.Contains(team))
@@ -178,7 +184,7 @@ namespace CyberPatriot.DiscordBot.Modules
                         channelSettings.MonitoredTeams = new List<TeamId>();
                     }
                     channelSettings.MonitoredTeams.Add(team);
-                    await ReplyAsync($"Watching team {team}");
+                    await ReplyAsync($"Watching team {team} in {channel.Mention}");
                 }
                 
                 await Database.SaveAsync(guildSettings);
