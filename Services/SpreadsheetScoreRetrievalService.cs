@@ -215,6 +215,7 @@ namespace CyberPatriot.DiscordBot.Services
                 scoreboardSummary.Filter = new ScoreboardFilterInfo(
                     scoreboardSummary.TeamList.Select(sum => sum.Division).Distinct().Cast<Division?>().SingleIfOne(),
                     scoreboardSummary.TeamList.Select(sum => sum.Tier).Distinct().SingleIfOne());
+                scoreboardSummary.OriginUri = originUri;
 
                 if (this.summariesByFilter.TryGetValue(scoreboardSummary.Filter,
                     out CompleteScoreboardSummary existingSummary))
@@ -241,6 +242,7 @@ namespace CyberPatriot.DiscordBot.Services
                 completeSummary.Filter = ScoreboardFilterInfo.NoFilter;
                 completeSummary.TeamList = existingSummaries.SelectMany(sum => sum.TeamList).Distinct()
                     .OrderByDescending(team => team.TotalScore).ToList();
+                completeSummary.OriginUri = existingSummaries.Select(sum => sum.OriginUri).Distinct().SingleIfOne();
                 this.summariesByFilter[ScoreboardFilterInfo.NoFilter] = completeSummary;
             }
 
