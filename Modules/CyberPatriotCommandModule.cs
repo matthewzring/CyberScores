@@ -35,7 +35,7 @@ namespace CyberPatriot.DiscordBot.Modules
             {
                 throw new Exception("Error obtaining scoreboard.");
             }
-            string tzId = (await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id)).TimeZone;
+            string tzId = (await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id))?.TimeZone;
             TimeZoneInfo tz = null;
             if (tzId != null)
             {

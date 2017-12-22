@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using CyberPatriot.DiscordBot.Services;
 
 namespace CyberPatriot
 {
@@ -136,6 +139,74 @@ namespace CyberPatriot
             }
         }
 
+        public static Func<T> ThenPassive<T>(this Func<T> func, Action<T> passiveTransform)
+        {
+            return new Func<T>(() =>
+            {
+                T val = func();
+                passiveTransform(val);
+                return val;
+            });
+        }
+        
+        public static Func<TParam, TReturn> ThenPassive<TParam, TReturn>(this Func<TParam, TReturn> func, Action<TParam, TReturn> passiveTransform)
+        {
+            return new Func<TParam, TReturn>(param =>
+            {
+                TReturn val = func(param);
+                passiveTransform(param, val);
+                return val;
+            });
+        }
+
+        public static void AddAll<T>(this ICollection<T> collection, IEnumerable<T> otherSequence)
+        {
+            foreach (var element in otherSequence)
+            {
+                collection.Add(element);
+            }
+        }
+
+        /// <summary>
+        /// Finds a read-only predicated list from a data persistence service, managing the context automatically.
+        /// ToIList is called on the whole thing.
+        /// </summary>
+        public static Task<IList<T>> FindAllAsync<T>(this IDataPersistenceService persistence) where T : class
+        {
+            using (var context = persistence.OpenContext<T>(false))
+            {
+                // enumeration could be in progress while disposal happens because tasks
+                // not a big deal for the LiteDb implementation
+                return context.FindAllAsync().ToIListAsync();
+            }
+        }
+        
+        /// <summary>
+        /// Finds a read-only predicated list from a data persistence service, managing the context automatically.
+        /// ToIList is called on the whole thing.
+        /// </summary>
+        public static Task<IList<T>> FindAllAsync<T>(this IDataPersistenceService persistence, Expression<Func<T, bool>> predicate) where T : class
+        {
+            using (var context = persistence.OpenContext<T>(false))
+            {
+                // enumeration could be in progress while disposal happens because tasks
+                // not a big deal for the LiteDb implementation
+                return context.FindAllAsync(predicate).ToIListAsync();
+            }
+        }
+        
+        /// <summary>
+        /// Finds a model element.
+        /// </summary>
+        public static Task<T> FindOneAsync<T>(this IDataPersistenceService persistence, Expression<Func<T, bool>> predicate) where T : class
+        {
+            using (var context = persistence.OpenContext<T>(false))
+            {
+                // same issue with task and disposal, see Utilities.FindAllAsync<T>
+                return context.FindOneAsync(predicate);
+            }
+        }
+
         public static string GetOrdinalSuffix(int number)
         {
             switch (number)
@@ -214,6 +285,22 @@ namespace CyberPatriot
             }
 
             return enumerable.ToList();
+        }
+        
+        public static Task<IList<T>> ToIListAsync<T>(this IAsyncEnumerable<T> enumerable)
+        {
+            if (enumerable is IList<T> list)
+            {
+                return Task.FromResult(list);
+            }
+            
+            return enumerable.ToList().ToSuperTask<List<T>, IList<T>>();
+        }
+
+        public static async Task<TSuper> ToSuperTask<TDerived, TSuper>(this Task<TDerived> derivedTask) where TDerived : TSuper
+        {
+            // feels like there should be a nicer way
+            return await derivedTask;
         }
 
         public static class PeriodicTask

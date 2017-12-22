@@ -69,7 +69,8 @@ namespace CyberPatriot.DiscordBot.Services
 
         async Task TimerTick(TimerStateWrapper state)
         {
-            using (var guildSettingEnumerator = _database.FindAllAsync<Models.Guild>().GetEnumerator())
+            using (var databaseContext = _database.OpenContext<Models.Guild>(false))
+            using (var guildSettingEnumerator = databaseContext.FindAllAsync().GetEnumerator())
             {
                 Dictionary<ScoreboardFilterInfo, CompleteScoreboardSummary> scoreboards =
                     new Dictionary<ScoreboardFilterInfo, CompleteScoreboardSummary>();
@@ -84,7 +85,7 @@ namespace CyberPatriot.DiscordBot.Services
                     }
 
                     SocketGuild guild = _discord.GetGuild(guildSettings.Id);
-                    foreach (var chanSettings in guildSettings.ChannelSettings)
+                    foreach (var chanSettings in guildSettings.ChannelSettings.Values)
                     {
                         if (chanSettings?.MonitoredTeams == null || chanSettings.MonitoredTeams.Count == 0)
                         {

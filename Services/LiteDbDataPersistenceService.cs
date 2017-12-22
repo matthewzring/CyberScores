@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Runtime.InteropServices.ComTypes;
 using System.Threading.Tasks;
 using CyberPatriot.Models;
 using LiteDB;
@@ -33,53 +34,127 @@ namespace CyberPatriot.DiscordBot.Services
 
             Database.Mapper.RegisterType<TeamId>
             (
-                serialize: (teamID) => teamID.ToString(),
+                serialize: (teamId) => teamId.ToString(),
                 deserialize: (bson) => TeamId.Parse(bson.AsString)
             );
 
             return Task.CompletedTask;
         }
 
-        public Task<bool> AnyAsync<TModel>()
+        public IDataPersistenceContext<TModel> OpenContext<TModel>(bool forWriting) where TModel : class
         {
-            // hacky
-            return Task.FromResult(GetCollection<TModel>().Exists(m => true));
+            return new LiteDbPersistenceContext<TModel>(GetCollection<TModel>(), forWriting);
         }
 
-        public Task<bool> AnyAsync<TModel>(Expression<Func<TModel, bool>> predicate)
+        class LiteDbPersistenceContext<TModel> : IDataPersistenceContext<TModel> where TModel : class
         {
-            return Task.FromResult(GetCollection<TModel>().Exists(predicate));
-        }
+            public LiteDbPersistenceContext(LiteCollection<TModel> modelCollection, bool write)
+            {
+                Collection = modelCollection;
+                if (write)
+                {
+                    toWrite = new HashSet<TModel>();
+                }
+            }
 
-        public Task<int> CountAsync<TModel>(Expression<Func<TModel, bool>> predicate)
-        {
-            return Task.FromResult(GetCollection<TModel>().Count(predicate));
-        }
+            private LiteCollection<TModel> Collection { get; }
+            
+            private ISet<TModel> toWrite;
+            
+            public Task<bool> AnyAsync()
+            {
+                // hacky
+                return Task.FromResult(Collection.Exists(m => true));
+            }
 
-        public Task<int> CountAsync<TModel>()
-        {
-            return Task.FromResult(GetCollection<TModel>().Count());
-        }
+            public Task<bool> AnyAsync(Expression<Func<TModel, bool>> predicate)
+            {
+                return Task.FromResult(Collection.Exists(predicate));
+            }
 
-        public IAsyncEnumerable<TModel> FindAllAsync<TModel>()
-        {
-            return AsyncEnumerable.ToAsyncEnumerable(GetCollection<TModel>().FindAll());
-        }
+            public Task<int> CountAsync(Expression<Func<TModel, bool>> predicate)
+            {
+                return Task.FromResult(Collection.Count(predicate));
+            }
 
-        public IAsyncEnumerable<TModel> FindAllAsync<TModel>(Expression<Func<TModel, bool>> predicate)
-        {
-            return AsyncEnumerable.ToAsyncEnumerable(GetCollection<TModel>().Find(predicate));
-        }
+            public Task<int> CountAsync()
+            {
+                return Task.FromResult(Collection.Count());
+            }
 
-        public Task<TModel> FindOneAsync<TModel>(Expression<Func<TModel, bool>> predicate)
-        {
-            return Task.FromResult(GetCollection<TModel>().FindOne(predicate));
-        }
+            public IAsyncEnumerable<TModel> FindAllAsync()
+            {
+                var all = Collection.FindAll().ToList();
+                toWrite?.AddAll(all);
+                return all.ToAsyncEnumerable();
+            }
 
-        public Task SaveAsync<TModel>(TModel model)
-        {
-            GetCollection<TModel>().Upsert(model);
-            return Task.CompletedTask;
+            public IAsyncEnumerable<TModel> FindAllAsync(Expression<Func<TModel, bool>> predicate)
+            {
+                var all = Collection.Find(predicate).ToList();
+                toWrite?.AddAll(all);
+                return all.ToAsyncEnumerable();
+            }
+
+            private TModel FindOne(Expression<Func<TModel, bool>> predicate)
+            {
+                var single = Collection.FindOne(predicate);
+                if (toWrite != null && single != null)
+                {
+                    toWrite.Add(single);
+                }
+                return single;
+            }
+
+            private TModel InvokeFactory(Func<TModel> factory)
+            {
+                var val = factory();
+                toWrite?.Add(val);
+                return val;
+            }
+
+            private async Task<TModel> InvokeFactoryAsync(Func<Task<TModel>> asyncFactory)
+            {
+                var val = await asyncFactory();
+                toWrite?.Add(val);
+                return val;
+            }
+            
+            public Task<TModel> FindOneAsync(Expression<Func<TModel, bool>> predicate) => Task.FromResult(FindOne(predicate));
+
+            public Task<TModel> FindOneOrNewAsync(Expression<Func<TModel, bool>> predicate, Func<TModel> factory)
+                => Task.FromResult(FindOne(predicate) ?? InvokeFactory(factory));
+
+            public async Task<TModel> FindOneOrNewAsync(Expression<Func<TModel, bool>> predicate,
+                Func<Task<TModel>> asyncFactory)
+                => FindOne(predicate) ?? await InvokeFactoryAsync(asyncFactory);
+        
+
+            public Task SaveAsync(TModel model)
+            {
+                Collection.Upsert(model);
+                toWrite?.Remove(model);
+                return Task.CompletedTask;
+            }
+
+            public Task WriteAsync()
+            {
+                Dispose();
+                return Task.CompletedTask;
+            }
+            
+            public void Dispose()
+            {
+                if (toWrite != null)
+                {
+                    // on context close, write everything we've returned if we're in write mode
+                    foreach (var model in toWrite)
+                    {
+                        Collection.Upsert(model);
+                    }
+                    toWrite.Clear();
+                }
+            }
         }
     }
 }
