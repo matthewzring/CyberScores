@@ -159,6 +159,8 @@ namespace CyberPatriot
             });
         }
 
+        public static TimeZoneNames.TimeZoneValues GetAbbreviations(this TimeZoneInfo tzInfo) => TimeZoneNames.TZNames.GetAbbreviationsForTimeZone(tzInfo.Id, "en-US");
+
         public static void AddAll<T>(this ICollection<T> collection, IEnumerable<T> otherSequence)
         {
             foreach (var element in otherSequence)

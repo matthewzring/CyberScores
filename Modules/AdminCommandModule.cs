@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Net.Mime;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
-using CyberPatriot.DiscordBot;
 using CyberPatriot.DiscordBot.Models;
 using CyberPatriot.DiscordBot.Services;
 using CyberPatriot.Models;
@@ -193,5 +194,62 @@ namespace CyberPatriot.DiscordBot.Modules
 
         [Command("ping")]
         public Task PingAsync() => ReplyAsync("Pong!");
+
+        public IScoreRetrievalService ScoreService { get; set; }
+        public IDataPersistenceService Database { get; set; }
+        
+        [Command("exportscoreboard"), Alias("savescoreboard", "exportscoreboardjson", "downloadscoreboard")]
+        [RequireOwner]
+        public async Task DownloadScoreboardAsync()
+        {
+            await ReplyAsync("Downloading scoreboard...");
+
+            using (Context.Channel.EnterTypingState())
+            {
+                var scoreSummary = await ScoreService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter);
+                IDictionary<TeamId, ScoreboardDetails> teamDetails =
+                (await Task.WhenAll(scoreSummary.TeamList.Select(team => ScoreService.GetDetailsAsync(team.TeamId)))
+                ).ToDictionary(entry => entry.TeamId);
+                MemoryStream rawWriteStream = null;
+                try
+                {
+                    rawWriteStream = new MemoryStream();
+                    
+                    // need to close to get GZ tail, but this also closes underlying stream...
+                    using (var writeStream = new GZipStream(rawWriteStream, CompressionMode.Compress))
+                    {
+                        await JsonScoreRetrievalService.SerializeAsync(new StreamWriter(writeStream), scoreSummary,
+                            teamDetails);
+                    }
+                    rawWriteStream = new MemoryStream(rawWriteStream.ToArray());
+                    
+                    string fileName = $"scoreboard-{scoreSummary.SnapshotTimestamp.ToUnixTimeSeconds()}.json.gz";
+                    if (Directory.Exists("scoreboardarchives"))
+                    {
+                        using (var fileStream = File.Create(Path.Combine("scoreboardarchives", fileName)))
+                        {
+                            await rawWriteStream.CopyToAsync(fileStream);
+                        }
+                    }
+                    rawWriteStream.Position = 0;
+                    string tzId = (await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id))?.TimeZone;
+                    TimeZoneInfo tz = null;
+                    if (tzId != null)
+                    {
+                        tz = TimeZoneInfo.FindSystemTimeZoneById(tzId);
+                    }
+                    DateTimeOffset timestamp = tz == null
+                        ? scoreSummary.SnapshotTimestamp
+                        : TimeZoneInfo.ConvertTime(scoreSummary.SnapshotTimestamp, tz);
+
+                    await Context.Channel.SendFileAsync(rawWriteStream, fileName,
+                        $"JSON scoreboard snapshot for {timestamp:g} {tz?.GetAbbreviations().Generic ?? "UTC"}");
+                }
+                finally
+                {
+                    rawWriteStream?.Dispose();
+                }
+            }
+        }
     }
 }

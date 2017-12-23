@@ -23,28 +23,51 @@ namespace CyberPatriot.DiscordBot.Services
 
         Task IScoreRetrievalService.InitializeAsync(IServiceProvider provider) => Task.CompletedTask;
 
-        public static string Serialize(CompleteScoreboardSummary summary,
+        public static async Task<string> SerializeAsync(CompleteScoreboardSummary summary,
             IDictionary<TeamId, ScoreboardDetails> teamDetails)
         {
-            using (var memStr = new MemoryStream())
-            using (var strWrite = new StreamWriter(memStr))
-            using (var jsonWriter = new JsonTextWriter(strWrite))
+            StreamWriter sw = null;
+            StreamReader sr = null;
+
+            try
             {
-                // write
-                jsonWriter.WriteStartObject();
-                jsonWriter.WritePropertyName("summary");
-                var serializer = JsonSerializer.CreateDefault();
-                serializer.Serialize(jsonWriter, summary);
-                jsonWriter.WritePropertyName("teams");
-                serializer.Serialize(jsonWriter, teamDetails);
-                jsonWriter.WriteEndObject();
-                
-                // read
-                memStr.Position = 0;
-                using (var strRead = new StreamReader(memStr))
+                using (var memStr = new MemoryStream())
                 {
-                    return strRead.ReadToEnd();
+                    sw = new StreamWriter(memStr);
+                    sr = new StreamReader(memStr);
+
+                    // write
+                    await SerializeAsync(sw, summary, teamDetails);
+
+                    // read
+                    memStr.Position = 0;
+                    return await sr.ReadToEndAsync();
                 }
+            }
+            finally
+            {
+                sw?.Dispose();
+                sr?.Dispose();
+            }
+        }
+
+        public static async Task SerializeAsync(TextWriter target, CompleteScoreboardSummary summary,
+            IDictionary<TeamId, ScoreboardDetails> teamDetails)
+        {
+            using (JsonWriter jw = new JsonTextWriter(target))
+            {
+                jw.CloseOutput = false;
+
+                // write
+                await jw.WriteStartObjectAsync();
+                await jw.WritePropertyNameAsync("summary");
+                var serializer = JsonSerializer.CreateDefault();
+                // serialize
+                await Task.Run(() => serializer.Serialize(jw, summary));
+                await jw.WritePropertyNameAsync("teams");
+                await Task.Run(() => serializer.Serialize(jw, teamDetails));
+                await jw.WriteEndObjectAsync();
+                await jw.FlushAsync();
             }
         }
 
