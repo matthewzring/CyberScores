@@ -26,6 +26,36 @@ namespace CyberPatriot.DiscordBot.Services
 
             _discord.Log += LogDiscord;
             _commands.Log += LogCommand;
+
+            // TODO use "proper" Microsoft.Extensions.Logging infrastructure, it just seems really overcomplicated for my needs
+            _discord.Log += LogDiscordErrorToOwnerDM;
+        }
+
+        private async Task LogDiscordErrorToOwnerDM(LogMessage message)
+        {
+            if (message.Severity < LogSeverity.Warning)
+            {
+                return;
+            }
+
+            var appInfo = await _discord.GetApplicationInfoAsync();
+            var ownerDmChannel = await appInfo?.Owner?.GetOrCreateDMChannelAsync();
+            if (ownerDmChannel == null)
+            {
+                return;
+            }
+
+            // backtick, backtick, zero width space, backtick
+            // this way it won't break our markdown
+            const string threeBackticksEscaped = "``​`";
+
+            // per LogCommand (example code): "Don't risk blocking the logging task by awaiting a message send; ratelimits!?"
+            var dummyTask = ownerDmChannel.SendMessageAsync(string.Empty,
+            embed: new EmbedBuilder()
+                .WithTitle("Application Error" + message.Exception != null ? ": " + message.Exception.GetType().Name : string.Empty)
+                .WithDescription("```" + message.ToString().Replace("```", threeBackticksEscaped) + "```")
+                .WithColor(Color.Red)
+                .Build());
         }
 
         private ILoggerFactory ConfigureLogging(ILoggerFactory factory)
