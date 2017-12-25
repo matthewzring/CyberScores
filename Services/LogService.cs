@@ -47,12 +47,13 @@ namespace CyberPatriot.DiscordBot.Services
 
         private Task LogCommand(LogMessage message)
         {
+            // Don't need to log it in the channel here, already handled elegantly in the CommandHandlingService
             // Return an error message for async commands
-            if (message.Exception is CommandException command)
-            {
-                // Don't risk blocking the logging task by awaiting a message send; ratelimits!?
-                var _ = command.Context.Channel.SendMessageAsync($"Error: {command.Message}");
-            }
+            //if (message.Exception is CommandException command)
+            //{
+            //    // Don't risk blocking the logging task by awaiting a message send; ratelimits!?
+            //    var _ = command.Context.Channel.SendMessageAsync($"Error: {command.Message}");
+            //}
 
             _commandsLogger.Log(
                 LogLevelFromSeverity(message.Severity),
