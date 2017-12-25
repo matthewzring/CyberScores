@@ -91,7 +91,7 @@ namespace CyberPatriot.DiscordBot.Services
             deserializedJsonLock.EnterReadLock();
             try
             {
-                return Task.FromResult(summary);
+                return Task.FromResult(summary.Clone().WithFilter(filter));
             }
             finally
             {

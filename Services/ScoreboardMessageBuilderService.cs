@@ -206,7 +206,7 @@ namespace CyberPatriot.DiscordBot.Services
                 }
 
                 // filter to peer teams
-                peerScoreboard = peerScoreboard.Clone().WithFilter(teamScore.Summary.Division, teamScore.Summary.Tier);
+                peerScoreboard.WithFilter(teamScore.Summary.Division, teamScore.Summary.Tier);
                 // descending order
                 IList<ScoreboardSummaryEntry> peerTeams = peerScoreboard.TeamList;
                 if (peerTeams.Count > 0)
