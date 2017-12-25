@@ -90,7 +90,7 @@ namespace CyberPatriot.DiscordBot.Services
             HitTrackingCachedObject<ScoreboardDetails> cachedTeamData = null;
             Func<bool> cachedGoodEnough = () => cachedTeamInformations.TryGetValue(team, out cachedTeamData) && cachedTeamData.Age <= MaxTeamLifespan;
 
-            // FIXME potential undefined/unwanetd behavior if reordering dictionary in EnsureTeamCacheCapacity
+            // FIXME potential undefined/unwanted behavior if reordering dictionary in EnsureTeamCacheCapacity
             // while hitting this branch (it reorders based on HitCount while we alter it)
             // I dont think this will ever do worse than return a just-removed cache item,
             // or slightly screw up removal sorting, but I'm not sure

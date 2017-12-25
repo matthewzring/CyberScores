@@ -270,7 +270,7 @@ namespace CyberPatriot.DiscordBot.Services
                 return Task.FromResult(details);
             }
 
-            return Task.FromException<ScoreboardDetails>(new KeyNotFoundException());
+            return Task.FromException<ScoreboardDetails>(new ArgumentException("The given team does not exist."));
         }
     }
 }

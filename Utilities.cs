@@ -148,7 +148,7 @@ namespace CyberPatriot
                 return val;
             });
         }
-        
+
         public static Func<TParam, TReturn> ThenPassive<TParam, TReturn>(this Func<TParam, TReturn> func, Action<TParam, TReturn> passiveTransform)
         {
             return new Func<TParam, TReturn>(param =>
@@ -182,7 +182,7 @@ namespace CyberPatriot
                 return context.FindAllAsync().ToIListAsync();
             }
         }
-        
+
         /// <summary>
         /// Finds a read-only predicated list from a data persistence service, managing the context automatically.
         /// ToIList is called on the whole thing.
@@ -196,7 +196,7 @@ namespace CyberPatriot
                 return context.FindAllAsync(predicate).ToIListAsync();
             }
         }
-        
+
         /// <summary>
         /// Finds a model element.
         /// </summary>
@@ -288,14 +288,14 @@ namespace CyberPatriot
 
             return enumerable.ToList();
         }
-        
+
         public static Task<IList<T>> ToIListAsync<T>(this IAsyncEnumerable<T> enumerable)
         {
             if (enumerable is IList<T> list)
             {
                 return Task.FromResult(list);
             }
-            
+
             return enumerable.ToList().ToSuperTask<List<T>, IList<T>>();
         }
 

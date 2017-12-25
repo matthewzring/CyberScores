@@ -74,7 +74,14 @@ namespace CyberPatriot.DiscordBot.Services
 
             if (result.Error.HasValue &&
                 result.Error.Value != CommandError.UnknownCommand)
-                await context.Channel.SendMessageAsync(result.ToString());
+            {
+                await context.Channel.SendMessageAsync(string.Empty,
+                    embed: new EmbedBuilder()
+                        .WithColor(Color.Red)
+                        .WithTitle("Error Executing Command: " + result.Error.Value.ToStringCamelCaseToSpace())
+                        .WithDescription(result.ErrorReason)
+                        .WithTimestamp(message.CreatedAt));
+            }
         }
 
     }
