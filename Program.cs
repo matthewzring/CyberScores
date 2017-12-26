@@ -32,7 +32,12 @@ namespace CyberPatriot.DiscordBot
                 services.GetRequiredService<IScoreRetrievalService>().InitializeAsync(services)
             );
 
-            _client.Ready += async () => await (await (await _client.GetApplicationInfoAsync())?.Owner?.GetOrCreateDMChannelAsync())?.SendMessageAsync($"[{DateTimeOffset.Now.ToString("g")}] Now online!");
+            string enableUpNotificationConfSetting = _config["enableUpNotification"] ?? "false";
+
+            if (bool.TryParse(enableUpNotificationConfSetting, out bool enableUpNotification) && enableUpNotification)
+            {
+                _client.Ready += async () => await (await (await _client.GetApplicationInfoAsync())?.Owner?.GetOrCreateDMChannelAsync())?.SendMessageAsync($"[{DateTimeOffset.Now.ToString("g")}] Now online!");
+            }
 
             await _client.LoginAsync(Discord.TokenType.Bot, _config["token"]);
             await _client.StartAsync();
