@@ -183,8 +183,8 @@ namespace CyberPatriot.DiscordBot.Modules
             }
         }
 
-        [Command("ping")]
-        public Task PingAsync() => ReplyAsync("Pong!");
+        [Command("ping"), Summary("Pings the bot. Responds with the internal socket client's estimated latency, if available.")]
+        public Task PingAsync() => ReplyAsync("Pong!" + (Context.Client is Discord.WebSocket.DiscordSocketClient socketClient ? " " + socketClient.Latency + "ms" : string.Empty));
 
         [Command("kill"), Alias("die"), RequireOwner]
         public Task KillAsync()

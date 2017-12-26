@@ -16,10 +16,10 @@ namespace CyberPatriot.DiscordBot.Modules
 
         public PreferenceProviderService Preferences { get; set; }
 
-        [Command("team"), Alias("getteam")]
-        public async Task GetTeamAsync(TeamId team)
+        [Command("team"), Alias("getteam"), Summary("Gets score information for a given team.")]
+        public async Task GetTeamAsync(TeamId teamId)
         {
-            ScoreboardDetails teamScore = await ScoreRetrievalService.GetDetailsAsync(team);
+            ScoreboardDetails teamScore = await ScoreRetrievalService.GetDetailsAsync(teamId);
             if (teamScore == null)
             {
                 throw new Exception("Error obtaining team score.");
@@ -27,7 +27,7 @@ namespace CyberPatriot.DiscordBot.Modules
             await ReplyAsync(string.Empty, embed: ScoreEmbedBuilder.CreateTeamDetailsEmbed(teamScore, await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(teamScore.Summary.Division, null))).Build());
         }
 
-        [Command("scoreboard"), Alias("leaderboard", "top")]
+        [Command("scoreboard"), Alias("leaderboard", "top"), Summary("Returns the current CyberPatriot leaderboard.")]
         public async Task GetLeaderboardAsync(int pageNumber = 1)
         {
             CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter);

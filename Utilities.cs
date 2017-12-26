@@ -169,6 +169,17 @@ namespace CyberPatriot
             }
         }
 
+        public static Discord.EmbedBuilder Conditionally(this Discord.EmbedBuilder builder, bool condition, Func<Discord.EmbedBuilder, Discord.EmbedBuilder> action) => condition ? action(builder) : builder;
+
+        public static Discord.EmbedBuilder ForEach<T>(this Discord.EmbedBuilder builder, IEnumerable<T> collection, Action<Discord.EmbedBuilder, T> action)
+        {
+            foreach (var item in collection)
+            {
+                action(builder, item);
+            }
+            return builder;
+        }
+
         /// <summary>
         /// Finds a read-only predicated list from a data persistence service, managing the context automatically.
         /// ToIList is called on the whole thing.
@@ -238,6 +249,29 @@ namespace CyberPatriot
                 index++;
             }
             return -1;
+        }
+
+        public static int CeilingDivision(int dividend, int divisor)
+        {
+            int result = dividend / divisor;
+            if (dividend % divisor != 0)
+            {
+                result++;
+            }
+            return result;
+        }
+
+        public static IEnumerable<T> Except<T>(this IEnumerable<T> enumerable, T element)
+        {
+            Func<T, T, bool> eqCompare = (a, b) => object.ReferenceEquals(a, null) ? object.ReferenceEquals(b, null) : a.Equals(b);
+
+            foreach (var item in enumerable)
+            {
+                if (!eqCompare(item, element))
+                {
+                    yield return item;
+                }
+            }
         }
 
         public static string Pluralize(string noun, int quantity, bool prependQuantity = true)

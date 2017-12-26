@@ -33,7 +33,8 @@ namespace CyberPatriot.DiscordBot.Services
 
         private async Task LogDiscordErrorToOwnerDM(LogMessage message)
         {
-            if (message.Severity < LogSeverity.Warning)
+            // lower indicates higher priority
+            if (message.Severity > LogSeverity.Warning)
             {
                 return;
             }
@@ -52,7 +53,7 @@ namespace CyberPatriot.DiscordBot.Services
             // per LogCommand (example code): "Don't risk blocking the logging task by awaiting a message send; ratelimits!?"
             var dummyTask = ownerDmChannel.SendMessageAsync(string.Empty,
             embed: new EmbedBuilder()
-                .WithTitle("Application Error" + message.Exception != null ? ": " + message.Exception.GetType().Name : string.Empty)
+                .WithTitle("Application Message: " + message.Severity.ToStringCamelCaseToSpace() + (message.Exception != null ? ": " + message.Exception.GetType().Name : string.Empty))
                 .WithDescription("```" + message.ToString().Replace("```", threeBackticksEscaped) + "```")
                 .WithColor(Color.Red)
                 .Build());
