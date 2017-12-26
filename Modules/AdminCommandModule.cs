@@ -55,16 +55,17 @@ namespace CyberPatriot.DiscordBot.Modules
         [Group("timezone"), Alias("tz")]
         public class TimezoneModule : ModuleBase
         {
-            public IDataPersistenceService Database { get; set; }
+            public PreferenceProviderService PreferenceService { get; set; }
 
             [Command("set")]
             [RequireUserPermission(GuildPermission.Administrator)]
             [RequireContext(ContextType.Guild)]
             public async Task SetTimezoneAsync(string newTimezone)
             {
+                TimeZoneInfo newTz;
                 try
                 {
-                    if (TimeZoneInfo.FindSystemTimeZoneById(newTimezone) == null)
+                    if ((newTz = TimeZoneInfo.FindSystemTimeZoneById(newTimezone)) == null)
                     {
                         throw new Exception();
                     }
@@ -76,12 +77,7 @@ namespace CyberPatriot.DiscordBot.Modules
                     await ReplyAsync($"That timezone is not recognized. Please make sure you are passing a valid *{tzType}* timezone identifier.");
                     return;
                 }
-                using (var context = Database.OpenContext<Guild>(true))
-                {
-                    Models.Guild guildSettings = await Guild.OpenWriteGuildSettingsAsync(context, Context.Guild.Id);
-                    guildSettings.TimeZone = newTimezone;
-                    await context.WriteAsync();
-                }
+                await PreferenceService.SetTimeZoneAsync(Context.Guild, newTz);
                 await ReplyAsync($"Updated timezone to {TimeZoneNames.TZNames.GetNamesForTimeZone(newTimezone, "en-US").Generic}.");
             }
 
@@ -90,12 +86,7 @@ namespace CyberPatriot.DiscordBot.Modules
             [RequireContext(ContextType.Guild)]
             public async Task RemoveTimezone()
             {
-                using (var context = Database.OpenContext<Guild>(true))
-                {
-                    Models.Guild guildSettings = await Guild.OpenWriteGuildSettingsAsync(context, Context.Guild.Id);
-                    guildSettings.TimeZone = null;
-                    await context.WriteAsync();
-                }
+                await PreferenceService.SetTimeZoneAsync(Context.Guild, null);
                 await ReplyAsync("Removed timezone. Displayed times will now be in UTC.");
             }
         }

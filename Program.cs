@@ -58,6 +58,7 @@ namespace CyberPatriot.DiscordBot
                 // Extra
                 .AddSingleton(_config)
                 .AddSingleton<IDataPersistenceService, LiteDbDataPersistenceService>(prov => new LiteDbDataPersistenceService(new LiteDatabase(_config["databaseFilename"])))
+                .AddSingleton<PreferenceProviderService>()
                 // CyPat
                 //.AddSingleton<IScoreRetrievalService, CachingScoreRetrievalService>(prov => new CachingScoreRetrievalService(new HttpScoreboardScoreRetrievalService(_config["defaultScoreboardHostname"])))
                 .AddSingleton<IScoreRetrievalService, SpreadsheetScoreRetrievalService>()

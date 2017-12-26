@@ -31,6 +31,7 @@ namespace CyberPatriot.DiscordBot.Services
             // this is code specific to this program, the rest of this class is fairly generic
             // index each model
             GetCollection<Models.Guild>().EnsureIndex(g => g.Id, true);
+            GetCollection<Models.User>().EnsureIndex(u => u.Id, true);
 
             Database.Mapper.RegisterType<TeamId>
             (
@@ -58,9 +59,9 @@ namespace CyberPatriot.DiscordBot.Services
             }
 
             private LiteCollection<TModel> Collection { get; }
-            
+
             private ISet<TModel> toWrite;
-            
+
             public Task<bool> AnyAsync()
             {
                 // hacky
@@ -119,7 +120,7 @@ namespace CyberPatriot.DiscordBot.Services
                 toWrite?.Add(val);
                 return val;
             }
-            
+
             public Task<TModel> FindOneAsync(Expression<Func<TModel, bool>> predicate) => Task.FromResult(FindOne(predicate));
 
             public Task<TModel> FindOneOrNewAsync(Expression<Func<TModel, bool>> predicate, Func<TModel> factory)
@@ -128,7 +129,7 @@ namespace CyberPatriot.DiscordBot.Services
             public async Task<TModel> FindOneOrNewAsync(Expression<Func<TModel, bool>> predicate,
                 Func<Task<TModel>> asyncFactory)
                 => FindOne(predicate) ?? await InvokeFactoryAsync(asyncFactory);
-        
+
 
             public Task SaveAsync(TModel model)
             {
@@ -142,7 +143,7 @@ namespace CyberPatriot.DiscordBot.Services
                 Dispose();
                 return Task.CompletedTask;
             }
-            
+
             public void Dispose()
             {
                 if (toWrite != null)
