@@ -43,13 +43,13 @@ namespace CyberPatriot.DiscordBot.Services
         {
             foreach (var candidateBackendTaskFactory in _backendOptions)
             {
-                var candidateBackend = await candidateBackendTaskFactory(provider);
-                if (candidateBackend == null)
-                {
-                    continue;
-                }
                 try
                 {
+                    var candidateBackend = await candidateBackendTaskFactory(provider);
+                    if (candidateBackend == null)
+                    {
+                        continue;
+                    }
                     // try getting a summary to "test" the backend
                     CompleteScoreboardSummary returnedSummary = await candidateBackend.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter);
                     if (returnedSummary == null || returnedSummary.TeamList == null || returnedSummary.TeamList.Count == 0 || returnedSummary.TeamList.First().TeamId.SeasonId == 0)
@@ -68,7 +68,7 @@ namespace CyberPatriot.DiscordBot.Services
                 }
                 catch
                 {
-                    // invalid summary
+                    // invalid summary, or failed constructor
                     continue;
                 }
             }

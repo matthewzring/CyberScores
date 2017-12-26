@@ -60,8 +60,13 @@ namespace CyberPatriot.DiscordBot
                 .AddSingleton<IDataPersistenceService, LiteDbDataPersistenceService>(prov => new LiteDbDataPersistenceService(new LiteDatabase(_config["databaseFilename"])))
                 .AddSingleton<PreferenceProviderService>()
                 // CyPat
+                // Scoreboard trial order: live, JSON archive, CSV released archive
+                // Bot must be restarted to reset the chosen scoreboard
                 .AddSingleton<IScoreRetrievalService, FallbackScoreRetrievalService>(prov => new FallbackScoreRetrievalService(
                     innerProv => Task.FromResult<IScoreRetrievalService>(new HttpScoreboardScoreRetrievalService(_config["defaultScoreboardHostname"])),
+                    async innerProv =>
+                        // if the  constructor throws an exception, e.g. missing config, means this provider is skipped
+                        new JsonScoreRetrievalService(await System.IO.File.ReadAllTextAsync(_config["jsonSource"])),
                     async innerProv => await new SpreadsheetScoreRetrievalService().InitializeFromConfiguredCsvAsync(innerProv)
                 ))
                 .AddSingleton<FlagProviderService>()
