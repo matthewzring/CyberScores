@@ -37,5 +37,35 @@ namespace CyberPatriot.DiscordBot.Modules
             }
             await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User)));
         }
+
+        [Command("scoreboard"), Alias("leaderboard"), Summary("Returns the current CyberPatriot leaderboard for the given division.")]
+        public async Task GetLeaderboardAsync(Division division, int pageNumber = 1)
+        {
+            CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(division, null));
+            if (teamScore == null)
+            {
+                throw new Exception("Error obtaining scoreboard.");
+            }
+            await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User)));
+        }
+
+        [Command("scoreboard"), Alias("leaderboard"), Summary("Returns the current CyberPatriot leaderboard for the given division and tier.")]
+        public async Task GetLeaderboardAsync(Division division, string tier, int pageNumber = 1)
+        {
+            if (!string.IsNullOrWhiteSpace(tier))
+            {
+                // transform some common mistakes with the tier
+                // first letter capital
+                char[] tierCharArray = tier.ToCharArray();
+                tierCharArray[0] = char.ToUpper(tierCharArray[0]);
+                tier = new string(tierCharArray);
+            }
+            CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(division, tier));
+            if (teamScore == null)
+            {
+                throw new Exception("Error obtaining scoreboard.");
+            }
+            await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User)));
+        }
     }
 }

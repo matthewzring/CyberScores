@@ -33,6 +33,7 @@ namespace CyberPatriot.DiscordBot.Services
         {
             _provider = provider;
             _commands.AddTypeReader<CyberPatriot.Models.TeamId>(new TeamIdTypeReader());
+            _commands.AddTypeReader<CyberPatriot.Models.Division>(new DivisionTypeReader());
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
             await _commands.CreateModuleAsync("help", mb =>
             {
