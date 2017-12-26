@@ -153,15 +153,37 @@ namespace CyberPatriot.DiscordBot.Services
             var builder = new EmbedBuilder()
                 .WithTimestamp(teamScore.SnapshotTimestamp)
                 .WithTitle(teamScore.Summary.Division.ToStringCamelCaseToSpace() + (teamScore.Summary.Tier == null ? string.Empty : (" " + teamScore.Summary.Tier)) + " Team " + teamScore.Summary.TeamId);
+
+            // scoreboard link
             if (teamScore.OriginUri != null)
             {
                 builder.Url = teamScore.OriginUri.ToString();
             }
+
+            // location -> flag in thumbnail
             string flagUrl = FlagProvider.GetFlagUri(teamScore.Summary.Location);
             if (flagUrl != null)
             {
                 builder.ThumbnailUrl = flagUrl;
             }
+
+            // tier -> color on side
+            // colors borrowed from AFA's spreadsheet
+            switch (teamScore.Summary.Tier?.Trim().ToLower())
+            {
+                case "platinum":
+                    // tweaked from AFA spreadsheet to be more distinct from silver
+                    // AFA original is #DAE3F3
+                    builder.WithColor(183, 201, 243);
+                    break;
+                case "gold":
+                    builder.WithColor(0xFF, 0xE6, 0x99);
+                    break;
+                case "silver":
+                    builder.WithColor(0xF2, 0xF2, 0xF2);
+                    break;
+            }
+
             // TODO image lookup for location? e.g. thumbnail with flag?
             foreach (var item in teamScore.Images)
             {
