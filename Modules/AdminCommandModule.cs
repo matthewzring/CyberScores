@@ -99,7 +99,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 await ReplyAsync("Removed timezone. Displayed times will now be in UTC.");
             }
         }
-        
+
         [Group("teammonitor")]
         public class TeamMonitorModule : ModuleBase
         {
@@ -157,7 +157,7 @@ namespace CyberPatriot.DiscordBot.Modules
                     await dbContext.WriteAsync();
                 }
             }
-            
+
             [Command("add"), Alias("watch")]
             [RequireUserPermission(ChannelPermission.ManageChannel)]
             [RequireContext(ContextType.Guild)]
@@ -170,7 +170,7 @@ namespace CyberPatriot.DiscordBot.Modules
                     var guildSettings = await Guild.OpenWriteGuildSettingsAsync(dbContext, Context.Guild.Id);
                     if (!guildSettings.ChannelSettings.TryGetValue(channel.Id, out Models.Channel channelSettings))
                     {
-                        channelSettings = new Channel() {Id = channel.Id};
+                        channelSettings = new Channel() { Id = channel.Id };
                         guildSettings.ChannelSettings[channel.Id] = channelSettings;
                     }
                     if (channelSettings.MonitoredTeams != null && channelSettings.MonitoredTeams.Contains(team))
@@ -195,9 +195,16 @@ namespace CyberPatriot.DiscordBot.Modules
         [Command("ping")]
         public Task PingAsync() => ReplyAsync("Pong!");
 
+        [Command("kill"), Alias("die"), RequireOwner]
+        public Task KillAsync()
+        {
+            Environment.Exit(0);
+            return Task.CompletedTask;
+        }
+
         public IScoreRetrievalService ScoreService { get; set; }
         public IDataPersistenceService Database { get; set; }
-        
+
         [Command("exportscoreboard"), Alias("savescoreboard", "exportscoreboardjson", "downloadscoreboard")]
         [RequireOwner]
         public async Task DownloadScoreboardAsync()
@@ -214,7 +221,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 try
                 {
                     rawWriteStream = new MemoryStream();
-                    
+
                     // need to close to get GZ tail, but this also closes underlying stream...
                     using (var writeStream = new GZipStream(rawWriteStream, CompressionMode.Compress))
                     {
@@ -222,7 +229,7 @@ namespace CyberPatriot.DiscordBot.Modules
                             teamDetails);
                     }
                     rawWriteStream = new MemoryStream(rawWriteStream.ToArray());
-                    
+
                     string fileName = $"scoreboard-{scoreSummary.SnapshotTimestamp.ToUnixTimeSeconds()}.json.gz";
                     if (Directory.Exists("scoreboardarchives"))
                     {
