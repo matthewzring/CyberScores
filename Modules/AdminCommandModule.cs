@@ -193,6 +193,21 @@ namespace CyberPatriot.DiscordBot.Modules
             return Task.CompletedTask;
         }
 
+        [Command("setavatar"), Alias("seticon"), RequireOwner]
+        public async Task SetIconAsync(string iconUrl)
+        {
+            var iconDownloader = new System.Net.Http.HttpClient();
+            string tempFileTargetName = Path.GetTempFileName();
+            using (var iconStream = await iconDownloader.GetStreamAsync(iconUrl))
+            using (var tempFileTarget = File.OpenWrite(tempFileTargetName))
+            {
+                await iconStream.CopyToAsync(tempFileTarget);
+            }
+            await Context.Client.CurrentUser.ModifyAsync(props => props.Avatar = new Image(tempFileTargetName));
+            File.Delete(tempFileTargetName);
+            await ReplyAsync("Avatar updated!");
+        }
+
         public IScoreRetrievalService ScoreService { get; set; }
         public IDataPersistenceService Database { get; set; }
 
