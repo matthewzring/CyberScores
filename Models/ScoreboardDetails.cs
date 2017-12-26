@@ -8,7 +8,7 @@ namespace CyberPatriot.Models
         [Newtonsoft.Json.JsonIgnore]
         public TeamId TeamId
         {
-            get => Summary?.TeamId;
+            get => Summary?.TeamId ?? default(TeamId);
         }
 
         public ScoreboardSummaryEntry Summary { get; set; }

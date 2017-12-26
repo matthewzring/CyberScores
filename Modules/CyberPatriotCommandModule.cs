@@ -27,7 +27,7 @@ namespace CyberPatriot.DiscordBot.Modules
             await ReplyAsync(string.Empty, embed: ScoreEmbedBuilder.CreateTeamDetailsEmbed(teamScore, await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(teamScore.Summary.Division, null))).Build());
         }
 
-        [Command("scoreboard"), Alias("leaderboard", "top"), Summary("Returns the current CyberPatriot leaderboard.")]
+        [Command("scoreboard"), Alias("leaderboard"), Summary("Returns the current CyberPatriot leaderboard.")]
         public async Task GetLeaderboardAsync(int pageNumber = 1)
         {
             CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter);

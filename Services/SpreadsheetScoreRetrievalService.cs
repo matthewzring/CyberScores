@@ -28,6 +28,10 @@ namespace CyberPatriot.DiscordBot.Services
 
         public Task InitializeAsync(IServiceProvider provider)
         {
+            // reset
+            summariesByFilter = new Dictionary<ScoreboardFilterInfo, CompleteScoreboardSummary>();
+            teamInfo = new Dictionary<TeamId, ScoreboardDetails>();
+
             Task csvInit = InitializeFromConfiguredCsvAsync(provider);
 
             // hacky implementation of a decent idea
@@ -37,7 +41,7 @@ namespace CyberPatriot.DiscordBot.Services
             {
                 // set format options to display decimals, overriding anything else that may have been set :(
                 embedBuilder.FormattingOptions.FormatScore = rawScore => (rawScore / 100.0m).ToString();
-                embedBuilder.FormattingOptions.FormatLabeledScoreDifference = rawScore => (rawScore / 100.0m) + " point" + (rawScore == 100 ? string.Empty : "s"); 
+                embedBuilder.FormattingOptions.FormatLabeledScoreDifference = rawScore => (rawScore / 100.0m) + " point" + (rawScore == 100 ? string.Empty : "s");
                 embedBuilder.FormattingOptions.FormatScoreForLeaderboard = rawScore => (rawScore / 100.0m).ToString("0.00");
                 embedBuilder.FormattingOptions.TimeDisplay = ScoreboardMessageBuilderService.MessageFormattingOptions.NumberDisplayCriteria.Never;
                 embedBuilder.FormattingOptions.VulnerabilityDisplay = ScoreboardMessageBuilderService.MessageFormattingOptions.NumberDisplayCriteria.Never;
@@ -49,7 +53,22 @@ namespace CyberPatriot.DiscordBot.Services
         public Task<SpreadsheetScoreRetrievalService> InitializeFromConfiguredCsvAsync(IServiceProvider serviceProvider)
         {
             var conf = serviceProvider.GetRequiredService<IConfiguration>();
-            return InitializeFromCsvAsync(conf.GetSection("csvSources").Get<string[]>());
+            string[] srcList;
+            try
+            {
+                srcList = conf.GetSection("csvSources").Get<string[]>();
+            }
+            catch
+            {
+                srcList = null;
+            }
+
+            if ((srcList?.Count(s => !string.IsNullOrWhiteSpace(s)) ?? 0) == 0)
+            {
+                srcList = null;
+            }
+
+            return srcList == null ? null : InitializeFromCsvAsync(srcList);
         }
 
         public async Task<SpreadsheetScoreRetrievalService> InitializeFromCsvAsync(params string[] filenames)

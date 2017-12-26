@@ -8,7 +8,7 @@ namespace CyberPatriot
     {
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            var name = value as TeamId;
+            var name = (TeamId)value;
             writer.WriteValue(value?.ToString());
         }
 

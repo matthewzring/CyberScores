@@ -5,7 +5,7 @@ namespace CyberPatriot.Models
     /// An immutable team identifier.
     /// </summary>
     [Newtonsoft.Json.JsonConverter(typeof(TeamIdJsonConverter))]
-    public class TeamId : IComparable<TeamId>
+    public struct TeamId : IComparable<TeamId>
     {
         public int SeasonId { get; }
         public int TeamNumber { get; }
@@ -73,7 +73,7 @@ namespace CyberPatriot.Models
 
         public static bool TryParse(string idString, out TeamId teamId)
         {
-            teamId = null;
+            teamId = default(TeamId);
             if (idString == null)
             {
                 return false;
@@ -114,22 +114,22 @@ namespace CyberPatriot.Models
 
         public static bool operator <(TeamId a, TeamId b)
         {
-            return (a ?? throw new NullReferenceException()).CompareTo(b) < 0;
+            return a.CompareTo(b) < 0;
         }
 
         public static bool operator >(TeamId a, TeamId b)
         {
-            return (a ?? throw new NullReferenceException()).CompareTo(b) > 0;
+            return a.CompareTo(b) > 0;
         }
 
         public static bool operator <=(TeamId a, TeamId b)
         {
-            return (a ?? throw new NullReferenceException()).CompareTo(b) <= 0;
+            return a.CompareTo(b) <= 0;
         }
 
         public static bool operator >=(TeamId a, TeamId b)
         {
-            return (a ?? throw new NullReferenceException()).CompareTo(b) >= 0;
+            return a.CompareTo(b) >= 0;
         }
     }
 }

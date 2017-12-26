@@ -21,7 +21,7 @@ namespace CyberPatriot.DiscordBot.Services
             Backend = backend;
         }
 
-        Task IScoreRetrievalService.InitializeAsync(IServiceProvider provider) => Task.CompletedTask;
+        Task IScoreRetrievalService.InitializeAsync(IServiceProvider provider) => Backend.InitializeAsync(provider);
 
         protected class HitTrackingCachedObject<TCachee>
         {
@@ -155,7 +155,7 @@ namespace CyberPatriot.DiscordBot.Services
                     // need to replace cached for this entry
                     // try querying the "master" cached scoreboard before querying the backend
 
-                    if (filter != ScoreboardFilterInfo.NoFilter && cachedScoreboards.TryGetValue(ScoreboardFilterInfo.NoFilter, out CompleteScoreboardSummary masterScoreboard) && DateTimeOffset.UtcNow - scoreboard.SnapshotTimestamp < MaxCompleteScoreboardLifespan)
+                    if (filter != ScoreboardFilterInfo.NoFilter && cachedScoreboards.TryGetValue(ScoreboardFilterInfo.NoFilter, out CompleteScoreboardSummary masterScoreboard) && DateTimeOffset.UtcNow - masterScoreboard.SnapshotTimestamp < MaxCompleteScoreboardLifespan)
                     {
                         // we have a fresh complete scoreboard, just create the more specialized one
                         scoreboard = masterScoreboard.Clone().WithFilter(filter);
@@ -178,7 +178,7 @@ namespace CyberPatriot.DiscordBot.Services
                     }
                 }
 
-                // dont want client alterations to affect cached copy
+                // don't want client alterations to affect cached copy
                 return scoreboard.Clone();
             }
             finally

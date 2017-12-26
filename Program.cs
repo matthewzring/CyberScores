@@ -60,8 +60,10 @@ namespace CyberPatriot.DiscordBot
                 .AddSingleton<IDataPersistenceService, LiteDbDataPersistenceService>(prov => new LiteDbDataPersistenceService(new LiteDatabase(_config["databaseFilename"])))
                 .AddSingleton<PreferenceProviderService>()
                 // CyPat
-                //.AddSingleton<IScoreRetrievalService, CachingScoreRetrievalService>(prov => new CachingScoreRetrievalService(new HttpScoreboardScoreRetrievalService(_config["defaultScoreboardHostname"])))
-                .AddSingleton<IScoreRetrievalService, SpreadsheetScoreRetrievalService>()
+                .AddSingleton<IScoreRetrievalService, FallbackScoreRetrievalService>(prov => new FallbackScoreRetrievalService(
+                    innerProv => Task.FromResult<IScoreRetrievalService>(new HttpScoreboardScoreRetrievalService(_config["defaultScoreboardHostname"])),
+                    async innerProv => await new SpreadsheetScoreRetrievalService().InitializeFromConfiguredCsvAsync(innerProv)
+                ))
                 .AddSingleton<FlagProviderService>()
                 .AddSingleton<CyberPatriotEventHandlingService>()
                 .AddSingleton<ScoreboardMessageBuilderService>()
