@@ -150,7 +150,7 @@ namespace CyberPatriot.DiscordBot.Services
                             divInd = Array.IndexOf(headers, "Division");
                             if (divInd == -1)
                             {
-                                teamIdInd = 1;
+                                divInd = 1;
                             }
                             locInd = Array.IndexOf(headers, "Location");
                             if (locInd == -1)
