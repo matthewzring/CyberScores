@@ -12,8 +12,8 @@ namespace CyberPatriot.DiscordBot.Services
     public class CachingScoreRetrievalService : IScoreRetrievalService
     {
         public IScoreRetrievalService Backend { get; set; }
-        public TimeSpan MaxTeamLifespan { get; set; } = TimeSpan.FromMinutes(1);
-        public TimeSpan MaxCompleteScoreboardLifespan { get; set; } = TimeSpan.FromMinutes(3);
+        public TimeSpan MaxTeamLifespan { get; set; } = TimeSpan.FromMinutes(.75);
+        public TimeSpan MaxCompleteScoreboardLifespan { get; set; } = TimeSpan.FromMinutes(1);
         public int MaxCachedTeamDetails { get; set; } = 20;
 
         public CachingScoreRetrievalService(IScoreRetrievalService backend)
