@@ -93,6 +93,23 @@ namespace CyberPatriot
             throw new ArgumentOutOfRangeException();
         }
 
+        public static IAsyncEnumerable<T> WhereAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, Task<bool>> predicate)
+        {
+            return AsyncEnumerable.CreateEnumerable(() =>
+            {
+                IAsyncEnumerator<T> rootEnumerator = enumerable.GetEnumerator();
+                return AsyncEnumerable.CreateEnumerator(async ct =>
+                {
+                    bool isNext;
+                    while ((isNext = await rootEnumerator.MoveNext()) && !(await predicate(rootEnumerator.Current)))
+                    {
+
+                    }
+                    return isNext;
+                }, () => rootEnumerator.Current, () => rootEnumerator.Dispose());
+            });
+        }
+
         public static T Max<T>(params T[] args) where T : struct, IComparable<T>
         {
             T max = args[0];

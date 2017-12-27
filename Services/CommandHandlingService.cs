@@ -38,45 +38,49 @@ namespace CyberPatriot.DiscordBot.Services
             await _commands.CreateModuleAsync("help", mb =>
             {
                 Dictionary<string, Action<Discord.Commands.Builders.ModuleBuilder>> buildersBySubmoduleName = new Dictionary<string, Action<Discord.Commands.Builders.ModuleBuilder>>();
+                Dictionary<string, IList<CommandInfo>> commandsByAlias = new Dictionary<string, IList<CommandInfo>>();
                 foreach (var cmd in _commands.Commands)
                 {
                     foreach (var alias in cmd.Aliases)
                     {
                         string[] aliasComponents = alias.Split(' ');
                         // don't pass the CommandInfo given by the delegate, pass the command we're giving help for
-                        if (aliasComponents.Length == 1)
-                        {
-                            mb.AddCommand(alias, (c, p, s, i) => HelpCommandAsync(c, p, s, cmd, alias), cb => cb.Summary = "Command help");
-                        }
-                        else
-                        {
-                            for (int i = 0; i < aliasComponents.Length - 1; i++)
-                            {
-                                string aliasTillNow = string.Join(' ', aliasComponents.Take(i + 1));
-                                if (!buildersBySubmoduleName.TryGetValue(aliasTillNow, out Action<Discord.Commands.Builders.ModuleBuilder> submoduleConfigurator))
-                                {
-                                    // first add submodule builder delegate
-                                    submoduleConfigurator = new Action<Discord.Commands.Builders.ModuleBuilder>(smb =>
-                                    {
-                                        foreach (var kvp in buildersBySubmoduleName)
-                                        {
-                                            // check if one of our submodules, and if one of our DIRECT submodules
-                                            // all tier layers should be present in the hierarchy
-                                            if (kvp.Key.StartsWith(aliasTillNow + " ") && kvp.Key.Substring(aliasTillNow.Length + 1).Count(c => c == ' ') == aliasTillNow.Count(c => c == ' '))
-                                            {
-                                                // this is one of our DIRECT submodules
-                                                // it could have its own submodules
-                                                smb.AddModule(kvp.Key.Substring(aliasTillNow.Length + 1).Split(' ').First(), kvp.Value);
-                                            }
-                                        }
-                                    });
-                                    buildersBySubmoduleName.Add(aliasTillNow, submoduleConfigurator);
-                                }
-                            }
 
-                            buildersBySubmoduleName[string.Join(' ', aliasComponents.Take(aliasComponents.Length - 1))] += smb =>
-                                smb.AddCommand(aliasComponents.Last(), (c, p, s, i) => HelpCommandAsync(c, p, s, cmd, alias), cb => cb.Summary = "Command help");
+                        for (int i = 0; i < aliasComponents.Length; i++)
+                        {
+                            string aliasTillNow = string.Join(' ', aliasComponents.Take(i + 1));
+                            if (!buildersBySubmoduleName.TryGetValue(aliasTillNow, out Action<Discord.Commands.Builders.ModuleBuilder> submoduleConfigurator))
+                            {
+                                // first add submodule builder delegate
+                                // runs only after all the configurators have been added to the dictionary
+                                submoduleConfigurator = new Action<Discord.Commands.Builders.ModuleBuilder>(smb =>
+                                {
+                                    foreach (var kvp in buildersBySubmoduleName)
+                                    {
+                                        // check if one of our submodules, and if one of our DIRECT submodules
+                                        // all tier layers should be present in the hierarchy
+                                        if (kvp.Key.StartsWith(aliasTillNow + " ") && aliasTillNow.Split(' ').Length == kvp.Key.Split(' ').Length - 1)
+                                        {
+                                            // this is one of our DIRECT submodules
+                                            // it could have its own submodules
+                                            smb.AddModule(kvp.Key.Substring(aliasTillNow.Length + 1).Split(' ').First(), kvp.Value);
+                                        }
+                                    }
+                                });
+                                buildersBySubmoduleName.Add(aliasTillNow, submoduleConfigurator);
+                            }
                         }
+
+                        if (!commandsByAlias.TryGetValue(alias, out IList<CommandInfo> thisAliasCmdList))
+                        {
+                            thisAliasCmdList = new List<CommandInfo>();
+                            commandsByAlias[alias] = thisAliasCmdList;
+
+                            buildersBySubmoduleName[string.Join(' ', aliasComponents)] += smb =>
+                            smb.AddCommand("", (c, p, s, i) => HelpCommandAsync(c, p, s, thisAliasCmdList.ToDictionary(itercmd => itercmd, _ => alias).ToArray()), cb => cb.Summary = "Command help");
+                        }
+
+                        thisAliasCmdList.Add(cmd);
                     }
                 }
                 // only call root modules, root modules will invoke their own submodules
@@ -86,30 +90,28 @@ namespace CyberPatriot.DiscordBot.Services
                 }
 
                 // add overall help
-                mb.AddCommand(string.Empty, HelpOverallAsync, cb => cb.WithSummary("Overall help. Pass a command specification (e.g. 'help admin ping') to show help for that command."));
+                mb.AddCommand(string.Empty, HelpOverallAsync, cb => cb
+                    .WithSummary("Overall help. Pass a command specification (e.g. 'help admin ping') to show help for that command, or a page number (e.g. 'help 1') for paginated overall help.")
+                    .WithPriority(int.MinValue / 2)
+                    .AddParameter<int>("pageNumber", pb =>
+                        pb.WithDefault(1)
+                        .WithIsOptional(true)
+                        .WithSummary("The page number for paginated help.")));
+
+                // add "help help" manually
+                mb.AddModule("help", smb => smb.AddCommand(string.Empty, (c, p, s, i) => HelpCommandAsync(c, p, s, new []{ new KeyValuePair<CommandInfo, string>(_commands.Commands.Single(cand => cand.Aliases[0] == "help"), "help") }), cb => cb.Summary = "Command help"));
             });
         }
 
-        private async Task<IResult> HelpOverallAsync(ICommandContext context, object[] parameters, IServiceProvider services, CommandInfo invokedHelpCmd)
+        private async Task<ExecuteResult> HelpOverallAsync(ICommandContext context, object[] parameters, IServiceProvider services, CommandInfo invokedHelpCmd)
         {
-            // FIXME pagination currently fails, and adding the parameter breaks the rest of the help commands
-            const int pageSize = 50;
-            int pageNumber = 1;
+            const int pageSize = 4;
 
-            if (parameters.Length > 1)
-            {
-                return ParseResult.FromError(CommandError.BadArgCount, "Help for commands takes no more than one argument.");
-            }
-            else if (parameters.Length == 1)
-            {
-                if (!int.TryParse(parameters[0] as string, out pageNumber))
-                {
-                    return TypeReaderResult.FromError(CommandError.ParseFailed, "Could not parse pageNumber as an integer.");
-                }
-            }
+            // param logic is enforced by the command service
+            int pageNumber = (int)parameters[0];
 
-            CommandInfo[] cmds = _commands.Commands
-                .Where(cmd =>
+            CommandInfo[] cmds = await _commands.Commands.ToAsyncEnumerable()
+                .WhereAsync(async cmd =>
                 {
                     ModuleInfo rootModule = cmd.Module;
                     while (rootModule?.Parent != null)
@@ -117,9 +119,21 @@ namespace CyberPatriot.DiscordBot.Services
                         rootModule = rootModule.Parent;
                     }
 
-                    // all commands OK, except generated help commands
+                    if (rootModule.Name == "help" && cmd.Aliases.SingleIfOne() != "help")
+                    {
+                        return false;
+                    }
+
+                    bool preconditionSuccess = false;
+                    try
+                    {
+                        preconditionSuccess = (await cmd.CheckPreconditionsAsync(context, services)).IsSuccess;
+                    }
+                    catch { }
+
+                    // all commands OK, except: generated help commands and commands where preconditions are not met
                     // only the overall help command should be displayed in help
-                    return rootModule.Name != "help" || cmd.Aliases.SingleIfOne() == "help";
+                    return preconditionSuccess;
                 }).OrderBy(cmd => cmd.Aliases[0]).ToArray();
             int pageCount = Utilities.CeilingDivision(cmds.Length, pageSize);
 
@@ -131,6 +145,7 @@ namespace CyberPatriot.DiscordBot.Services
             EmbedBuilder builder = new EmbedBuilder()
             {
                 Title = "Help",
+                Description = "Commands applicable in the current context (e.g. DM, guild channel) with your permission level.",
                 Color = Color.DarkBlue
             };
 
@@ -199,7 +214,7 @@ namespace CyberPatriot.DiscordBot.Services
             embed.AddField("__" + invocationString.ToString() + "__", description.ToString());
         }
 
-        private async Task<IResult> HelpCommandAsync(ICommandContext context, object[] parameters, IServiceProvider services, CommandInfo cmd, string alias)
+        private async Task<IResult> HelpCommandAsync(ICommandContext context, object[] parameters, IServiceProvider services, KeyValuePair<CommandInfo, string>[] aliasedCommands)
         {
             if (parameters?.Length != 0)
             {
@@ -211,7 +226,10 @@ namespace CyberPatriot.DiscordBot.Services
                 Title = "Help",
                 Color = Color.DarkBlue
             };
-            BuildHelpAsField(builder, cmd, alias);
+            foreach (var kvp in aliasedCommands)
+            {
+                BuildHelpAsField(builder, kvp.Key, kvp.Value);
+            }
 
             await context.Channel.SendMessageAsync(string.Empty, embed: builder.Build());
             return ExecuteResult.FromSuccess();
@@ -257,16 +275,16 @@ namespace CyberPatriot.DiscordBot.Services
 
             if (result.Error.HasValue &&
                 result.Error.Value == CommandError.UnknownCommand)
+            {
                 return;
-
-            if (result.Error.HasValue &&
-                result.Error.Value != CommandError.UnknownCommand)
+            }
+            else if (!result.IsSuccess)
             {
                 await context.Channel.SendMessageAsync(string.Empty,
                     embed: new EmbedBuilder()
                         .WithColor(Color.Red)
-                        .WithTitle("Error Executing Command: " + result.Error.Value.ToStringCamelCaseToSpace())
-                        .WithDescription(result.ErrorReason)
+                        .WithTitle("Error Executing Command" + (result.Error.HasValue ? ": " + ((result.Error.Value == CommandError.Exception && result is ExecuteResult ? new Nullable<ExecuteResult>((ExecuteResult)result) : null)?.Exception?.GetType()?.Name ?? result.Error.Value.ToString()).ToStringCamelCaseToSpace() : string.Empty))
+                        .WithDescription(result.ErrorReason ?? "An unknown error occurred.")
                         .WithTimestamp(message.CreatedAt));
             }
         }
