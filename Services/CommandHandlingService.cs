@@ -62,7 +62,7 @@ namespace CyberPatriot.DiscordBot.Services
                                         {
                                             // check if one of our submodules, and if one of our DIRECT submodules
                                             // all tier layers should be present in the hierarchy
-                                            if (kvp.Key.StartsWith(aliasTillNow + " ") && kvp.Key.Substring(aliasTillNow.Length + 1).Count(c => c == ' ') - 1 == aliasTillNow.Count(c => c == ' '))
+                                            if (kvp.Key.StartsWith(aliasTillNow + " ") && kvp.Key.Substring(aliasTillNow.Length + 1).Count(c => c == ' ') == aliasTillNow.Count(c => c == ' '))
                                             {
                                                 // this is one of our DIRECT submodules
                                                 // it could have its own submodules
