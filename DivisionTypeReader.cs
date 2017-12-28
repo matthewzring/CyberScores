@@ -13,7 +13,7 @@ namespace CyberPatriot.DiscordBot
         public override Task<TypeReaderResult> Read(ICommandContext context, string input, IServiceProvider services)
         {
             Division result;
-            if (Enum.TryParse(input, out result))
+            if (Enum.TryParse(input, true, out result))
             {
                 return Task.FromResult(TypeReaderResult.FromSuccess(result));
             }
