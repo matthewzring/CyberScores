@@ -14,11 +14,13 @@ namespace CyberPatriot.DiscordBot.Services
         public FlagProviderService FlagProvider { get; set; }
         // hack, needed for formatting
         public IScoreRetrievalService ScoreRetriever { get; set; }
+        public ICompetitionRoundLogicService CompetitionLogic { get; set; }
 
-        public ScoreboardMessageBuilderService(FlagProviderService flagProvider, IScoreRetrievalService scoreRetriever)
+        public ScoreboardMessageBuilderService(FlagProviderService flagProvider, IScoreRetrievalService scoreRetriever, ICompetitionRoundLogicService competitionLogic)
         {
             FlagProvider = flagProvider;
             ScoreRetriever = scoreRetriever;
+            CompetitionLogic = competitionLogic;
         }
 
         public string CreateTopLeaderboardEmbed(CompleteScoreboardSummary scoreboard, TimeZoneInfo timeZone = null, int pageNumber = 1, int pageSize = 15)
@@ -81,7 +83,7 @@ namespace CyberPatriot.DiscordBot.Services
 
             var builder = new EmbedBuilder()
                 .WithTimestamp(teamScore.SnapshotTimestamp)
-                .WithTitle(teamScore.Summary.Division.ToStringCamelCaseToSpace() + (teamScore.Summary.Tier == null ? string.Empty : (" " + teamScore.Summary.Tier)) + " Team " + teamScore.Summary.TeamId);
+                .WithTitle(CompetitionLogic.GetTitle(teamScore.Summary));
 
             // scoreboard link
             if (teamScore.OriginUri != null)
@@ -149,26 +151,28 @@ namespace CyberPatriot.DiscordBot.Services
             if (peerScoreboard != null)
             {
                 // don't pollute upstream
-                CompleteScoreboardSummary totalDivisionScoreboard = peerScoreboard.Clone();
-                if (totalDivisionScoreboard.Filter.Tier == null)
-                {
-                    // can't filter if it already has a tier filter
-                    totalDivisionScoreboard.WithFilter(teamScore.Summary.Division, null);
-                }
+                CompleteScoreboardSummary totalDivisionScoreboard = peerScoreboard.Clone().WithFilter(teamScore.Summary.Division, null);
 
-                // filter to peer teams
-                peerScoreboard.WithFilter(teamScore.Summary.Division, teamScore.Summary.Tier);
-                // descending order
-                IList<ScoreboardSummaryEntry> peerTeams = peerScoreboard.TeamList;
+                IList<ScoreboardSummaryEntry> myDivMyTierTeams = totalDivisionScoreboard.Clone().WithFilter(teamScore.Summary.Division, teamScore.Summary.Tier).TeamList;
+                IList<ScoreboardSummaryEntry> peerTeams = CompetitionLogic.GetPeerTeams(ScoreRetriever.Round, totalDivisionScoreboard, teamScore);
                 if (peerTeams.Count > 0)
                 {
                     int myIndexInPeerList = peerTeams.IndexOfWhere(entr => entr.TeamId == teamScore.TeamId);
 
                     StringBuilder rankEmbedBuilder = new StringBuilder();
                     rankEmbedBuilder.AppendLine(Utilities.AppendOrdinalSuffix(myIndexInPeerList + 1) + " of " + Utilities.Pluralize("peer team", peerTeams.Count));
-                    if (totalDivisionScoreboard.Filter.Tier == null && totalDivisionScoreboard.Filter != peerScoreboard.Filter)
+
+                    // non-peer rankings use parentheticals - peer rankings are used for the rest of the logic
+                    // if peer teams != div+tier teams
+                    if (!myDivMyTierTeams.Select(t => t.TeamId).OrderBy(t => t).SequenceEqual(peerTeams.Select(t => t.TeamId).OrderBy(t => t)))
                     {
-                        rankEmbedBuilder.AppendLine(Utilities.AppendOrdinalSuffix(totalDivisionScoreboard.TeamList.IndexOf(teamScore.Summary) + 1) + " of " + Utilities.Pluralize("team", totalDivisionScoreboard.TeamList.Count) + " in division");
+                        // tier ranking, differing from peer ranking
+                        rankEmbedBuilder.Append('(').AppendLine(Utilities.AppendOrdinalSuffix(myDivMyTierTeams.IndexOf(teamScore.Summary) + 1) + " of " + Utilities.Pluralize("team", totalDivisionScoreboard.TeamList.Count) + " in tier)");
+                    }
+                    if (totalDivisionScoreboard.TeamList.Count > peerTeams.Count)
+                    {
+                        // division ranking, differing from peer ranking
+                        rankEmbedBuilder.Append('(').AppendLine(Utilities.AppendOrdinalSuffix(totalDivisionScoreboard.TeamList.IndexOf(teamScore.Summary) + 1) + " of " + Utilities.Pluralize("team", totalDivisionScoreboard.TeamList.Count) + " in division)");
                     }
                     builder.AddInlineField("Rank", rankEmbedBuilder.ToString());
 

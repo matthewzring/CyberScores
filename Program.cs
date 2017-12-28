@@ -29,7 +29,8 @@ namespace CyberPatriot.DiscordBot
                 services.GetRequiredService<CommandHandlingService>().InitializeAsync(services),
                 services.GetRequiredService<IDataPersistenceService>().InitializeAsync(services),
                 services.GetRequiredService<CyberPatriotEventHandlingService>().InitializeAsync(services),
-                services.GetRequiredService<IScoreRetrievalService>().InitializeAsync(services)
+                services.GetRequiredService<IScoreRetrievalService>().InitializeAsync(services),
+                services.GetRequiredService<ICompetitionRoundLogicService>().InitializeAsync(services)
             );
 
             string enableUpNotificationConfSetting = _config["enableUpNotification"] ?? "false";
