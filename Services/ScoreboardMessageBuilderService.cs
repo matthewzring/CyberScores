@@ -167,7 +167,7 @@ namespace CyberPatriot.DiscordBot.Services
                     if (!myDivMyTierTeams.Select(t => t.TeamId).OrderBy(t => t).SequenceEqual(peerTeams.Select(t => t.TeamId).OrderBy(t => t)))
                     {
                         // tier ranking, differing from peer ranking
-                        rankEmbedBuilder.Append('(').AppendLine(Utilities.AppendOrdinalSuffix(myDivMyTierTeams.IndexOf(teamScore.Summary) + 1) + " of " + Utilities.Pluralize("team", totalDivisionScoreboard.TeamList.Count) + " in tier)");
+                        rankEmbedBuilder.Append('(').AppendLine(Utilities.AppendOrdinalSuffix(myDivMyTierTeams.IndexOf(teamScore.Summary) + 1) + " of " + Utilities.Pluralize("team", myDivMyTierTeams.Count) + " in tier)");
                     }
                     if (totalDivisionScoreboard.TeamList.Count > peerTeams.Count)
                     {
