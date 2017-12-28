@@ -26,7 +26,8 @@ namespace CyberPatriot.DiscordBot.Modules
             [Command("set")]
             [RequireUserPermission(GuildPermission.Administrator)]
             [RequireContext(ContextType.Guild)]
-            public async Task SetPrefixAsync(string newPrefix)
+            [Summary("Sets the prefix for this guild.")]
+            public async Task SetPrefixAsync([Summary("The new prefix for this guild.")] string newPrefix)
             {
                 using (var context = Database.OpenContext<Guild>(true))
                 {
@@ -40,6 +41,7 @@ namespace CyberPatriot.DiscordBot.Modules
             [Command("remove"), Alias("delete", "unset")]
             [RequireUserPermission(GuildPermission.Administrator)]
             [RequireContext(ContextType.Guild)]
+            [Summary("Removes the prefix for this guild, reverting to the @mention default.")]
             public async Task RemoveAsync()
             {
                 using (var context = Database.OpenContext<Guild>(true))
@@ -60,7 +62,8 @@ namespace CyberPatriot.DiscordBot.Modules
             [Command("set")]
             [RequireUserPermission(GuildPermission.Administrator)]
             [RequireContext(ContextType.Guild)]
-            public async Task SetTimezoneAsync(string newTimezone)
+            [Summary("Sets the default timezone for this guild.")]
+            public async Task SetTimezoneAsync([Summary("The timezone in which times will be displayed by default.")] string newTimezone)
             {
                 TimeZoneInfo newTz;
                 try
@@ -84,6 +87,7 @@ namespace CyberPatriot.DiscordBot.Modules
             [Command("remove"), Alias("delete", "unset")]
             [RequireUserPermission(GuildPermission.Administrator)]
             [RequireContext(ContextType.Guild)]
+            [Summary("Removes the designated timezone for this guild, reverting the default to UTC.")]
             public async Task RemoveTimezone()
             {
                 await PreferenceService.SetTimeZoneAsync(Context.Guild, null);
@@ -99,7 +103,8 @@ namespace CyberPatriot.DiscordBot.Modules
             [Command("list")]
             [RequireUserPermission(ChannelPermission.ManageChannel)]
             [RequireContext(ContextType.Guild)]
-            public async Task ListTeamsAsync(ITextChannel channel = null)
+            [Summary("Lists all teams which are monitored in a given channel.")]
+            public async Task ListTeamsAsync([Summary("The channel to list teams for. Defaults to the current channel.")] ITextChannel channel = null)
             {
                 // guaranteed guild context
                 channel = channel ?? (Context.Channel as ITextChannel);
@@ -123,7 +128,8 @@ namespace CyberPatriot.DiscordBot.Modules
             [Command("remove"), Alias("delete", "unwatch")]
             [RequireUserPermission(ChannelPermission.ManageChannel)]
             [RequireContext(ContextType.Guild)]
-            public async Task RemoveTeamAsync(TeamId team, ITextChannel channel = null)
+            [Summary("Unwatches a team from placement change notifications.")]
+            public async Task RemoveTeamAsync([Summary("The team to unwatch.")] TeamId team, [Summary("The channel in which the team will cease to be monitored. Defaults to the current channel.")] ITextChannel channel = null)
             {
                 // guaranteed guild context
                 channel = channel ?? (Context.Channel as ITextChannel);
@@ -152,7 +158,8 @@ namespace CyberPatriot.DiscordBot.Modules
             [Command("add"), Alias("watch")]
             [RequireUserPermission(ChannelPermission.ManageChannel)]
             [RequireContext(ContextType.Guild)]
-            public async Task WatchTeamAsync(TeamId team, ITextChannel channel = null)
+            [Summary("Add a team for placement change monitoring. When this team changes placement (either rises or falls) on the scoreboard, an announcement will be made in the given channel.")]
+            public async Task WatchTeamAsync([Summary("The team to monitor.")] TeamId team, [Summary("The channel in which the team will be monitored. Defaults to the current channel.")] ITextChannel channel = null)
             {
                 // guaranteed guild context
                 channel = channel ?? (Context.Channel as ITextChannel);
@@ -187,6 +194,7 @@ namespace CyberPatriot.DiscordBot.Modules
         public Task PingAsync() => ReplyAsync("Pong!" + (Context.Client is Discord.WebSocket.DiscordSocketClient socketClient ? " " + socketClient.Latency + "ms" : string.Empty));
 
         [Command("kill"), Alias("die"), RequireOwner]
+        [Summary("Terminates the bot instance.")]
         public Task KillAsync()
         {
             Environment.Exit(0);
@@ -194,6 +202,7 @@ namespace CyberPatriot.DiscordBot.Modules
         }
 
         [Command("setavatar"), Alias("seticon"), RequireOwner]
+        [Summary("Sets the avatar for the bot.")]
         public async Task SetIconAsync(string iconUrl)
         {
             var iconDownloader = new System.Net.Http.HttpClient();
@@ -213,6 +222,7 @@ namespace CyberPatriot.DiscordBot.Modules
 
         [Command("exportscoreboard"), Alias("savescoreboard", "exportscoreboardjson", "downloadscoreboard")]
         [RequireOwner]
+        [Summary("Exports a GZip-compressed JSON scoreboard from the current backend to the current channel.")]
         public async Task DownloadScoreboardAsync()
         {
             await ReplyAsync("Downloading scoreboard...");
