@@ -99,7 +99,7 @@ namespace CyberPatriot.DiscordBot.Services
                         .WithSummary("The page number for paginated help.")));
 
                 // add "help help" manually
-                mb.AddModule("help", smb => smb.AddCommand(string.Empty, (c, p, s, i) => HelpCommandAsync(c, p, s, new []{ new KeyValuePair<CommandInfo, string>(_commands.Commands.Single(cand => cand.Aliases[0] == "help"), "help") }), cb => cb.Summary = "Command help"));
+                mb.AddModule("help", smb => smb.AddCommand(string.Empty, (c, p, s, i) => HelpCommandAsync(c, p, s, new[] { new KeyValuePair<CommandInfo, string>(_commands.Commands.Single(cand => cand.Aliases[0] == "help"), "help") }), cb => cb.Summary = "Command help"));
             });
         }
 
@@ -148,6 +148,12 @@ namespace CyberPatriot.DiscordBot.Services
                 Description = "Commands applicable in the current context (e.g. DM, guild channel) with your permission level.",
                 Color = Color.DarkBlue
             };
+
+            Models.Guild guildPrefs;
+            if (context.Guild != null && (guildPrefs = await _database.FindOneAsync<Models.Guild>(g => g.Id == context.Guild.Id)) != null && guildPrefs.Prefix != null)
+            {
+                builder.Description += "\n\nThis guild's prefix is: `" + guildPrefs.Prefix + "`";
+            }
 
             foreach (var cmd in cmds.Skip((pageNumber - 1) * pageSize).Take(pageSize))
             {
