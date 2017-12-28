@@ -61,15 +61,15 @@ namespace CyberPatriot.DiscordBot
                 .AddSingleton<PreferenceProviderService>()
                 // CyPat
                 // Scoreboard trial order: live, JSON archive, CSV released archive
-                // Bot must be restarted to reset the chosen scoreboard
                 .AddSingleton<IScoreRetrievalService, FallbackScoreRetrievalService>(prov => new FallbackScoreRetrievalService(
                     prov,
                     innerProv => Task.FromResult<IScoreRetrievalService>(new HttpScoreboardScoreRetrievalService(innerProv.GetRequiredService<IConfiguration>()["defaultScoreboardHostname"])),
                     async innerProv =>
-                        // if the  constructor throws an exception, e.g. missing config, means this provider is skipped
+                        // if the constructor throws an exception, e.g. missing config, means this provider is skipped
                         new JsonScoreRetrievalService(await System.IO.File.ReadAllTextAsync(innerProv.GetRequiredService<IConfiguration>()["jsonSource"])),
                     async innerProv => await new SpreadsheetScoreRetrievalService().InitializeFromConfiguredCsvAsync(innerProv)
                 ))
+                .AddSingleton<ICompetitionRoundLogicService, CyberPatriotTenCompetitionRoundLogicService>()
                 .AddSingleton<FlagProviderService>()
                 .AddSingleton<CyberPatriotEventHandlingService>()
                 .AddSingleton<ScoreboardMessageBuilderService>()

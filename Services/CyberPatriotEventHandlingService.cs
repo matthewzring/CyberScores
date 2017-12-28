@@ -56,10 +56,12 @@ namespace CyberPatriot.DiscordBot.Services
 #pragma warning disable 4014
                 Utilities.PeriodicTask.Run(TeamPlacementChangeNotificationTimer, TimeSpan.FromMinutes(5), new TimerStateWrapper(), cts.Token);
                 Utilities.PeriodicTask.Run(UpdateGameBasedOnBackend, TimeSpan.FromSeconds(120), cts.Token);
-#pragma warning restore 4014
 
                 // set the game initially
-                return UpdateGameBasedOnBackend();
+                UpdateGameBasedOnBackend();
+#pragma warning restore 4014
+
+                return Task.CompletedTask;
             };
             _discord.Disconnected += err =>
             {
@@ -85,7 +87,7 @@ namespace CyberPatriot.DiscordBot.Services
                     }
                     else
                     {
-                        summaryLineBuilder.AppendFormat("Top: {0}, {1}pts", topTeam.TeamId, _messageBuilder.FormattingOptions.FormatScore(topTeam.TotalScore));
+                        summaryLineBuilder.AppendFormat("Top: {0}, {1}pts", topTeam.TeamId, _scoreRetriever.FormattingOptions.FormatScore(topTeam.TotalScore));
                     }
                 }
                 await _discord.SetGameAsync(summaryLineBuilder.ToString());

@@ -11,85 +11,14 @@ namespace CyberPatriot.DiscordBot.Services
 {
     public class ScoreboardMessageBuilderService
     {
-        // Supports hacked-on infrastructure
-        public class MessageFormattingOptions
-        {
-            public enum NumberDisplayCriteria
-            {
-                Always,
-                WhenNonZero,
-                WhenNonNegative,
-                Never
-            }
-
-            public Func<int, string> FormatScore { get; set; } = i => i.ToString();
-            public Func<int, string> FormatLabeledScoreDifference { get; set; } = i => Utilities.Pluralize("point", i);
-            public Func<int, string> FormatScoreForLeaderboard { get; set; } = i => i.ToString();
-            public NumberDisplayCriteria TimeDisplay { get; set; } = NumberDisplayCriteria.Always;
-            public NumberDisplayCriteria VulnerabilityDisplay { get; set; } = NumberDisplayCriteria.WhenNonZero;
-
-            public static bool EvaluateNumericDisplay(NumberDisplayCriteria criteria, int number)
-            {
-                switch (criteria)
-                {
-                    case NumberDisplayCriteria.Always:
-                        return true;
-                    case NumberDisplayCriteria.WhenNonNegative:
-                        return number >= 0;
-                    case NumberDisplayCriteria.WhenNonZero:
-                        return number != 0;
-                    case NumberDisplayCriteria.Never:
-                        return false;
-                }
-
-                throw new ArgumentOutOfRangeException();
-            }
-
-            public static bool EvaluateNumericDisplay(NumberDisplayCriteria criteria, int a, int b)
-            {
-                // checks both
-                switch (criteria)
-                {
-                    case NumberDisplayCriteria.Always:
-                        return true;
-                    case NumberDisplayCriteria.WhenNonNegative:
-                        // both must be nonnegative to DISPLAY
-                        return a >= 0 && b >= 0;
-                    case NumberDisplayCriteria.WhenNonZero:
-                        // both must be zero to hide
-                        return !(a == 0 && b == 0);
-                    case NumberDisplayCriteria.Never:
-                        return false;
-                }
-
-                throw new ArgumentOutOfRangeException();
-            }
-
-            public static bool EvaluateNumericDisplay(NumberDisplayCriteria criteria, TimeSpan number)
-            {
-                switch (criteria)
-                {
-                    case NumberDisplayCriteria.Always:
-                        return true;
-                    case NumberDisplayCriteria.WhenNonNegative:
-                        return number >= TimeSpan.Zero;
-                    case NumberDisplayCriteria.WhenNonZero:
-                        return number != TimeSpan.Zero;
-                    case NumberDisplayCriteria.Never:
-                        return false;
-                }
-
-                throw new ArgumentOutOfRangeException();
-            }
-        }
-
         public FlagProviderService FlagProvider { get; set; }
+        // hack, needed for formatting
+        public IScoreRetrievalService ScoreRetriever { get; set; }
 
-        public MessageFormattingOptions FormattingOptions { get; } = new MessageFormattingOptions();
-
-        public ScoreboardMessageBuilderService(FlagProviderService flagProvider)
+        public ScoreboardMessageBuilderService(FlagProviderService flagProvider, IScoreRetrievalService scoreRetriever)
         {
             FlagProvider = flagProvider;
+            ScoreRetriever = scoreRetriever;
         }
 
         public string CreateTopLeaderboardEmbed(CompleteScoreboardSummary scoreboard, TimeZoneInfo timeZone = null, int pageNumber = 1, int pageSize = 15)
@@ -133,7 +62,7 @@ namespace CyberPatriot.DiscordBot.Services
 
             // FIXME time display logic according to FormattingOptions
             scoreboard.TeamList.Skip(pageNumber * pageSize).Take(pageSize)
-                .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + 1 + (pageNumber * pageSize), team.TeamId, team.Location, FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
+                .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + 1 + (pageNumber * pageSize), team.TeamId, team.Location, ScoreRetriever.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
                 .Consume();
             stringBuilder.AppendLine("```");
             if (scoreboard.OriginUri != null)
@@ -205,18 +134,18 @@ namespace CyberPatriot.DiscordBot.Services
                 {
                     warningAppendage += multiimage ? multiImageStr : overTimeStr;
                 }
-                string vulnsString = MessageFormattingOptions.EvaluateNumericDisplay(FormattingOptions.VulnerabilityDisplay, item.VulnerabilitiesFound, item.VulnerabilitiesRemaining + item.VulnerabilitiesFound) ? $" ({item.VulnerabilitiesFound}/{item.VulnerabilitiesFound + item.VulnerabilitiesRemaining} vulns{penaltyAppendage})" : string.Empty;
-                string playTimeStr = MessageFormattingOptions.EvaluateNumericDisplay(FormattingOptions.TimeDisplay, item.PlayTime) ? $" in {item.PlayTime:hh\\:mm}" : string.Empty;
-                builder.AddField('`' + item.ImageName + $": {FormattingOptions.FormatScore(item.Score)}pts`", $"{FormattingOptions.FormatScore(item.Score)} points{vulnsString}{playTimeStr}{warningAppendage}");
+                string vulnsString = ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetriever.FormattingOptions.VulnerabilityDisplay, item.VulnerabilitiesFound, item.VulnerabilitiesRemaining + item.VulnerabilitiesFound) ? $" ({item.VulnerabilitiesFound}/{item.VulnerabilitiesFound + item.VulnerabilitiesRemaining} vulns{penaltyAppendage})" : string.Empty;
+                string playTimeStr = ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetriever.FormattingOptions.TimeDisplay, item.PlayTime) ? $" in {item.PlayTime:hh\\:mm}" : string.Empty;
+                builder.AddField('`' + item.ImageName + $": {ScoreRetriever.FormattingOptions.FormatScore(item.Score)}pts`", $"{ScoreRetriever.FormattingOptions.FormatScore(item.Score)} points{vulnsString}{playTimeStr}{warningAppendage}");
             }
 
             string totalScoreTimeAppendage = string.Empty;
-            if (MessageFormattingOptions.EvaluateNumericDisplay(FormattingOptions.TimeDisplay, teamScore.Summary.PlayTime))
+            if (ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetriever.FormattingOptions.TimeDisplay, teamScore.Summary.PlayTime))
             {
                 totalScoreTimeAppendage = $" in {teamScore.Summary.PlayTime:hh\\:mm}";
             }
 
-            builder.AddInlineField("Total Score", $"{FormattingOptions.FormatScore(teamScore.Summary.TotalScore)} points" + totalScoreTimeAppendage);
+            builder.AddInlineField("Total Score", $"{ScoreRetriever.FormattingOptions.FormatScore(teamScore.Summary.TotalScore)} points" + totalScoreTimeAppendage);
             if (peerScoreboard != null)
             {
                 // don't pollute upstream
@@ -249,17 +178,17 @@ namespace CyberPatriot.DiscordBot.Services
                     if (myIndexInPeerList > 0)
                     {
                         int marginUnderFirst = peerTeams[0].TotalScore - teamScore.Summary.TotalScore;
-                        marginBuilder.AppendLine($"{FormattingOptions.FormatLabeledScoreDifference(marginUnderFirst)} under 1st place");
+                        marginBuilder.AppendLine($"{ScoreRetriever.FormattingOptions.FormatLabeledScoreDifference(marginUnderFirst)} under 1st place");
                     }
                     if (myIndexInPeerList >= 2)
                     {
                         int marginUnderAbove = peerTeams[myIndexInPeerList - 1].TotalScore - teamScore.Summary.TotalScore;
-                        marginBuilder.AppendLine($"{FormattingOptions.FormatLabeledScoreDifference(marginUnderAbove)} under {Utilities.AppendOrdinalSuffix(myIndexInPeerList)} place");
+                        marginBuilder.AppendLine($"{ScoreRetriever.FormattingOptions.FormatLabeledScoreDifference(marginUnderAbove)} under {Utilities.AppendOrdinalSuffix(myIndexInPeerList)} place");
                     }
                     if (myIndexInPeerList < peerTeams.Count - 1)
                     {
                         int marginAboveUnder = teamScore.Summary.TotalScore - peerTeams[myIndexInPeerList + 1].TotalScore;
-                        marginBuilder.AppendLine($"{FormattingOptions.FormatLabeledScoreDifference(marginAboveUnder)} above {Utilities.AppendOrdinalSuffix(myIndexInPeerList + 2)} place");
+                        marginBuilder.AppendLine($"{ScoreRetriever.FormattingOptions.FormatLabeledScoreDifference(marginAboveUnder)} above {Utilities.AppendOrdinalSuffix(myIndexInPeerList + 2)} place");
                     }
                     // TODO division- and round-specific margins
                     builder.AddInlineField("Margin", marginBuilder.ToString());

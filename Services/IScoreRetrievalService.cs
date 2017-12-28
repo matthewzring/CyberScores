@@ -12,5 +12,8 @@ namespace CyberPatriot.DiscordBot.Services
         Task InitializeAsync(IServiceProvider provider);
         bool IsDynamic { get; }
         string StaticSummaryLine { get; }
+        CompetitionRound Round { get; }
+        ScoreFormattingOptions FormattingOptions { get; }
+
     }
 }

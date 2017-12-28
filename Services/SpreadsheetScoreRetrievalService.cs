@@ -19,11 +19,22 @@ namespace CyberPatriot.DiscordBot.Services
     {
 
         public bool IsDynamic => false;
-        public string StaticSummaryLine => "Official Released Scores";
+        public string StaticSummaryLine => Round == 0 ? "Official Scores Released" : "Official " + Round.ToStringCamelCaseToSpace() + " Scores";
+        public ScoreFormattingOptions FormattingOptions { get; private set; }
+        public CompetitionRound Round { get; set; } = 0;
 
 
         public SpreadsheetScoreRetrievalService()
         {
+            // hacky implementation of a decent idea
+            // add decimals at format level to embed creator
+            // set format options to display decimals, overriding anything else that may have been set :(
+            FormattingOptions = new ScoreFormattingOptions();
+            FormattingOptions.FormatScore = rawScore => (rawScore / 100.0m).ToString();
+            FormattingOptions.FormatLabeledScoreDifference = rawScore => (rawScore / 100.0m) + " point" + (rawScore == 100 ? string.Empty : "s");
+            FormattingOptions.FormatScoreForLeaderboard = rawScore => (rawScore / 100.0m).ToString("0.00");
+            FormattingOptions.TimeDisplay = ScoreFormattingOptions.NumberDisplayCriteria.Never;
+            FormattingOptions.VulnerabilityDisplay = ScoreFormattingOptions.NumberDisplayCriteria.Never;
         }
 
         protected Dictionary<ScoreboardFilterInfo, CompleteScoreboardSummary> summariesByFilter =
@@ -37,22 +48,7 @@ namespace CyberPatriot.DiscordBot.Services
             summariesByFilter = new Dictionary<ScoreboardFilterInfo, CompleteScoreboardSummary>();
             teamInfo = new Dictionary<TeamId, ScoreboardDetails>();
 
-            Task csvInit = InitializeFromConfiguredCsvAsync(provider);
-
-            // hacky implementation of a decent idea
-            // add decimals at format level to embed creator
-            var embedBuilder = provider.GetService<ScoreboardMessageBuilderService>();
-            if (embedBuilder != null)
-            {
-                // set format options to display decimals, overriding anything else that may have been set :(
-                embedBuilder.FormattingOptions.FormatScore = rawScore => (rawScore / 100.0m).ToString();
-                embedBuilder.FormattingOptions.FormatLabeledScoreDifference = rawScore => (rawScore / 100.0m) + " point" + (rawScore == 100 ? string.Empty : "s");
-                embedBuilder.FormattingOptions.FormatScoreForLeaderboard = rawScore => (rawScore / 100.0m).ToString("0.00");
-                embedBuilder.FormattingOptions.TimeDisplay = ScoreboardMessageBuilderService.MessageFormattingOptions.NumberDisplayCriteria.Never;
-                embedBuilder.FormattingOptions.VulnerabilityDisplay = ScoreboardMessageBuilderService.MessageFormattingOptions.NumberDisplayCriteria.Never;
-            }
-
-            return csvInit;
+            return InitializeFromConfiguredCsvAsync(provider);
         }
 
         public Task<SpreadsheetScoreRetrievalService> InitializeFromConfiguredCsvAsync(IServiceProvider serviceProvider)
@@ -66,6 +62,15 @@ namespace CyberPatriot.DiscordBot.Services
             catch
             {
                 srcList = null;
+            }
+
+            try
+            {
+                Round = (CompetitionRound)conf.GetValue("csvRound", 0);
+            }
+            catch
+            {
+                Round = 0;
             }
 
             if ((srcList?.Count(s => !string.IsNullOrWhiteSpace(s)) ?? 0) == 0)

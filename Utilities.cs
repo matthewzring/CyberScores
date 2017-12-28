@@ -28,7 +28,7 @@ namespace CyberPatriot
             result.Append(initStr[0]);
             for (int i = 1; i < initStr.Length; i++)
             {
-                if (char.IsUpper(initStr[i]))
+                if (char.IsUpper(initStr[i]) || char.IsNumber(initStr[i]))
                 {
                     result.Append(' ');
                 }

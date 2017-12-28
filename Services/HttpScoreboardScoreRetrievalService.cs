@@ -19,6 +19,10 @@ namespace CyberPatriot.DiscordBot.Services
 
         public bool IsDynamic => true;
         public string StaticSummaryLine => Hostname;
+        public ScoreFormattingOptions FormattingOptions { get; } = new ScoreFormattingOptions();
+        public CompetitionRound Round => _roundInferenceService == null ? 0 : _roundInferenceService.InferRound(DateTimeOffset.UtcNow);
+
+        private ICompetitionRoundLogicService _roundInferenceService = null;
 
         public HttpScoreboardScoreRetrievalService() : this(null)
         {
@@ -37,6 +41,8 @@ namespace CyberPatriot.DiscordBot.Services
             {
                 Hostname = provider.GetRequiredService<IConfiguration>()["defaultScoreboardHostname"];
             }
+
+            _roundInferenceService = provider.GetService<ICompetitionRoundLogicService>() ?? _roundInferenceService;
 
             return Task.CompletedTask;
         }

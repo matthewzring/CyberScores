@@ -18,6 +18,8 @@ namespace CyberPatriot.DiscordBot.Services
 
         public bool IsDynamic => Backend.IsDynamic;
         public string StaticSummaryLine => Backend.StaticSummaryLine;
+        public CompetitionRound Round => Backend.Round;
+        public ScoreFormattingOptions FormattingOptions => Backend.FormattingOptions;
 
         public CachingScoreRetrievalService(IScoreRetrievalService backend)
         {

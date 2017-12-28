@@ -242,7 +242,7 @@ namespace CyberPatriot.DiscordBot.Modules
                     using (var writeStream = new GZipStream(rawWriteStream, CompressionMode.Compress))
                     {
                         await JsonScoreRetrievalService.SerializeAsync(new StreamWriter(writeStream), scoreSummary,
-                            teamDetails);
+                            teamDetails, ScoreService.Round);
                     }
                     rawWriteStream = new MemoryStream(rawWriteStream.ToArray());
 

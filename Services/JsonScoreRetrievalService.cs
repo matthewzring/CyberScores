@@ -16,8 +16,11 @@ namespace CyberPatriot.DiscordBot.Services
         protected CompleteScoreboardSummary summary;
         protected Dictionary<TeamId, ScoreboardDetails> teamDetails;
 
+
         public bool IsDynamic => false;
-        public string StaticSummaryLine => "Downloaded CCS Scoreboard";
+        public string StaticSummaryLine => "CCS Archive" + (Round == 0 ? string.Empty : (", " + Round.ToStringCamelCaseToSpace()));
+        public CompetitionRound Round { get; protected set; }
+        public ScoreFormattingOptions FormattingOptions { get; } = new ScoreFormattingOptions();
 
         public JsonScoreRetrievalService(string jsonContents)
         {
@@ -27,7 +30,7 @@ namespace CyberPatriot.DiscordBot.Services
         Task IScoreRetrievalService.InitializeAsync(IServiceProvider provider) => Task.CompletedTask;
 
         public static async Task<string> SerializeAsync(CompleteScoreboardSummary summary,
-            IDictionary<TeamId, ScoreboardDetails> teamDetails)
+            IDictionary<TeamId, ScoreboardDetails> teamDetails, CompetitionRound round = 0)
         {
             StreamWriter sw = null;
             StreamReader sr = null;
@@ -40,7 +43,7 @@ namespace CyberPatriot.DiscordBot.Services
                     sr = new StreamReader(memStr);
 
                     // write
-                    await SerializeAsync(sw, summary, teamDetails);
+                    await SerializeAsync(sw, summary, teamDetails, round);
 
                     // read
                     memStr.Position = 0;
@@ -55,7 +58,7 @@ namespace CyberPatriot.DiscordBot.Services
         }
 
         public static async Task SerializeAsync(TextWriter target, CompleteScoreboardSummary summary,
-            IDictionary<TeamId, ScoreboardDetails> teamDetails)
+            IDictionary<TeamId, ScoreboardDetails> teamDetails, CompetitionRound round = 0)
         {
             using (JsonWriter jw = new JsonTextWriter(target))
             {
@@ -69,6 +72,8 @@ namespace CyberPatriot.DiscordBot.Services
                 await Task.Run(() => serializer.Serialize(jw, summary));
                 await jw.WritePropertyNameAsync("teams");
                 await Task.Run(() => serializer.Serialize(jw, teamDetails));
+                await jw.WritePropertyNameAsync("round");
+                await jw.WriteValueAsync((int)round);
                 await jw.WriteEndObjectAsync();
                 await jw.FlushAsync();
             }
@@ -82,6 +87,14 @@ namespace CyberPatriot.DiscordBot.Services
                 JObject obj = JObject.Parse(rawJson);
                 summary = obj["summary"].Value<CompleteScoreboardSummary>();
                 teamDetails = obj["teams"].Value<Dictionary<TeamId, ScoreboardDetails>>();
+                try
+                {
+                    Round = (CompetitionRound)obj["round"].Value<int>();
+                }
+                catch
+                {
+                    Round = 0;
+                }
             }
             finally
             {
