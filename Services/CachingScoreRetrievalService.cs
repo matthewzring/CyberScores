@@ -21,7 +21,7 @@ namespace CyberPatriot.DiscordBot.Services
             Backend = backend;
         }
 
-        Task IScoreRetrievalService.InitializeAsync(IServiceProvider provider) => Backend.InitializeAsync(provider);
+        public Task InitializeAsync(IServiceProvider provider) => Backend.InitializeAsync(provider);
 
         protected class HitTrackingCachedObject<TCachee>
         {

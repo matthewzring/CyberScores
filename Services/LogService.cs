@@ -14,6 +14,7 @@ namespace CyberPatriot.DiscordBot.Services
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger _discordLogger;
         private readonly ILogger _commandsLogger;
+        private readonly ILogger _applicationLogger;
 
         public LogService(DiscordSocketClient discord, CommandService commands, ILoggerFactory loggerFactory)
         {
@@ -23,18 +24,19 @@ namespace CyberPatriot.DiscordBot.Services
             _loggerFactory = ConfigureLogging(loggerFactory);
             _discordLogger = _loggerFactory.CreateLogger("discord");
             _commandsLogger = _loggerFactory.CreateLogger("commands");
+            _applicationLogger = _loggerFactory.CreateLogger("application");
 
             _discord.Log += LogDiscord;
             _commands.Log += LogCommand;
 
             // TODO use "proper" Microsoft.Extensions.Logging infrastructure, it just seems really overcomplicated for my needs
-            _discord.Log += LogDiscordErrorToOwnerDM;
+            _discord.Log += LogErrorToOwnerDM;
         }
 
-        private async Task LogDiscordErrorToOwnerDM(LogMessage message)
+        private async Task LogErrorToOwnerDM(LogMessage message)
         {
             // lower indicates higher priority
-            if (message.Severity > LogSeverity.Warning)
+            if (message.Severity > LogSeverity.Error)
             {
                 return;
             }
@@ -93,6 +95,19 @@ namespace CyberPatriot.DiscordBot.Services
                 message.Exception,
                 (_1, _2) => message.ToString(prependTimestamp: false));
             return Task.CompletedTask;
+        }
+
+        public Task LogApplicationMessageAsync(LogSeverity severity, string message, [System.Runtime.CompilerServices.CallerMemberName] string source = "Application") => LogApplicationMessageAsync(new LogMessage(severity, source, message));
+
+        public Task LogApplicationMessageAsync(LogMessage message)
+        {
+            _applicationLogger.Log(
+                LogLevelFromSeverity(message.Severity),
+                0,
+                message,
+                message.Exception,
+                (_1, _2) => message.ToString(prependTimestamp: false));
+            return LogErrorToOwnerDM(message);
         }
 
         private static LogLevel LogLevelFromSeverity(LogSeverity severity)
