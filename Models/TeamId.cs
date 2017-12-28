@@ -1,10 +1,12 @@
 using System;
+
 namespace CyberPatriot.Models
 {
     /// <summary>
     /// An immutable team identifier.
     /// </summary>
     [Newtonsoft.Json.JsonConverter(typeof(TeamIdJsonConverter))]
+    [System.ComponentModel.TypeConverter(typeof(TeamIdTypeConverter))]
     public struct TeamId : IComparable<TeamId>
     {
         public int SeasonId { get; }

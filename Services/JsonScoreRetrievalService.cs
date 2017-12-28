@@ -85,8 +85,8 @@ namespace CyberPatriot.DiscordBot.Services
             try
             {
                 JObject obj = JObject.Parse(rawJson);
-                summary = obj["summary"].Value<CompleteScoreboardSummary>();
-                teamDetails = obj["teams"].Value<Dictionary<TeamId, ScoreboardDetails>>();
+                summary = obj["summary"].ToObject<CompleteScoreboardSummary>();
+                teamDetails = obj["teams"].ToObject<Dictionary<TeamId, ScoreboardDetails>>();
                 try
                 {
                     Round = (CompetitionRound)obj["round"].Value<int>();

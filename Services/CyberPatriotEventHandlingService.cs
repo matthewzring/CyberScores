@@ -55,7 +55,7 @@ namespace CyberPatriot.DiscordBot.Services
                 // FIXME exception handling in here
 #pragma warning disable 4014
                 Utilities.PeriodicTask.Run(TeamPlacementChangeNotificationTimer, TimeSpan.FromMinutes(5), new TimerStateWrapper(), cts.Token);
-                Utilities.PeriodicTask.Run(UpdateGameBasedOnBackend, TimeSpan.FromSeconds(120), cts.Token);
+                Utilities.PeriodicTask.Run(UpdateGameBasedOnBackend, TimeSpan.FromSeconds(60), cts.Token);
 
                 // set the game initially
                 UpdateGameBasedOnBackend();
