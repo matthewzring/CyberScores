@@ -356,6 +356,16 @@ namespace CyberPatriot
             return await derivedTask;
         }
 
+        public static TService GetRoot<TRoot, TService>(this TRoot service) where TRoot : IComposingService<TService>, TService
+        {
+            TService serv = service;
+            while (serv is IComposingService<TService> tempServ)
+            {
+                serv = tempServ.Backend;
+            }
+            return serv;
+        }
+
         public static class PeriodicTask
         {
             public static async Task Run<TState>(Func<TState, Task> action, TimeSpan period, TState state, System.Threading.CancellationToken cancellationToken)
@@ -372,6 +382,22 @@ namespace CyberPatriot
             public static Task Run<TState>(Func<TState, Task> action, TimeSpan period, TState state)
             {
                 return Run(action, period, state, System.Threading.CancellationToken.None);
+            }
+
+            public static async Task Run(Func<Task> action, TimeSpan period, System.Threading.CancellationToken cancellationToken)
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    await Task.Delay(period, cancellationToken).ConfigureAwait(false);
+
+                    if (!cancellationToken.IsCancellationRequested)
+                        await action().ConfigureAwait(false);
+                }
+            }
+
+            public static Task Run(Func<Task> action, TimeSpan period)
+            {
+                return Run(action, period, System.Threading.CancellationToken.None);
             }
         }
     }

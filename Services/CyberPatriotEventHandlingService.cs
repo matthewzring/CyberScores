@@ -54,10 +54,12 @@ namespace CyberPatriot.DiscordBot.Services
             {
                 // FIXME exception handling in here
 #pragma warning disable 4014
-                Utilities.PeriodicTask.Run(TimerTick, TimeSpan.FromMinutes(5), new TimerStateWrapper(), cts.Token);
+                Utilities.PeriodicTask.Run(TeamPlacementChangeNotificationTimer, TimeSpan.FromMinutes(5), new TimerStateWrapper(), cts.Token);
+                Utilities.PeriodicTask.Run(UpdateGameBasedOnBackend, TimeSpan.FromSeconds(120), cts.Token);
 #pragma warning restore 4014
 
-                return Task.CompletedTask;
+                // set the game initially
+                return UpdateGameBasedOnBackend();
             };
             _discord.Disconnected += err =>
             {
@@ -67,7 +69,34 @@ namespace CyberPatriot.DiscordBot.Services
             return Task.CompletedTask;
         }
 
-        async Task TimerTick(TimerStateWrapper state)
+        async Task UpdateGameBasedOnBackend()
+        {
+            string staticSummary = _scoreRetriever.StaticSummaryLine;
+            if (staticSummary != null)
+            {
+                var summaryLineBuilder = new StringBuilder(staticSummary);
+                if (_scoreRetriever.IsDynamic)
+                {
+                    summaryLineBuilder.Append(" - ");
+                    var topTeam = (await _scoreRetriever.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter)).TeamList.FirstOrDefault();
+                    if (topTeam == null)
+                    {
+                        summaryLineBuilder.Append("No teams!");
+                    }
+                    else
+                    {
+                        summaryLineBuilder.AppendFormat("Top: {0}, {1}pts", topTeam.TeamId, _messageBuilder.FormattingOptions.FormatScore(topTeam.TotalScore));
+                    }
+                }
+                await _discord.SetGameAsync(summaryLineBuilder.ToString());
+            }
+            else
+            {
+                await _discord.SetGameAsync(null);
+            }
+        }
+
+        async Task TeamPlacementChangeNotificationTimer(TimerStateWrapper state)
         {
             using (var databaseContext = _database.OpenContext<Models.Guild>(false))
             using (var guildSettingEnumerator = databaseContext.FindAllAsync().GetEnumerator())

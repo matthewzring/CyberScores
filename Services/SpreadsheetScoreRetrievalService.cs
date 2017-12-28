@@ -17,6 +17,11 @@ namespace CyberPatriot.DiscordBot.Services
     /// </summary>
     public class SpreadsheetScoreRetrievalService : IScoreRetrievalService
     {
+
+        public bool IsDynamic => false;
+        public string StaticSummaryLine => "Official Released Scores";
+
+
         public SpreadsheetScoreRetrievalService()
         {
         }

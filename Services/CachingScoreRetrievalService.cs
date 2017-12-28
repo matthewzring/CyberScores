@@ -9,12 +9,15 @@ using System.Collections;
 
 namespace CyberPatriot.DiscordBot.Services
 {
-    public class CachingScoreRetrievalService : IScoreRetrievalService
+    public class CachingScoreRetrievalService : IScoreRetrievalService, IComposingService<IScoreRetrievalService>
     {
         public IScoreRetrievalService Backend { get; set; }
         public TimeSpan MaxTeamLifespan { get; set; } = TimeSpan.FromMinutes(.75);
         public TimeSpan MaxCompleteScoreboardLifespan { get; set; } = TimeSpan.FromMinutes(1);
         public int MaxCachedTeamDetails { get; set; } = 20;
+
+        public bool IsDynamic => Backend.IsDynamic;
+        public string StaticSummaryLine => Backend.StaticSummaryLine;
 
         public CachingScoreRetrievalService(IScoreRetrievalService backend)
         {

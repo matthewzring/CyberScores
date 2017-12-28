@@ -17,6 +17,9 @@ namespace CyberPatriot.DiscordBot.Services
         public string Hostname { get; private set; }
         protected HttpClient Client { get; }
 
+        public bool IsDynamic => true;
+        public string StaticSummaryLine => Hostname;
+
         public HttpScoreboardScoreRetrievalService() : this(null)
         {
 

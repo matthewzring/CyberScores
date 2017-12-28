@@ -16,6 +16,9 @@ namespace CyberPatriot.DiscordBot.Services
         protected CompleteScoreboardSummary summary;
         protected Dictionary<TeamId, ScoreboardDetails> teamDetails;
 
+        public bool IsDynamic => false;
+        public string StaticSummaryLine => "Downloaded CCS Scoreboard";
+
         public JsonScoreRetrievalService(string jsonContents)
         {
             Deserialize(jsonContents);

@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace CyberPatriot.DiscordBot.Services
 {
-    public class FallbackScoreRetrievalService : IScoreRetrievalService
+    public class FallbackScoreRetrievalService : IScoreRetrievalService, IComposingService<IScoreRetrievalService>
     {
         private List<Func<IServiceProvider, Task<IScoreRetrievalService>>> _backendOptions;
         private Action<CachingScoreRetrievalService> _cacheConfigurator;
@@ -16,9 +16,15 @@ namespace CyberPatriot.DiscordBot.Services
         private IServiceProvider _provider;
         private LogService _log;
         private DateTimeOffset _lastBackendRefresh;
+        private readonly SemaphoreSlim _backendResolutionLock = new SemaphoreSlim(1);
 
         public TimeSpan BackendLifespan { get; set; } = TimeSpan.FromMinutes(10);
         protected CachingScoreRetrievalService Backend { get; private set; }
+        IScoreRetrievalService IComposingService<IScoreRetrievalService>.Backend => Backend;
+
+        // Deliberately, these change when the backend changes
+        public bool IsDynamic => Backend.IsDynamic;
+        public string StaticSummaryLine => Backend.StaticSummaryLine;
 
         /// <summary>
         /// Initializes the FallbackScoreRetrievalService with an array of possible backends.
@@ -73,80 +79,88 @@ namespace CyberPatriot.DiscordBot.Services
 
         public async Task ResolveBackendAsync(IServiceProvider provider = null, int upperSearchBound = -1)
         {
-            provider = provider ?? _provider;
-            IScoreRetrievalService backend = null;
-            int selInd = -1;
-            for (int i = 0; i < (upperSearchBound == -1 ? _backendOptions.Count : upperSearchBound); i++)
+            await _backendResolutionLock.WaitAsync();
+            try
             {
-                var candidateBackendTaskFactory = _backendOptions[i];
-                try
+                provider = provider ?? _provider;
+                IScoreRetrievalService backend = null;
+                int selInd = -1;
+                for (int i = 0; i < (upperSearchBound == -1 ? _backendOptions.Count : upperSearchBound); i++)
                 {
-                    var candidateBackend = await candidateBackendTaskFactory(provider);
-                    if (candidateBackend == null)
+                    var candidateBackendTaskFactory = _backendOptions[i];
+                    try
                     {
+                        var candidateBackend = await candidateBackendTaskFactory(provider);
+                        if (candidateBackend == null)
+                        {
+                            continue;
+                        }
+                        // try getting a summary to "test" the backend
+                        CompleteScoreboardSummary returnedSummary = await candidateBackend.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter);
+                        if (!IsSummaryValid(returnedSummary))
+                        {
+                            // invalid summary
+                            continue;
+                        }
+                        else
+                        {
+                            // this backend is valid
+                            selInd = i;
+                            backend = candidateBackend;
+
+                            // first valid backend wins
+                            break;
+                        }
+                    }
+                    catch
+                    {
+                        // invalid summary, or failed constructor
                         continue;
                     }
-                    // try getting a summary to "test" the backend
-                    CompleteScoreboardSummary returnedSummary = await candidateBackend.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter);
-                    if (!IsSummaryValid(returnedSummary))
+                }
+
+                if (backend == null)
+                {
+                    if (upperSearchBound == -1)
                     {
-                        // invalid summary
-                        continue;
+                        // we searched all possible backends
+                        await _log.LogApplicationMessageAsync(Discord.LogSeverity.Error, "Could not find an IScoreRetrievalService for fallback, continuing with invalid service.", nameof(FallbackScoreRetrievalService));
+                        throw new InvalidOperationException("No valid IScoreRetrievalService found.");
                     }
                     else
                     {
-                        // this backend is valid
-                        selInd = i;
-                        backend = candidateBackend;
-
-                        // first valid backend wins
-                        break;
+                        // we tried and failed to replace the backend with a higher-priority one, so now check lower priority ones
+                        // use Backend.Backend to get the cache's backend
+                        if (IsSummaryValid(await Backend.Backend.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter)))
+                        {
+                            // update the refresh time to now, keep the existing backend
+                            _lastBackendRefresh = DateTimeOffset.UtcNow;
+                        }
+                        else
+                        {
+                            // current backend has failed: try again but allow deferring to lower-priority things
+                            await ResolveBackendAsync(provider, -1);
+                        }
+                        return;
                     }
                 }
-                catch
-                {
-                    // invalid summary, or failed constructor
-                    continue;
-                }
-            }
 
-            if (backend == null)
+                _selectedBackendIndex = selInd;
+
+                // wrap it in a cache
+                var csrs = new CachingScoreRetrievalService(backend);
+                _cacheConfigurator(csrs);
+                Backend = csrs;
+                _lastBackendRefresh = DateTimeOffset.UtcNow;
+
+                // initialize the backend properly
+                // this initializes the cache, which passes through initialization to the real backend
+                await Backend.InitializeAsync(provider);
+            }
+            finally
             {
-                if (upperSearchBound == -1)
-                {
-                    // we searched all possible backends
-                    await _log.LogApplicationMessageAsync(Discord.LogSeverity.Error, "Could not find an IScoreRetrievalService for fallback, continuing with invalid service.", nameof(FallbackScoreRetrievalService));
-                    throw new InvalidOperationException("No valid IScoreRetrievalService found.");
-                }
-                else
-                {
-                    // we tried and failed to replace the backend with a higher-priority one, so now check lower priority ones
-                    // use Backend.Backend to get the cache's backend
-                    if (IsSummaryValid(await Backend.Backend.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter)))
-                    {
-                        // update the refresh time to now, keep the existing backend
-                        _lastBackendRefresh = DateTimeOffset.UtcNow;
-                    }
-                    else
-                    {
-                        // current backend has failed: try again but allow deferring to lower-priority things
-                        await ResolveBackendAsync(provider, -1);
-                    }
-                    return;
-                }
+                _backendResolutionLock.Release();
             }
-
-            _selectedBackendIndex = selInd;
-
-            // wrap it in a cache
-            var csrs = new CachingScoreRetrievalService(backend);
-            _cacheConfigurator(csrs);
-            Backend = csrs;
-            _lastBackendRefresh = DateTimeOffset.UtcNow;
-
-            // initialize the backend properly
-            // this initializes the cache, which passes through initialization to the real backend
-            await Backend.InitializeAsync(provider);
         }
 
         public Task InitializeAsync(IServiceProvider provider) => ResolveBackendAsync(provider);
@@ -169,6 +183,11 @@ namespace CyberPatriot.DiscordBot.Services
             {
                 // well this is awkward
                 await _log.LogApplicationMessageAsync(Discord.LogSeverity.Warning, "Returning known bad scoreboard summary!", nameof(FallbackScoreRetrievalService));
+                // don't block the caller
+                // exceptions will NOT be caught (!) but there's a log call in there which should be Good Enough(TM) in problematic cases
+#pragma warning disable 4014
+                ResolveBackendAsync(upperSearchBound: _selectedBackendIndex);
+#pragma warning restore 4014
             }
             return scoreboardDetails;
         }
