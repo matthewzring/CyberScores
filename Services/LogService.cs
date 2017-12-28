@@ -33,32 +33,37 @@ namespace CyberPatriot.DiscordBot.Services
             _discord.Log += LogErrorToOwnerDM;
         }
 
-        private async Task LogErrorToOwnerDM(LogMessage message)
+        private Task LogErrorToOwnerDM(LogMessage message)
         {
             // lower indicates higher priority
-            if (message.Severity > LogSeverity.Error)
+            if (!((message.Severity <= LogSeverity.Warning && message.Exception != null) || message.Severity <= LogSeverity.Error))
             {
-                return;
+                return Task.CompletedTask;
             }
 
-            var appInfo = await _discord.GetApplicationInfoAsync();
-            var ownerDmChannel = await appInfo?.Owner?.GetOrCreateDMChannelAsync();
-            if (ownerDmChannel == null)
+            // per LogCommand (example code): "Don't risk blocking the logging task by awaiting a message send; ratelimits!?"    
+            var _ = Task.Run(async () =>
             {
-                return;
-            }
+                var appInfo = await _discord.GetApplicationInfoAsync();
+                var ownerDmChannel = await appInfo?.Owner?.GetOrCreateDMChannelAsync();
+                if (ownerDmChannel == null)
+                {
+                    return;
+                }
 
-            // backtick, backtick, zero width space, backtick
-            // this way it won't break our markdown
-            const string threeBackticksEscaped = "``​`";
+                // backtick, backtick, zero width space, backtick
+                // this way it won't break our markdown
+                const string threeBackticksEscaped = "``​`";
 
-            // per LogCommand (example code): "Don't risk blocking the logging task by awaiting a message send; ratelimits!?"
-            var dummyTask = ownerDmChannel.SendMessageAsync(string.Empty,
-            embed: new EmbedBuilder()
-                .WithTitle("Application Message: " + message.Severity.ToStringCamelCaseToSpace() + (message.Exception != null ? ": " + message.Exception.GetType().Name : string.Empty))
-                .WithDescription("```" + message.ToString().Replace("```", threeBackticksEscaped) + "```")
-                .WithColor(Color.Red)
-                .Build());
+                await ownerDmChannel.SendMessageAsync(string.Empty,
+                embed: new EmbedBuilder()
+                    .WithTitle("Application Message: " + message.Severity.ToStringCamelCaseToSpace() + (message.Exception != null ? ": " + message.Exception.GetType().Name : string.Empty))
+                    .WithDescription("```" + message.ToString().Replace("```", threeBackticksEscaped) + "```")
+                    .WithColor(Color.Red)
+                    .Build());
+            });
+
+            return Task.CompletedTask;
         }
 
         private ILoggerFactory ConfigureLogging(ILoggerFactory factory)
