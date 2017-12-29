@@ -35,7 +35,7 @@ namespace CyberPatriot.DiscordBot.Modules
                     guildSettings.Prefix = newPrefix;
                     await context.WriteAsync();
                 }
-                await ReplyAsync("Updated prefix.");
+                await ReplyAsync($"Prefix updated to `{newPrefix}` for this guild.");
             }
 
             [Command("remove"), Alias("delete", "unset")]
@@ -50,7 +50,7 @@ namespace CyberPatriot.DiscordBot.Modules
                     guildSettings.Prefix = null;
                     await context.WriteAsync();
                 }
-                await ReplyAsync("Removed prefix. Use an @mention to invoke commands.");
+                await ReplyAsync("Removed prefix for this guild. Use an @mention to invoke commands.");
             }
         }
 
