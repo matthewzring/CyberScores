@@ -123,11 +123,11 @@ namespace CyberPatriot.DiscordBot.Modules
             [Command("remove"), Alias("delete", "unwatch")]
             [RequireUserPermission(ChannelPermission.ManageChannel, Group = "RolePermission")]
             [RequireOwner(Group = "RolePermission")]
-            [Summary("Unwatches a team from placement change notifications.")]
-            public async Task RemoveTeamAsync([Summary("The team to unwatch.")] TeamId team, [Summary("The channel in which the team will cease to be monitored. Defaults to the current channel.")] ITextChannel channel = null)
+            [Summary("Unwatches a team from placement change notifications in this channel.")]
+            public async Task RemoveTeamAsync([Summary("The team to unwatch.")] TeamId team)
             {
                 // guaranteed guild context
-                channel = channel ?? (Context.Channel as ITextChannel);
+                var channel = Context.Channel as ITextChannel;
                 using (var dbContext = Database.OpenContext<Models.Guild>(true))
                 {
                     var guildSettings = await Guild.OpenWriteGuildSettingsAsync(dbContext, Context.Guild.Id);
@@ -153,11 +153,11 @@ namespace CyberPatriot.DiscordBot.Modules
             [Command("add"), Alias("watch")]
             [RequireUserPermission(ChannelPermission.ManageChannel, Group = "RolePermission")]
             [RequireOwner(Group = "RolePermission")]
-            [Summary("Add a team for placement change monitoring. When this team changes placement (either rises or falls) on the scoreboard, an announcement will be made in the given channel.")]
-            public async Task WatchTeamAsync([Summary("The team to monitor.")] TeamId team, [Summary("The channel in which the team will be monitored. Defaults to the current channel.")] ITextChannel channel = null)
+            [Summary("Add a team for placement change monitoring. When this team changes placement (either rises or falls) on the scoreboard, an announcement will be made in this channel.")]
+            public async Task WatchTeamAsync([Summary("The team to monitor.")] TeamId team)
             {
                 // guaranteed guild context
-                channel = channel ?? (Context.Channel as ITextChannel);
+                var channel = Context.Channel as ITextChannel;
                 using (var dbContext = Database.OpenContext<Models.Guild>(true))
                 {
                     var guildSettings = await Guild.OpenWriteGuildSettingsAsync(dbContext, Context.Guild.Id);
