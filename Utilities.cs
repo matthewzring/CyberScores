@@ -197,6 +197,25 @@ namespace CyberPatriot
             return builder;
         }
 
+        public static async Task<Discord.EmbedBuilder> AddFieldAsync(this Discord.EmbedBuilder builder, Func<Discord.EmbedFieldBuilder, Task> fieldBuilder)
+        {
+            var field = new Discord.EmbedFieldBuilder();
+            await fieldBuilder(field);
+            builder.AddField(field);
+            return builder;
+        }
+
+        public static async Task<Discord.EmbedBuilder> AddFieldAsync(this Task<Discord.EmbedBuilder> builderTask, Func<Discord.EmbedFieldBuilder, Task> fieldBuilder)
+        {
+            var field = new Discord.EmbedFieldBuilder();
+            var builder = await builderTask;
+            await fieldBuilder(field);
+            builder.AddField(field);
+            return builder;
+        }
+
+        public static async Task<Discord.Embed> BuildAsync(this Task<Discord.EmbedBuilder> builderTask) => (await builderTask).Build();
+
         /// <summary>
         /// Finds a read-only predicated list from a data persistence service, managing the context automatically.
         /// ToIList is called on the whole thing.
@@ -370,6 +389,22 @@ namespace CyberPatriot
                 serv = tempServ.Backend;
             }
             return serv;
+        }
+
+        public static string JoinNonNullNonEmpty(string joinString, params object[] objects) => JoinNonNullNonEmpty(joinString, objects?.Select(o => o?.ToString()));
+
+        public static string JoinNonNullNonEmpty(string joinString, IEnumerable<string> objects) => string.Join(joinString, objects?.Where(s => !string.IsNullOrWhiteSpace(s)));
+
+        public static string GetAvatarUrlOrDefault(this Discord.IUser user) => (user ?? throw new NullReferenceException()).GetAvatarUrl() ?? $"https://cdn.discordapp.com/embed/avatars/{user.DiscriminatorValue % 5}.png";
+
+        public static string AppendPrepend(this string baseString, string prev, string next = null)
+        {
+            if (next == null)
+            {
+                next = prev;
+            }
+
+            return prev + baseString + next;
         }
 
         public static class PeriodicTask

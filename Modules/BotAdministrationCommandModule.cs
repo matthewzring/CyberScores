@@ -13,9 +13,27 @@ namespace CyberPatriot.DiscordBot.Modules
 {
     public class BotAdministrationCommandModule : ModuleBase
     {
+        public IScoreRetrievalService ScoreService { get; set; }
+        public IDataPersistenceService Database { get; set; }
 
         [Command("ping"), Summary("Pings the bot. Responds with the internal socket client's estimated latency, if available.")]
         public Task PingAsync() => ReplyAsync("Pong!" + (Context.Client is Discord.WebSocket.DiscordSocketClient socketClient ? " " + socketClient.Latency + "ms" : string.Empty));
+
+        [Command("info"), Alias("about"), Summary("Returns information about the bot.")]
+        public async Task InfoAsync()
+        {
+            var appinfo = (await Context.Client.GetApplicationInfoAsync());
+            await ReplyAsync(string.Empty, embed: await new EmbedBuilder()
+                .WithAuthor(Context.Client.CurrentUser.Username, Context.Client.CurrentUser.GetAvatarUrlOrDefault())
+                .WithDescription("A bot for interaction with CyberPatriot scoreboards.\n"
+                + "[Open source, on GitHub!](https://github.com/glen3b/CyPatScoreboardBot)")
+                // Assumes the owner is the author
+                .WithFooter(Utilities.JoinNonNullNonEmpty(" | ", appinfo?.Owner?.Username?.AppendPrepend("Made by ", string.Empty), "Written in C# using Discord.Net"), appinfo?.Owner?.GetAvatarUrlOrDefault())
+                .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Prefix").WithValue((Context.Guild != null ? (await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id))?.Prefix?.AppendPrepend("`") : null) ?? Context.Client.CurrentUser.Mention))
+                .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Teams").WithValue((await ScoreService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter)).TeamList.Count))
+                .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Guilds").WithValue((await Context.Client.GetGuildsAsync()).Count))
+                .BuildAsync());
+        }
 
         [Command("kill"), Alias("die"), RequireOwner]
         [Summary("Terminates the bot instance.")]
@@ -40,9 +58,6 @@ namespace CyberPatriot.DiscordBot.Modules
             File.Delete(tempFileTargetName);
             await ReplyAsync("Avatar updated!");
         }
-
-        public IScoreRetrievalService ScoreService { get; set; }
-        public IDataPersistenceService Database { get; set; }
 
         [Command("exportscoreboard"), Alias("savescoreboard", "exportscoreboardjson", "downloadscoreboard")]
         [RequireOwner]
