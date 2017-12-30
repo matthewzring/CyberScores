@@ -16,6 +16,7 @@ namespace CyberPatriot.DiscordBot.Services
         IList<ScoreboardSummaryEntry> GetPeerTeams(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardDetails teamDetails);
 
         string GetTitle(ScoreboardSummaryEntry team);
+        string GetDescription(ScoreboardSummaryEntry team);
         Task InitializeAsync(IServiceProvider provider);
     }
 
@@ -44,12 +45,9 @@ namespace CyberPatriot.DiscordBot.Services
             }
         }
 
-        public string GetTitle(ScoreboardSummaryEntry team)
-        {
-            string category = GetCategory(team.TeamId);
-            string divOrCategoryAndTier = category == null ? (team.Division.ToStringCamelCaseToSpace() + (team.Tier == null ? string.Empty : (" " + team.Tier))) : ((team.Tier == null ? string.Empty : team.Tier + " ") + category);
-            return divOrCategoryAndTier + " Team " + team.TeamId;
-        }
+        public string GetTitle(ScoreboardSummaryEntry team) => $"Team {team.TeamId}";
+
+        public string GetDescription(ScoreboardSummaryEntry team) => $"{GetCategory(team.TeamId) ?? team.Division.ToStringCamelCaseToSpace()}{(team.Tier == null ? "" : $" | {team.Tier}")} | {team.Location}";
 
         protected virtual string GetCategory(TeamId allServiceTeam)
         {
@@ -139,7 +137,7 @@ namespace CyberPatriot.DiscordBot.Services
                 // silent fail
                 return divisionScoreboard.TeamList;
             }
-            
+
             // there might be some A.S. teams whose categories we don't know
             // they get treated as not-my-problem, that is, not part of my category
             return divisionScoreboard.TeamList.Where(t => GetCategory(t.TeamId) == myCategory).ToIList();
