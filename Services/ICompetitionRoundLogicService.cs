@@ -15,8 +15,7 @@ namespace CyberPatriot.DiscordBot.Services
 
         IList<ScoreboardSummaryEntry> GetPeerTeams(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamDetails);
 
-        string GetTitle(ScoreboardSummaryEntry team);
-        string GetDescription(ScoreboardSummaryEntry team);
+        string GetEffectiveDivisionDescriptor(ScoreboardSummaryEntry team);
         Task InitializeAsync(IServiceProvider provider);
     }
 
@@ -45,9 +44,7 @@ namespace CyberPatriot.DiscordBot.Services
             }
         }
 
-        public string GetTitle(ScoreboardSummaryEntry team) => $"Team {team.TeamId}";
-
-        public string GetDescription(ScoreboardSummaryEntry team) => $"{GetCategory(team.TeamId) ?? team.Division.ToStringCamelCaseToSpace()}{(team.Tier == null ? "" : $" | {team.Tier}")} | {team.Location}";
+        public string GetEffectiveDivisionDescriptor(ScoreboardSummaryEntry team) => GetCategory(team.TeamId) ?? team.Division.ToStringCamelCaseToSpace();
 
         protected virtual string GetCategory(TeamId allServiceTeam)
         {
