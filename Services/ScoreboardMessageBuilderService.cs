@@ -160,29 +160,13 @@ namespace CyberPatriot.DiscordBot.Services
                 {
                     int myIndexInPeerList = peerTeams.IndexOfWhere(entr => entr.TeamId == teamScore.TeamId);
 
-                    StringBuilder rankEmbedBuilder = new StringBuilder();
-                    rankEmbedBuilder.AppendLine(Utilities.AppendOrdinalSuffix(myIndexInPeerList + 1) + " of " + Utilities.Pluralize("peer team", peerTeams.Count));
-
-                    // non-peer rankings use parentheticals - peer rankings are used for the rest of the logic
-                    // if peer teams != div+tier teams
-                    if (!myDivMyTierTeams.Select(t => t.TeamId).OrderBy(t => t).SequenceEqual(peerTeams.Select(t => t.TeamId).OrderBy(t => t)))
-                    {
-                        // tier ranking, differing from peer ranking
-                        rankEmbedBuilder.Append('(').AppendLine(Utilities.AppendOrdinalSuffix(myDivMyTierTeams.IndexOf(teamScore.Summary) + 1) + " of " + Utilities.Pluralize("team", myDivMyTierTeams.Count) + " in tier)");
-                    }
-                    if (totalDivisionScoreboard.TeamList.Count > peerTeams.Count)
-                    {
-                        // division ranking, differing from peer ranking
-                        rankEmbedBuilder.Append('(').AppendLine(Utilities.AppendOrdinalSuffix(totalDivisionScoreboard.TeamList.IndexOf(teamScore.Summary) + 1) + " of " + Utilities.Pluralize("team", totalDivisionScoreboard.TeamList.Count) + " in division)");
-                    }
-                    builder.AddInlineField("Rank", rankEmbedBuilder.ToString());
-
                     double rawPercentile = 1.0 - (((double)peerTeams.Count(peer => peer.TotalScore >= teamScore.Summary.TotalScore)) / peerTeams.Count);
                     int multipliedPercentile = (int)Math.Round(rawPercentile * 1000);
                     int intPart = multipliedPercentile / 10;
                     int floatPart = multipliedPercentile % 10;
 
-                    builder.AddInlineField("Percentile", $"{(floatPart == 0 ? Utilities.AppendOrdinalSuffix(intPart) : $"{intPart}.{Utilities.AppendOrdinalSuffix(floatPart)}")} percentile");
+                    builder.AddInlineField("Rank", $"{Utilities.AppendOrdinalSuffix(myIndexInPeerList + 1)} place\n{(floatPart == 0 ? Utilities.AppendOrdinalSuffix(intPart) : $"{intPart}.{Utilities.AppendOrdinalSuffix(floatPart)}")} percentile");
+
                     StringBuilder marginBuilder = new StringBuilder();
                     if (myIndexInPeerList > 0)
                     {
@@ -199,8 +183,26 @@ namespace CyberPatriot.DiscordBot.Services
                         int marginAboveUnder = teamScore.Summary.TotalScore - peerTeams[myIndexInPeerList + 1].TotalScore;
                         marginBuilder.AppendLine($"{ScoreRetriever.FormattingOptions.FormatLabeledScoreDifference(marginAboveUnder)} above {Utilities.AppendOrdinalSuffix(myIndexInPeerList + 2)} place");
                     }
+
                     // TODO division- and round-specific margins
                     builder.AddInlineField("Margin", marginBuilder.ToString());
+
+                    StringBuilder standingFieldBuilder = new StringBuilder();
+                    standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(myIndexInPeerList + 1) + " of " + Utilities.Pluralize("peer team", peerTeams.Count));
+
+                    // non-peer rankings use parentheticals - peer rankings are used for the rest of the logic
+                    // if peer teams != div+tier teams
+                    if (myDivMyTierTeams.Count != peerTeams.Count && !myDivMyTierTeams.Select(t => t.TeamId).OrderBy(t => t).SequenceEqual(peerTeams.Select(t => t.TeamId).OrderBy(t => t)))
+                    {
+                        // tier ranking, differing from peer ranking
+                        standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(myDivMyTierTeams.IndexOf(teamScore.Summary) + 1) + " of " + Utilities.Pluralize("team", myDivMyTierTeams.Count) + " in tier");
+                    }
+                    if (totalDivisionScoreboard.TeamList.Count > peerTeams.Count)
+                    {
+                        // division ranking, differing from peer ranking
+                        standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(totalDivisionScoreboard.TeamList.IndexOf(teamScore.Summary) + 1) + " of " + Utilities.Pluralize("team", totalDivisionScoreboard.TeamList.Count) + " in division");
+                    }
+                    builder.AddInlineField("Standing", standingFieldBuilder.ToString());
                 }
             }
 
