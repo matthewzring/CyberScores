@@ -239,7 +239,13 @@ namespace CyberPatriot
 
         public static string GetOrdinalSuffix(int number)
         {
-            switch (number)
+            int tensCheck = number % 100;
+            if (tensCheck > 10 && tensCheck < 20)
+            {
+                return "th";
+            }
+
+            switch (number % 10)
             {
                 case 1:
                     return "st";
