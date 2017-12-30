@@ -25,10 +25,9 @@ namespace CyberPatriot.DiscordBot.Modules
             var appinfo = (await Context.Client.GetApplicationInfoAsync());
             await ReplyAsync(string.Empty, embed: await new EmbedBuilder()
                 .WithAuthor(Context.Client.CurrentUser.Username, Context.Client.CurrentUser.GetAvatarUrlOrDefault())
-                .WithDescription("A bot for interaction with CyberPatriot scoreboards.\n"
-                + "[Open source, on GitHub!](https://github.com/glen3b/CyPatScoreboardBot)")
-                // Assumes the owner is the author
-                .WithFooter(Utilities.JoinNonNullNonEmpty(" | ", appinfo?.Owner?.Username?.AppendPrepend("Made by ", string.Empty), "Written in C# using Discord.Net"), appinfo?.Owner?.GetAvatarUrlOrDefault())
+                .WithDescription("**Purpose:** A bot for interaction with CyberPatriot scoreboards.\n"
+                + "**Source Code:** [On GitHub](https://github.com/glen3b/CyPatScoreboardBot)")
+                .WithFooter("Made by glen3b | Written in C# using Discord.Net", "https://avatars.githubusercontent.com/glen3b")
                 .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Prefix").WithValue((Context.Guild != null ? (await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id))?.Prefix?.AppendPrepend("`") : null) ?? Context.Client.CurrentUser.Mention))
                 .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Teams").WithValue((await ScoreService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter)).TeamList.Count))
                 .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Guilds").WithValue((await Context.Client.GetGuildsAsync()).Count))
