@@ -13,7 +13,7 @@ namespace CyberPatriot.DiscordBot.Services
     {
         CompetitionRound InferRound(DateTimeOffset date);
 
-        IList<ScoreboardSummaryEntry> GetPeerTeams(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardDetails teamDetails);
+        IList<ScoreboardSummaryEntry> GetPeerTeams(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamDetails);
 
         string GetTitle(ScoreboardSummaryEntry team);
         Task InitializeAsync(IServiceProvider provider);
@@ -97,11 +97,11 @@ namespace CyberPatriot.DiscordBot.Services
             return 0;
         }
 
-        public IList<ScoreboardSummaryEntry> GetPeerTeams(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardDetails teamDetails)
+        public IList<ScoreboardSummaryEntry> GetPeerTeams(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamDetails)
         {
             // make a clone, we'll mutate this later but it doesn't matter because it's a local copy
-            divisionScoreboard = divisionScoreboard.Clone().WithFilter(teamDetails.Summary.Division, null);
-            if (teamDetails.Summary.Division == Division.MiddleSchool)
+            divisionScoreboard = divisionScoreboard.Clone().WithFilter(teamDetails.Division, null);
+            if (teamDetails.Division == Division.MiddleSchool)
             {
                 // middle school doesn't have tiers or categories
                 return divisionScoreboard.TeamList;
@@ -109,16 +109,16 @@ namespace CyberPatriot.DiscordBot.Services
 
             // open/service
 
-            if ((teamDetails.Summary.Division == Division.Open && round > CompetitionRound.Round2) || (teamDetails.Summary.Division == Division.AllService && round == CompetitionRound.Round3))
+            if ((teamDetails.Division == Division.Open && round > CompetitionRound.Round2) || (teamDetails.Division == Division.AllService && round == CompetitionRound.Round3))
             {
                 // In open past R2, tier matters, but that's it
                 // In all service R3, category doesn't* matter, just tier
                 // See issue #14
-                return divisionScoreboard.WithFilter(teamDetails.Summary.Division, teamDetails.Summary.Tier).TeamList;
+                return divisionScoreboard.WithFilter(teamDetails.Division, teamDetails.Tier).TeamList;
             }
 
             // open/service, service: category matters; open: no tiers
-            if (teamDetails.Summary.Division == Division.Open)
+            if (teamDetails.Division == Division.Open)
             {
                 // either R1, R2, or "R0" (unknown round)
                 // safe to return the whole division as a peer list
@@ -129,7 +129,7 @@ namespace CyberPatriot.DiscordBot.Services
             if (round > CompetitionRound.Round2)
             {
                 // filter by tier
-                divisionScoreboard.WithFilter(Division.AllService, teamDetails.Summary.Tier);
+                divisionScoreboard.WithFilter(Division.AllService, teamDetails.Tier);
             }
 
             // just need to filter the list by category

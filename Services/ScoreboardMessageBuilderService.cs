@@ -154,7 +154,7 @@ namespace CyberPatriot.DiscordBot.Services
                 CompleteScoreboardSummary totalDivisionScoreboard = peerScoreboard.Clone().WithFilter(teamScore.Summary.Division, null);
 
                 IList<ScoreboardSummaryEntry> myDivMyTierTeams = totalDivisionScoreboard.Clone().WithFilter(teamScore.Summary.Division, teamScore.Summary.Tier).TeamList;
-                IList<ScoreboardSummaryEntry> peerTeams = CompetitionLogic.GetPeerTeams(ScoreRetriever.Round, totalDivisionScoreboard, teamScore);
+                IList<ScoreboardSummaryEntry> peerTeams = CompetitionLogic.GetPeerTeams(ScoreRetriever.Round, totalDivisionScoreboard, teamScore.Summary);
                 if (peerTeams.Count > 0)
                 {
                     int myIndexInPeerList = peerTeams.IndexOfWhere(entr => entr.TeamId == teamScore.TeamId);

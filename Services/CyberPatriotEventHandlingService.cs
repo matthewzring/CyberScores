@@ -23,11 +23,12 @@ namespace CyberPatriot.DiscordBot.Services
         private IConfiguration _config;
         private ScoreboardMessageBuilderService _messageBuilder;
         private IScoreRetrievalService _scoreRetriever;
+        private ICompetitionRoundLogicService _competitionLogic;
         protected Regex _teamUrlRegex;
 
         public CyberPatriotEventHandlingService(IServiceProvider provider, DiscordSocketClient discord,
             IDataPersistenceService database, IConfiguration config, ScoreboardMessageBuilderService messageBuilder,
-            IScoreRetrievalService scoreRetriever)
+            IScoreRetrievalService scoreRetriever, ICompetitionRoundLogicService competitionLogic)
         {
             _discord = discord;
             _provider = provider;
@@ -35,6 +36,7 @@ namespace CyberPatriot.DiscordBot.Services
             _config = config;
             _messageBuilder = messageBuilder;
             _scoreRetriever = scoreRetriever;
+            _competitionLogic = competitionLogic;
 
             _discord.MessageReceived += MessageReceived;
             _teamUrlRegex = new Regex("https?://" + _config["defaultScoreboardHostname"].Replace(".", "\\.") +
@@ -43,7 +45,6 @@ namespace CyberPatriot.DiscordBot.Services
 
         class TimerStateWrapper
         {
-            public Dictionary<ScoreboardFilterInfo, CompleteScoreboardSummary> PreviousTeamLists;
             public Dictionary<TeamId, int> PreviousTeamListIndexes = new Dictionary<TeamId, int>();
         }
 
@@ -103,8 +104,7 @@ namespace CyberPatriot.DiscordBot.Services
             using (var databaseContext = _database.OpenContext<Models.Guild>(false))
             using (var guildSettingEnumerator = databaseContext.FindAllAsync().GetEnumerator())
             {
-                Dictionary<ScoreboardFilterInfo, CompleteScoreboardSummary> scoreboards =
-                    new Dictionary<ScoreboardFilterInfo, CompleteScoreboardSummary>();
+                CompleteScoreboardSummary masterScoreboard = null;
                 Dictionary<TeamId, int> teamIdsToPeerIndexes = new Dictionary<TeamId, int>();
                 while (await guildSettingEnumerator.MoveNext())
                 {
@@ -115,7 +115,7 @@ namespace CyberPatriot.DiscordBot.Services
                         return;
                     }
 
-                    SocketGuild guild = _discord.GetGuild(guildSettings.Id);
+                    IGuild guild = _discord.GetGuild(guildSettings.Id);
                     foreach (var chanSettings in guildSettings.ChannelSettings.Values)
                     {
                         if (chanSettings?.MonitoredTeams == null || chanSettings.MonitoredTeams.Count == 0)
@@ -123,18 +123,13 @@ namespace CyberPatriot.DiscordBot.Services
                             continue;
                         }
 
-                        SocketGuildChannel rawChan = guild.GetChannel(chanSettings.Id);
-                        if (!(rawChan is SocketTextChannel chan))
+                        IGuildChannel rawChan = await guild.GetChannelAsync(chanSettings.Id);
+                        if (!(rawChan is ITextChannel chan))
                         {
                             continue;
                         }
 
-                        if (!scoreboards.TryGetValue(ScoreboardFilterInfo.NoFilter,
-                            out CompleteScoreboardSummary masterScoreboard))
-                        {
-                            masterScoreboard = await _scoreRetriever.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter);
-                            scoreboards[ScoreboardFilterInfo.NoFilter] = masterScoreboard;
-                        }
+                        masterScoreboard = await _scoreRetriever.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter);
 
                         foreach (TeamId monitored in chanSettings.MonitoredTeams)
                         {
@@ -145,13 +140,7 @@ namespace CyberPatriot.DiscordBot.Services
                                 continue;
                             }
                             ScoreboardSummaryEntry monitoredEntry = masterScoreboard.TeamList[masterScoreboardIndex];
-                            var peerFilter = new ScoreboardFilterInfo(monitoredEntry.Division, monitoredEntry.Tier);
-                            if (!scoreboards.TryGetValue(peerFilter, out CompleteScoreboardSummary peerScoreboard))
-                            {
-                                peerScoreboard = masterScoreboard.Clone().WithFilter(peerFilter);
-                                scoreboards[peerFilter] = peerScoreboard;
-                            }
-                            int peerIndex = peerScoreboard.TeamList.IndexOf(monitoredEntry);
+                            int peerIndex = _competitionLogic.GetPeerTeams(_scoreRetriever.Round, masterScoreboard, monitoredEntry).IndexOf(monitoredEntry);
                             teamIdsToPeerIndexes[monitored] = peerIndex;
 
                             // we've obtained all information, now compare to past data
@@ -188,7 +177,6 @@ namespace CyberPatriot.DiscordBot.Services
                     }
                 }
                 state.PreviousTeamListIndexes = teamIdsToPeerIndexes;
-                state.PreviousTeamLists = scoreboards;
             }
         }
 
