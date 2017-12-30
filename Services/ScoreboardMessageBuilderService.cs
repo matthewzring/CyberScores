@@ -82,8 +82,9 @@ namespace CyberPatriot.DiscordBot.Services
             }
 
             var builder = new EmbedBuilder()
-                .WithTimestamp(teamScore.SnapshotTimestamp)
-                .WithTitle(CompetitionLogic.GetTitle(teamScore.Summary));
+                          .WithTimestamp(teamScore.SnapshotTimestamp)
+                          .WithTitle(CompetitionLogic.GetTitle(teamScore.Summary))
+                          .WithDescription(CompetitionLogic.GetDescription(teamScore.Summary));
 
             // scoreboard link
             if (teamScore.OriginUri != null)
