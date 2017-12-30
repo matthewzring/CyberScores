@@ -177,7 +177,11 @@ namespace CyberPatriot.DiscordBot.Services
                     builder.AddInlineField("Rank", rankEmbedBuilder.ToString());
 
                     double rawPercentile = 1.0 - (((double)peerTeams.Count(peer => peer.TotalScore >= teamScore.Summary.TotalScore)) / peerTeams.Count);
-                    builder.AddInlineField("Percentile", Math.Round(rawPercentile * 1000) / 10 + "th percentile");
+                    int multipliedPercentile = (int)Math.Round(rawPercentile * 1000);
+                    int intPart = multipliedPercentile / 10;
+                    int floatPart = multipliedPercentile % 10;
+
+                    builder.AddInlineField("Percentile", $"{(floatPart == 0 ? Utilities.AppendOrdinalSuffix(intPart) : $"{intPart}.{Utilities.AppendOrdinalSuffix(floatPart)}")} percentile");
                     StringBuilder marginBuilder = new StringBuilder();
                     if (myIndexInPeerList > 0)
                     {
