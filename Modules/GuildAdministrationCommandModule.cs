@@ -17,13 +17,14 @@ namespace CyberPatriot.DiscordBot.Modules
     public class GuildAdministrationCommandModule : ModuleBase
     {
         [Group("prefix")]
+        [RequireUserPermission(GuildPermission.Administrator, Group = "RolePermission")]
+        [RequireOwner(Group = "RolePermission")]
+        [RequireContext(ContextType.Guild)]
         public class PrefixModule : ModuleBase
         {
             public IDataPersistenceService Database { get; set; }
 
             [Command("set")]
-            [RequireUserPermission(GuildPermission.Administrator)]
-            [RequireContext(ContextType.Guild)]
             [Summary("Sets the prefix for this guild.")]
             public async Task SetPrefixAsync([Summary("The new prefix for this guild.")] string newPrefix)
             {
@@ -37,8 +38,6 @@ namespace CyberPatriot.DiscordBot.Modules
             }
 
             [Command("remove"), Alias("delete", "unset")]
-            [RequireUserPermission(GuildPermission.Administrator)]
-            [RequireContext(ContextType.Guild)]
             [Summary("Removes the prefix for this guild, reverting to the @mention default.")]
             public async Task RemoveAsync()
             {
@@ -53,13 +52,14 @@ namespace CyberPatriot.DiscordBot.Modules
         }
 
         [Group("timezone"), Alias("tz")]
+        [RequireUserPermission(GuildPermission.Administrator, Group = "RolePermission")]
+        [RequireOwner(Group = "RolePermission")]
+        [RequireContext(ContextType.Guild)]
         public class TimezoneModule : ModuleBase
         {
             public PreferenceProviderService PreferenceService { get; set; }
 
             [Command("set")]
-            [RequireUserPermission(GuildPermission.Administrator)]
-            [RequireContext(ContextType.Guild)]
             [Summary("Sets the default timezone for this guild.")]
             public async Task SetTimezoneAsync([Summary("The timezone in which times will be displayed by default.")] string newTimezone)
             {
@@ -83,8 +83,6 @@ namespace CyberPatriot.DiscordBot.Modules
             }
 
             [Command("remove"), Alias("delete", "unset")]
-            [RequireUserPermission(GuildPermission.Administrator)]
-            [RequireContext(ContextType.Guild)]
             [Summary("Removes the designated timezone for this guild, reverting the default to UTC.")]
             public async Task RemoveTimezone()
             {
@@ -94,12 +92,12 @@ namespace CyberPatriot.DiscordBot.Modules
         }
 
         [Group("teammonitor")]
+        [RequireContext(ContextType.Guild)]
         public class TeamMonitorModule : ModuleBase
         {
             public IDataPersistenceService Database { get; set; }
 
             [Command("list")]
-            [RequireContext(ContextType.Guild)]
             [Summary("Lists all teams which are monitored in a given channel.")]
             public async Task ListTeamsAsync([Summary("The channel to list teams for. Defaults to the current channel.")] ITextChannel channel = null)
             {
@@ -123,8 +121,8 @@ namespace CyberPatriot.DiscordBot.Modules
             }
 
             [Command("remove"), Alias("delete", "unwatch")]
-            [RequireUserPermission(ChannelPermission.ManageChannel)]
-            [RequireContext(ContextType.Guild)]
+            [RequireUserPermission(ChannelPermission.ManageChannel, Group = "RolePermission")]
+            [RequireOwner(Group = "RolePermission")]
             [Summary("Unwatches a team from placement change notifications.")]
             public async Task RemoveTeamAsync([Summary("The team to unwatch.")] TeamId team, [Summary("The channel in which the team will cease to be monitored. Defaults to the current channel.")] ITextChannel channel = null)
             {
@@ -153,8 +151,8 @@ namespace CyberPatriot.DiscordBot.Modules
             }
 
             [Command("add"), Alias("watch")]
-            [RequireUserPermission(ChannelPermission.ManageChannel)]
-            [RequireContext(ContextType.Guild)]
+            [RequireUserPermission(ChannelPermission.ManageChannel, Group = "RolePermission")]
+            [RequireOwner(Group = "RolePermission")]
             [Summary("Add a team for placement change monitoring. When this team changes placement (either rises or falls) on the scoreboard, an announcement will be made in the given channel.")]
             public async Task WatchTeamAsync([Summary("The team to monitor.")] TeamId team, [Summary("The channel in which the team will be monitored. Defaults to the current channel.")] ITextChannel channel = null)
             {
