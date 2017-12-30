@@ -84,7 +84,8 @@ namespace CyberPatriot.DiscordBot.Services
             var builder = new EmbedBuilder()
                           .WithTimestamp(teamScore.SnapshotTimestamp)
                           .WithTitle("Team " + teamScore.TeamId)
-                          .WithDescription(Utilities.JoinNonNullNonEmpty(" | ", CompetitionLogic.GetEffectiveDivisionDescriptor(teamScore.Summary), teamScore.Summary.Tier, teamScore.Summary.Location));
+                          .WithDescription(Utilities.JoinNonNullNonEmpty(" | ", CompetitionLogic.GetEffectiveDivisionDescriptor(teamScore.Summary), teamScore.Summary.Tier, teamScore.Summary.Location))
+                          .WithFooter(ScoreRetriever.StaticSummaryLine);
 
             // scoreboard link
             if (teamScore.OriginUri != null)
