@@ -35,10 +35,10 @@ namespace CyberPatriot.DiscordBot.Modules
                 .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Guilds").WithValue((await Context.Client.GetGuildsAsync()).Count))
                 .AddField(fb => fb.WithIsInline(true).WithName("Uptime").WithValue(string.Join("\n",
                     (DateTimeOffset.UtcNow - CyberPatriotDiscordBot.StartupTime + TimeSpan.FromDays(1)).ToLongString()
-                    .Split(' ').Reverse()
+                    .Split(' ')
                     .Select((v, i) => new {Value = v, Index = i}) 
                     .GroupBy(x => x.Index / 4)
-                    .Select(x => x.Select(y => y.Value).Reverse()).Select(x => string.Join(" ", x)).Reverse())))
+                    .Select(x => x.Select(y => y.Value)).Select(x => string.Join(" ", x)))))
                 .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Users").WithValue(await Context.Client.GetGuildsAsync().TaskToAsyncEnumerable<IGuild, IReadOnlyCollection<IGuild>>().SumParallelAsync(async g => (await g.GetUsersAsync()).Count)))
                 .BuildAsync());
         }
