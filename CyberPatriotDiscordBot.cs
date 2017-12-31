@@ -10,10 +10,13 @@ using CyberPatriot.DiscordBot.Services;
 
 namespace CyberPatriot.DiscordBot
 {
-    class Program
+    internal class CyberPatriotDiscordBot
     {
+        // I don't like big static properties
+        public static DateTimeOffset StartupTime { get; private set; }
+        
         static void Main(string[] args)
-           => new Program().MainAsync().GetAwaiter().GetResult();
+           => new CyberPatriotDiscordBot().MainAsync().GetAwaiter().GetResult();
 
         private DiscordSocketClient _client;
         private IConfiguration _config;
@@ -39,6 +42,12 @@ namespace CyberPatriot.DiscordBot
             {
                 _client.Ready += async () => await (await (await _client.GetApplicationInfoAsync())?.Owner?.GetOrCreateDMChannelAsync())?.SendMessageAsync($"[{DateTimeOffset.Now.ToString("g")}] Now online!");
             }
+
+            _client.Ready += () =>
+            {
+                StartupTime = DateTimeOffset.UtcNow;
+                return Task.CompletedTask;
+            };
 
             await _client.LoginAsync(Discord.TokenType.Bot, _config["token"]);
             await _client.StartAsync();

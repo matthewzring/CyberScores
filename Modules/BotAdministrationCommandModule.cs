@@ -15,7 +15,7 @@ namespace CyberPatriot.DiscordBot.Modules
     {
         public IScoreRetrievalService ScoreService { get; set; }
         public IDataPersistenceService Database { get; set; }
-
+        
         [Command("ping"), Summary("Pings the bot. Responds with the internal socket client's estimated latency, if available.")]
         public Task PingAsync() => ReplyAsync("Pong!" + (Context.Client is Discord.WebSocket.DiscordSocketClient socketClient ? " " + socketClient.Latency + "ms" : string.Empty));
 
@@ -26,11 +26,20 @@ namespace CyberPatriot.DiscordBot.Modules
             await ReplyAsync(string.Empty, embed: await new EmbedBuilder()
                 .WithAuthor(Context.Client.CurrentUser.Username, Context.Client.CurrentUser.GetAvatarUrlOrDefault())
                 .WithDescription("**Purpose:** A bot for interaction with CyberPatriot scoreboards.\n"
-                + "**Source Code:** [On GitHub](https://github.com/glen3b/CyPatScoreboardBot)")
+                + "**Code:** [On GitHub](https://github.com/glen3b/CyPatScoreboardBot) - [Add me to your server!](https://discordapp.com/oauth2/authorize?client_id=389204961717649408&permissions=116736&scope=bot)\n"
+                + "**Disclaimer:** This bot is not affiliated with the Air Force Association nor the CyberPatriot program. All scores displayed, even those marked \"official,\" are non-binding unofficial scores and should be treated as such. Official scores can only be found [on the CyberPatriot website](http://www.uscyberpatriot.org/competition/current-competition/scores).")
                 .WithFooter("Made by glen3b | Written in C# using Discord.Net", "https://avatars.githubusercontent.com/glen3b")
                 .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Prefix").WithValue((Context.Guild != null ? (await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id))?.Prefix?.AppendPrepend("`") : null) ?? Context.Client.CurrentUser.Mention))
+                .AddField(fb => fb.WithIsInline(true).WithName("Score Provider").WithValue(ScoreService.StaticSummaryLine))
                 .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Teams").WithValue((await ScoreService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter)).TeamList.Count))
                 .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Guilds").WithValue((await Context.Client.GetGuildsAsync()).Count))
+                .AddField(fb => fb.WithIsInline(true).WithName("Uptime").WithValue(string.Join("\n",
+                    (DateTimeOffset.UtcNow - CyberPatriotDiscordBot.StartupTime + TimeSpan.FromDays(1)).ToLongString()
+                    .Split(' ').Reverse()
+                    .Select((v, i) => new {Value = v, Index = i}) 
+                    .GroupBy(x => x.Index / 4)
+                    .Select(x => x.Select(y => y.Value).Reverse()).Select(x => string.Join(" ", x)).Reverse())))
+                .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Users").WithValue(await Context.Client.GetGuildsAsync().TaskToAsyncEnumerable<IGuild, IReadOnlyCollection<IGuild>>().SumParallelAsync(async g => (await g.GetUsersAsync()).Count)))
                 .BuildAsync());
         }
 

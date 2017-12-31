@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using CyberPatriot.DiscordBot.Services;
 
@@ -109,6 +109,24 @@ namespace CyberPatriot
                 }, () => rootEnumerator.Current, () => rootEnumerator.Dispose());
             });
         }
+        
+        public static async Task<int> SumParallelAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, Task<int>> transform)
+        {
+            List<Task<int>> transformTasks = await enumerable.Select(transform).ToList().ConfigureAwait(false);
+            int sum = 0;
+            while (transformTasks.Count > 0)
+            {
+                Task<int> completedSum = await Task.WhenAny(transformTasks).ConfigureAwait(false);
+                transformTasks.Remove(completedSum);
+                // FIXME is interlocked really needed? I doubt it
+                Interlocked.Add(ref sum, completedSum.Result);
+            }
+
+            return sum;
+        }
+
+        public static IAsyncEnumerable<TElem> TaskToAsyncEnumerable<TElem, TEnumerable>(this Task<TEnumerable> enumerableTask) where TEnumerable : IEnumerable<TElem>
+            => new AsyncEnumerableTaskWrapper<TElem>(enumerableTask.ToSuperTask<TEnumerable, IEnumerable<TElem>>());
 
         public static T Max<T>(params T[] args) where T : struct, IComparable<T>
         {
@@ -197,6 +215,11 @@ namespace CyberPatriot
             return builder;
         }
 
+        public static async Task<Discord.EmbedBuilder> AddField(this Task<Discord.EmbedBuilder> builderTask, Action<Discord.EmbedFieldBuilder> fb)
+        {
+            return (await builderTask).AddField(fb);
+        }
+
         public static async Task<Discord.EmbedBuilder> AddFieldAsync(this Discord.EmbedBuilder builder, Func<Discord.EmbedFieldBuilder, Task> fieldBuilder)
         {
             var field = new Discord.EmbedFieldBuilder();
@@ -216,6 +239,26 @@ namespace CyberPatriot
 
         public static async Task<Discord.Embed> BuildAsync(this Task<Discord.EmbedBuilder> builderTask) => (await builderTask).Build();
 
+        public static string ToLongString(this TimeSpan difference, bool showSeconds = true, bool showZeroValues = false)
+        {
+            var response = new StringBuilder();
+            if (showZeroValues)
+            {
+                response.Append(difference.Days != 0 ? $"{Pluralize("day", difference.Days)} " : "");
+                response.Append(difference.TotalHours >= 1 ? $"{Pluralize("hour", difference.Hours)} " : "");
+                response.Append(difference.TotalMinutes >= 1 ? $"{Pluralize("minute", difference.Minutes)} " : "");
+                response.Append(showSeconds ? $"{Pluralize("second", difference.Seconds)}" : "");
+            }
+            else
+            {
+                response.Append(difference.Days != 0 ? $"{Pluralize("day", difference.Days)} " : "");
+                response.Append(difference.Hours != 0 ? $"{Pluralize("hour", difference.Hours)} " : "");
+                response.Append(difference.Minutes != 0 ? $"{Pluralize("minute", difference.Minutes)} " : "");
+                response.Append(showSeconds && difference.Seconds != 0 ? $"{Pluralize("second", difference.Seconds)}" : "");
+            }
+            return response.ToString().Trim();
+        }
+        
         /// <summary>
         /// Finds a read-only predicated list from a data persistence service, managing the context automatically.
         /// ToIList is called on the whole thing.
