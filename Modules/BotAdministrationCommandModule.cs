@@ -34,7 +34,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Teams").WithValue((await ScoreService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter)).TeamList.Count))
                 .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Guilds").WithValue((await Context.Client.GetGuildsAsync()).Count))
                 .AddField(fb => fb.WithIsInline(true).WithName("Uptime").WithValue(string.Join("\n",
-                    (DateTimeOffset.UtcNow - CyberPatriotDiscordBot.StartupTime + TimeSpan.FromDays(1)).ToLongString()
+                    (DateTimeOffset.UtcNow - CyberPatriotDiscordBot.StartupTime).ToLongString()
                     .Split(' ')
                     .Select((v, i) => new {Value = v, Index = i}) 
                     .GroupBy(x => x.Index / 4)
