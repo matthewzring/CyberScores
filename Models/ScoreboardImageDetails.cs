@@ -10,6 +10,7 @@ namespace CyberPatriot.Models
         public int VulnerabilitiesRemaining { get; set; }
         public int Penalties { get; set; }
         public int Score { get; set; }
+        public int PointsPossible { get; set; } = -1;
         public ScoreWarnings Warnings { get; set; }
     }
 }

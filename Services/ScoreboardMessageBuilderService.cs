@@ -149,7 +149,15 @@ namespace CyberPatriot.DiscordBot.Services
                 totalScoreTimeAppendage = $" in {teamScore.Summary.PlayTime:hh\\:mm}";
             }
 
-            builder.AddInlineField("Total Score", $"{ScoreRetriever.FormattingOptions.FormatScore(teamScore.Summary.TotalScore)} points" + totalScoreTimeAppendage);
+            string totalPointsAppendage = string.Empty;
+            if (teamScore.Images.All(i => i.PointsPossible != -1))
+            {
+                totalPointsAppendage =
+                    "\n" + ScoreRetriever.FormattingOptions.FormatScore(teamScore.Images.Sum(i => i.PointsPossible)) +
+                    " points possible";
+            }
+
+            builder.AddInlineField("Total Score", $"{ScoreRetriever.FormattingOptions.FormatScore(teamScore.Summary.TotalScore)} points" + totalScoreTimeAppendage + totalPointsAppendage);
             if (peerScoreboard != null)
             {
                 // don't pollute upstream

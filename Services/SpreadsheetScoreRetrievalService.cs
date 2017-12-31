@@ -100,6 +100,7 @@ namespace CyberPatriot.DiscordBot.Services
                 int state = 0;
 
                 string[] headers = null;
+                int[] maxImagePoints = null;
                 int teamIdInd = -1, divInd = -1, locInd = -1, tierInd = -1;
 
                 int lowerDataBound = 0, upperDataBound = 0;
@@ -185,6 +186,24 @@ namespace CyberPatriot.DiscordBot.Services
                             upperDataBound = Utilities.Min(headers.Length,
                                 cumuScoreInd == -1 ? int.MaxValue : cumuScoreInd);
 
+                            maxImagePoints = new int[headers.Length];
+                            for (int j = 0; j < maxImagePoints.Length; j++)
+                            {
+                                maxImagePoints[j] = -1;
+                            }
+                            for (int j = lowerDataBound; j < upperDataBound; j++)
+                            {
+                                string[] imageHeaderComponents = headers[j].Split('|');
+                                if (imageHeaderComponents.Length > 1)
+                                {
+                                    headers[j] = imageHeaderComponents[0];
+                                    if (decimal.TryParse(imageHeaderComponents[1], out decimal maxScore))
+                                    {
+                                        maxImagePoints[j] = (int) (maxScore * 100m);
+                                    }
+                                }
+                            }
+                            
                             // now in data-parsing mode
                             state = 2;
                             break;
@@ -216,6 +235,7 @@ namespace CyberPatriot.DiscordBot.Services
                                 ScoreboardImageDetails image = new ScoreboardImageDetails
                                 {
                                     ImageName = headers[j],
+                                    PointsPossible = maxImagePoints[j],
                                     Penalties = 0,
                                     PlayTime = TimeSpan.Zero,
                                     VulnerabilitiesFound = 0,

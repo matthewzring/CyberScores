@@ -195,6 +195,7 @@ namespace CyberPatriot.DiscordBot.Services
             {
                 string[] dataEntries = imagesTable[i].ChildNodes.Select(n => n.InnerText.Trim()).ToArray();
                 ScoreboardImageDetails image = new ScoreboardImageDetails();
+                image.PointsPossible = 100;
                 image.ImageName = dataEntries[0];
                 image.PlayTime = Utilities.ParseHourMinuteTimespan(dataEntries[1]);
                 image.VulnerabilitiesFound = int.Parse(dataEntries[2]);
