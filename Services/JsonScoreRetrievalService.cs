@@ -87,6 +87,14 @@ namespace CyberPatriot.DiscordBot.Services
                 JObject obj = JObject.Parse(rawJson);
                 summary = obj["summary"].ToObject<CompleteScoreboardSummary>();
                 teamDetails = obj["teams"].ToObject<Dictionary<TeamId, ScoreboardDetails>>();
+                
+                // workaround, see #18
+                summary.SnapshotTimestamp = summary.SnapshotTimestamp.ToUniversalTime();
+                foreach (var teamData in teamDetails.Values)
+                {
+                    teamData.SnapshotTimestamp = teamData.SnapshotTimestamp.ToUniversalTime();
+                }
+                
                 try
                 {
                     Round = (CompetitionRound)obj["round"].Value<int>();
