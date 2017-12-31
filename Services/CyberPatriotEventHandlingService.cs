@@ -69,6 +69,15 @@ namespace CyberPatriot.DiscordBot.Services
                 cts.Cancel();
                 return Task.CompletedTask;
             };
+            _discord.JoinedGuild += async sg =>
+            {
+                IMessageChannel ch;
+                await (ch = (sg.DefaultChannel as IMessageChannel ?? await sg.Owner.GetOrCreateDMChannelAsync()))
+                    .SendMessageAsync(
+                        $"Hello! I am the CyberPatriot scoreboard Discord bot{(ch is IDMChannel ? ", and I've just been added to your server " + sg.Name?.AppendPrepend("\"") : string.Empty)}. To get started, " +
+                        $"give me a prefix:\n\"{_discord.CurrentUser.Mention} admin prefix set <your prefix here>\"\n" +
+                        $"You can say \"{_discord.CurrentUser.Mention} about\" to get more info about me, or run \"{_discord.CurrentUser.Mention} help\" for a list of commands.");
+            };
             return Task.CompletedTask;
         }
 
