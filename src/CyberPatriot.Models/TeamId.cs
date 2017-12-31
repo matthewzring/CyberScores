@@ -1,4 +1,5 @@
 using System;
+using CyberPatriot.Models.Serialization;
 
 namespace CyberPatriot.Models
 {
@@ -100,19 +101,9 @@ namespace CyberPatriot.Models
             return retVal;
         }
 
-        public static bool operator ==(TeamId a, TeamId b)
-        {
-            if (object.ReferenceEquals(a, null))
-            {
-                return object.ReferenceEquals(b, null);
-            }
-            return a.Equals(b);
-        }
+        public static bool operator ==(TeamId a, TeamId b) => a.Equals(b);
 
-        public static bool operator !=(TeamId a, TeamId b)
-        {
-            return !(a == b);
-        }
+        public static bool operator !=(TeamId a, TeamId b) => !a.Equals(b);
 
         public static bool operator <(TeamId a, TeamId b)
         {

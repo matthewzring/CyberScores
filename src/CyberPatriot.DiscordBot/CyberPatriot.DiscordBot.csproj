@@ -2,6 +2,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.0</TargetFramework>
+    <AssemblyName>CyberPatriot.DiscordBot</AssemblyName>
+    <RootNamespace>CyberPatriot.DiscordBot</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <None Update="config.json" CopyToOutputDirectory="PreserveNewest" />
@@ -18,5 +20,11 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="1.1.2" />
     <PackageReference Include="HtmlAgilityPack" Version="1.6.6" />
     <PackageReference Include="TimeZoneNames" Version="3.2.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CyberPatriot.Models\CyberPatriot.Models.csproj">
+      <Project>{C4517923-3517-4AB6-9EB3-074869BCF38C}</Project>
+      <Name>CyberPatriot.Models</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>

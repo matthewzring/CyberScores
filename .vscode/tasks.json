@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/CyberPatriotDiscordBot.csproj"
+                "${workspaceFolder}/src/CyberPatriot.DiscordBot/CyberPatriot.DiscordBot.csproj"
             ],
             "problemMatcher": "$msCompile"
         }

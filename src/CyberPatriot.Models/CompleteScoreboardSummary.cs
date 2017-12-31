@@ -10,12 +10,12 @@ namespace CyberPatriot.Models
         public DateTimeOffset SnapshotTimestamp { get; set; }
         public Uri OriginUri { get; set; }
 
-        private ScoreboardFilterInfo filterInfo = ScoreboardFilterInfo.NoFilter;
+        private ScoreboardFilterInfo _filterInfo = ScoreboardFilterInfo.NoFilter;
         public ScoreboardFilterInfo Filter
         {
             get
             {
-                return filterInfo;
+                return _filterInfo;
             }
             set
             {
@@ -23,7 +23,7 @@ namespace CyberPatriot.Models
                 {
                     throw new ArgumentNullException(nameof(value));
                 }
-                filterInfo = value;
+                _filterInfo = value;
             }
         }
 
@@ -71,7 +71,7 @@ namespace CyberPatriot.Models
             }
             
             Filter = filter;
-            TeamList = newTeamList.ToIList();
+            TeamList = newTeamList as IList<ScoreboardSummaryEntry> ?? newTeamList.ToList();
             return this;
         }
         
@@ -95,7 +95,7 @@ namespace CyberPatriot.Models
                 newTeamList = newTeamList.Where(summary => summary.Tier == newTierFilter);
             }
             Filter = new ScoreboardFilterInfo(newDivisionFilter, newTierFilter);
-            TeamList = newTeamList.ToIList();
+            TeamList = newTeamList as IList<ScoreboardSummaryEntry> ?? newTeamList.ToList();
             return this;
         }
     }

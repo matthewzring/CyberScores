@@ -6,8 +6,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using CyberPatriot.DiscordBot.Services;
+using CyberPatriot.Models;
 
-namespace CyberPatriot
+namespace CyberPatriot.DiscordBot
 {
     public static class Utilities
     {
@@ -64,29 +65,29 @@ namespace CyberPatriot
             return tier == "high school" || tier == "middle school";
         }
 
-        public static string ToConciseString(this Models.ScoreWarnings warnings)
+        public static string ToConciseString(this ScoreWarnings warnings)
         {
             StringBuilder resBuild = new StringBuilder(2);
-            if ((warnings & Models.ScoreWarnings.MultiImage) == Models.ScoreWarnings.MultiImage)
+            if ((warnings & ScoreWarnings.MultiImage) == ScoreWarnings.MultiImage)
             {
                 resBuild.Append('M');
             }
-            if ((warnings & Models.ScoreWarnings.TimeOver) == Models.ScoreWarnings.TimeOver)
+            if ((warnings & ScoreWarnings.TimeOver) == ScoreWarnings.TimeOver)
             {
                 resBuild.Append('T');
             }
             return resBuild.ToString();
         }
 
-        public static string ToConciseString(this Models.Division division)
+        public static string ToConciseString(this Division division)
         {
             switch (division)
             {
-                case Models.Division.Open:
+                case Division.Open:
                     return "Open";
-                case Models.Division.AllService:
+                case Division.AllService:
                     return "A.S.";
-                case Models.Division.MiddleSchool:
+                case Division.MiddleSchool:
                     return "M.S.";
             }
 

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace CyberPatriot
+namespace CyberPatriot.DiscordBot
 {
     public class AsyncEnumerableTaskWrapper<T> : IAsyncEnumerable<T>
     {
