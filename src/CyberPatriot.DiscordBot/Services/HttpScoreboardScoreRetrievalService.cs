@@ -61,7 +61,7 @@ namespace CyberPatriot.DiscordBot.Services
                 private readonly object _syncContext = new object();
                 private volatile ConcurrentBag<Task> _pulsePrereqs = new ConcurrentBag<Task>();
                 private readonly int _maxQueuedAuthTokens;
-                private readonly T _authorizationConstant;    
+                private readonly T _authorizationConstant;
 
                 public TimedTokenProvider(T authConstant, int maxQueuedAuthTokens)
                 {
@@ -239,9 +239,24 @@ namespace CyberPatriot.DiscordBot.Services
 
         public Task InitializeAsync(IServiceProvider provider)
         {
+            var confProvider = provider.GetRequiredService<IConfiguration>();
             if (Hostname == null)
             {
-                Hostname = provider.GetRequiredService<IConfiguration>()["defaultScoreboardHostname"];
+                Hostname = confProvider["httpConfig:defaultHostname"];
+            }
+            var httpConfSection = confProvider.GetSection("httpConfig");
+            if (httpConfSection != null)
+            {
+                string uname, pw;
+                if ((uname = httpConfSection.GetSection("authentication")["username"]) != null && (pw = httpConfSection.GetSection("authentication")["password"]) != null)
+                {
+                    Client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes(uname + ':' + pw)));
+                }
+                string usragentheader;
+                if ((usragentheader = httpConfSection["useragent"]) != null)
+                {
+                    Client.DefaultRequestHeaders.Add("User-Agent", usragentheader);
+                }
             }
 
             _roundInferenceService = provider.GetService<ICompetitionRoundLogicService>() ?? _roundInferenceService;
