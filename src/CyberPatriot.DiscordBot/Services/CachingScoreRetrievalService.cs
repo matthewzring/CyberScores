@@ -28,25 +28,21 @@ namespace CyberPatriot.DiscordBot.Services
 
         public Task InitializeAsync(IServiceProvider provider) => Backend.InitializeAsync(provider);
 
-        protected class HitTrackingCachedObject<TCachee>
+        protected class CachedObject<TCachee>
         {
-            public TCachee Value;
-            public int HitCount;
+            public TCachee Value { get; }
 
             public DateTimeOffset Timestamp
             {
-                get
-                {
-                    return getTimestamp(Value);
-                }
+                get; protected set;
             }
 
-            private Func<TCachee, DateTimeOffset> getTimestamp;
+            public CachedObject(TCachee value) : this(value, DateTimeOffset.UtcNow) { }
 
-            public HitTrackingCachedObject(TCachee value, Func<TCachee, DateTimeOffset> timestampGet)
+            public CachedObject(TCachee value, DateTimeOffset timestamp)
             {
                 Value = value;
-                getTimestamp = timestampGet;
+                Timestamp = timestamp;
             }
 
             public TimeSpan Age
@@ -56,6 +52,15 @@ namespace CyberPatriot.DiscordBot.Services
                     return DateTimeOffset.UtcNow - Timestamp;
                 }
             }
+        }
+
+        protected class HitTrackingCachedObject<TCachee> : CachedObject<TCachee>
+        {
+            public volatile int HitCount;
+
+            public HitTrackingCachedObject(TCachee value) : base(value) { }
+
+            public HitTrackingCachedObject(TCachee value, DateTimeOffset timestamp) : base(value, timestamp) { }
         }
 
         #region Team Details
@@ -128,7 +133,7 @@ namespace CyberPatriot.DiscordBot.Services
                     // pull from backend
                     ScoreboardDetails teamInfo = await Backend.GetDetailsAsync(team);
                     // add to cache
-                    cachedTeamData = new HitTrackingCachedObject<ScoreboardDetails>(teamInfo, tInf => tInf.SnapshotTimestamp);
+                    cachedTeamData = new HitTrackingCachedObject<ScoreboardDetails>(teamInfo);
                     Interlocked.Increment(ref cachedTeamData.HitCount);
                     cachedTeamInformations[team] = cachedTeamData;
                     // return the fresh object
@@ -148,28 +153,28 @@ namespace CyberPatriot.DiscordBot.Services
         #region Scoreboard Summary
         protected SemaphoreSlim scoreboardCacheLock = new SemaphoreSlim(1);
 
-        protected ConcurrentDictionary<ScoreboardFilterInfo, CompleteScoreboardSummary> cachedScoreboards = new ConcurrentDictionary<ScoreboardFilterInfo, CompleteScoreboardSummary>();
+        protected ConcurrentDictionary<ScoreboardFilterInfo, CachedObject<CompleteScoreboardSummary>> cachedScoreboards = new ConcurrentDictionary<ScoreboardFilterInfo, CachedObject<CompleteScoreboardSummary>>();
 
         public async Task<CompleteScoreboardSummary> GetScoreboardAsync(ScoreboardFilterInfo filter)
         {
             await scoreboardCacheLock.WaitAsync();
             try
             {
-                if (!cachedScoreboards.TryGetValue(filter, out CompleteScoreboardSummary scoreboard) || DateTimeOffset.UtcNow - scoreboard.SnapshotTimestamp >= MaxCompleteScoreboardLifespan)
+                if (!cachedScoreboards.TryGetValue(filter, out CachedObject<CompleteScoreboardSummary> scoreboard) || scoreboard.Age >= MaxCompleteScoreboardLifespan)
                 {
                     // need to replace cached for this entry
                     // try querying the "master" cached scoreboard before querying the backend
 
-                    if (filter != ScoreboardFilterInfo.NoFilter && cachedScoreboards.TryGetValue(ScoreboardFilterInfo.NoFilter, out CompleteScoreboardSummary masterScoreboard) && DateTimeOffset.UtcNow - masterScoreboard.SnapshotTimestamp < MaxCompleteScoreboardLifespan)
+                    if (filter != ScoreboardFilterInfo.NoFilter && cachedScoreboards.TryGetValue(ScoreboardFilterInfo.NoFilter, out CachedObject<CompleteScoreboardSummary> masterScoreboard) && masterScoreboard.Age < MaxCompleteScoreboardLifespan)
                     {
                         // we have a fresh complete scoreboard, just create the more specialized one
-                        scoreboard = masterScoreboard.Clone().WithFilter(filter);
+                        scoreboard = new CachedObject<CompleteScoreboardSummary>(masterScoreboard.Value.Clone().WithFilter(filter), masterScoreboard.Timestamp);
                         cachedScoreboards[filter] = scoreboard;
                     }
                     else
                     {
                         // we need a new master scoreboard
-                        masterScoreboard = await Backend.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter);
+                        masterScoreboard = new CachedObject<CompleteScoreboardSummary>(await Backend.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter));
                         cachedScoreboards[ScoreboardFilterInfo.NoFilter] = masterScoreboard;
                         if (filter == ScoreboardFilterInfo.NoFilter)
                         {
@@ -177,14 +182,14 @@ namespace CyberPatriot.DiscordBot.Services
                         }
                         else
                         {
-                            scoreboard = masterScoreboard.Clone().WithFilter(filter);
+                            scoreboard = new CachedObject<CompleteScoreboardSummary>(masterScoreboard.Value.Clone().WithFilter(filter), masterScoreboard.Timestamp);
                             cachedScoreboards[filter] = scoreboard;
                         }
                     }
                 }
 
                 // don't want client alterations to affect cached copy
-                return scoreboard.Clone();
+                return scoreboard.Value.Clone();
             }
             finally
             {
