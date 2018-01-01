@@ -19,53 +19,65 @@ namespace CyberPatriot.DiscordBot.Modules
         [Command("team"), Alias("getteam"), Summary("Gets score information for a given team.")]
         public async Task GetTeamAsync(TeamId teamId)
         {
-            ScoreboardDetails teamScore = await ScoreRetrievalService.GetDetailsAsync(teamId);
-            if (teamScore == null)
+            using (Context.Channel.EnterTypingState())
             {
-                throw new Exception("Error obtaining team score.");
+                ScoreboardDetails teamScore = await ScoreRetrievalService.GetDetailsAsync(teamId);
+                if (teamScore == null)
+                {
+                    throw new Exception("Error obtaining team score.");
+                }
+                await ReplyAsync(string.Empty, embed: ScoreEmbedBuilder.CreateTeamDetailsEmbed(teamScore, await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(teamScore.Summary.Division, null))).Build());
             }
-            await ReplyAsync(string.Empty, embed: ScoreEmbedBuilder.CreateTeamDetailsEmbed(teamScore, await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(teamScore.Summary.Division, null))).Build());
         }
 
         [Command("scoreboard"), Alias("leaderboard"), Summary("Returns the current CyberPatriot leaderboard.")]
         public async Task GetLeaderboardAsync(int pageNumber = 1)
         {
-            CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter);
-            if (teamScore == null)
+            using (Context.Channel.EnterTypingState())
             {
-                throw new Exception("Error obtaining scoreboard.");
+                CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter);
+                if (teamScore == null)
+                {
+                    throw new Exception("Error obtaining scoreboard.");
+                }
+                await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User)));
             }
-            await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User)));
         }
 
         [Command("scoreboard"), Alias("leaderboard"), Summary("Returns the current CyberPatriot leaderboard for the given division.")]
         public async Task GetLeaderboardAsync(Division division, int pageNumber = 1)
         {
-            CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(division, null));
-            if (teamScore == null)
+            using (Context.Channel.EnterTypingState())
             {
-                throw new Exception("Error obtaining scoreboard.");
+                CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(division, null));
+                if (teamScore == null)
+                {
+                    throw new Exception("Error obtaining scoreboard.");
+                }
+                await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User)));
             }
-            await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User)));
         }
 
         [Command("scoreboard"), Alias("leaderboard"), Summary("Returns the current CyberPatriot leaderboard for the given division and tier.")]
         public async Task GetLeaderboardAsync(Division division, string tier, int pageNumber = 1)
         {
-            if (!string.IsNullOrWhiteSpace(tier))
+            using (Context.Channel.EnterTypingState())
             {
-                // transform some common mistakes with the tier
-                // first letter capital
-                char[] tierCharArray = tier.ToCharArray();
-                tierCharArray[0] = char.ToUpper(tierCharArray[0]);
-                tier = new string(tierCharArray);
+                if (!string.IsNullOrWhiteSpace(tier))
+                {
+                    // transform some common mistakes with the tier
+                    // first letter capital
+                    char[] tierCharArray = tier.ToCharArray();
+                    tierCharArray[0] = char.ToUpper(tierCharArray[0]);
+                    tier = new string(tierCharArray);
+                }
+                CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(division, tier));
+                if (teamScore == null)
+                {
+                    throw new Exception("Error obtaining scoreboard.");
+                }
+                await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User)));
             }
-            CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(division, tier));
-            if (teamScore == null)
-            {
-                throw new Exception("Error obtaining scoreboard.");
-            }
-            await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User)));
         }
     }
 }

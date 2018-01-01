@@ -39,7 +39,7 @@ namespace CyberPatriot.DiscordBot.Services
             _competitionLogic = competitionLogic;
 
             _discord.MessageReceived += MessageReceived;
-            _teamUrlRegex = new Regex("https?://" + _config["defaultScoreboardHostname"].Replace(".", "\\.") +
+            _teamUrlRegex = new Regex("https?://" + _config["httpConfig:defaultHostname"].Replace(".", "\\.") +
                                       "/team\\.php\\?team=([0-9]{2}-[0-9]{4})");
         }
 

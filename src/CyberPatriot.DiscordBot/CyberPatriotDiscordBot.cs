@@ -73,7 +73,11 @@ namespace CyberPatriot.DiscordBot
                 // Scoreboard trial order: live, JSON archive, CSV released archive
                 .AddSingleton<IScoreRetrievalService, FallbackScoreRetrievalService>(prov => new FallbackScoreRetrievalService(
                     prov,
-                    innerProv => Task.FromResult<IScoreRetrievalService>(new HttpScoreboardScoreRetrievalService(innerProv.GetRequiredService<IConfiguration>()["defaultScoreboardHostname"])),
+                    async innerProv => { 
+                        var httpServ = new HttpScoreboardScoreRetrievalService();
+                        await httpServ.InitializeAsync(innerProv);
+                        return httpServ;
+                    },
                     async innerProv =>
                         // if the constructor throws an exception, e.g. missing config, means this provider is skipped
                         new JsonScoreRetrievalService(await System.IO.File.ReadAllTextAsync(innerProv.GetRequiredService<IConfiguration>()["jsonSource"])),
