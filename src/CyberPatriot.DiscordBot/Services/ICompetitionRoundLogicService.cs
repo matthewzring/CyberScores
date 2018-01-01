@@ -115,7 +115,13 @@ namespace CyberPatriot.DiscordBot.Services
             // open/service, service: category matters; open: no tiers
             if (teamDetails.Division == Division.Open)
             {
-                // either R1, R2, or "R0" (unknown round)
+                // unknown round - if our candidate team has a tier, filter by tier, otherwise return the whole division
+                if (round == 0 && teamDetails.Tier != null)
+                {
+                    return divisionScoreboard.WithFilter(teamDetails.Division, teamDetails.Tier).TeamList;
+                }
+
+                // either R1 or R2
                 // safe to return the whole division as a peer list
                 return divisionScoreboard.TeamList;
             }
