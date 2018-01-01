@@ -28,7 +28,7 @@ namespace CyberPatriot.DiscordBot.Services
 
         // 1 request every 1.5 seconds
         // note the delay may be up to 3s
-        protected IRateLimitProvider RateLimiter { get; set; } = new TimerRateLimitProvider(1500, 5);
+        protected IRateLimitProvider RateLimiter { get; set; } = new TimerRateLimitProvider(1500, 3);
         private ICompetitionRoundLogicService _roundInferenceService = null;
 
         #region Rate Limiting Implementation
@@ -407,9 +407,20 @@ namespace CyberPatriot.DiscordBot.Services
             }
             retVal.Summary.ImageCount = int.Parse(summaryRow.ChildNodes[4].InnerText.Trim());
             retVal.Summary.PlayTime = Utilities.ParseHourMinuteTimespan(summaryRow.ChildNodes[5].InnerText);
-            retVal.ScoreTime = Utilities.ParseHourMinuteTimespan(summaryRow.ChildNodes[6].InnerText);
-            retVal.Summary.TotalScore = int.Parse(summaryRow.ChildNodes[7].InnerText);
-            string warnStr = summaryRow.ChildNodes[8].InnerText;
+            string scoreTimeText = summaryRow.ChildNodes[6].InnerText;
+            // to deal with legacy scoreboards
+            int scoreTimeIndOffset = 0;
+            if (scoreTimeText.Contains(":"))
+            {
+                retVal.ScoreTime = Utilities.ParseHourMinuteTimespan(summaryRow.ChildNodes[6].InnerText);
+            }
+            else
+            {
+                retVal.ScoreTime = retVal.Summary.PlayTime;
+                scoreTimeIndOffset = -1;
+            }
+            retVal.Summary.TotalScore = int.Parse(summaryRow.ChildNodes[7 + scoreTimeIndOffset].InnerText);
+            string warnStr = summaryRow.ChildNodes[8 + scoreTimeIndOffset].InnerText;
             retVal.Summary.Warnings |= warnStr.Contains("T") ? ScoreWarnings.TimeOver : 0;
             retVal.Summary.Warnings |= warnStr.Contains("M") ? ScoreWarnings.MultiImage : 0;
 
@@ -417,7 +428,8 @@ namespace CyberPatriot.DiscordBot.Services
             var imagesTable = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/table[2]").ChildNodes.Where(n => n.Name != "#text").ToArray();
             for (int i = 1; i < imagesTable.Length; i++)
             {
-                string[] dataEntries = imagesTable[i].ChildNodes.Select(n => n.InnerText.Trim()).ToArray();
+                // skip team IDs to account for legacy scoreboards
+                string[] dataEntries = imagesTable[i].ChildNodes.Select(n => n.InnerText.Trim()).SkipWhile(s => TeamId.TryParse(s, out TeamId _)).ToArray();
                 ScoreboardImageDetails image = new ScoreboardImageDetails();
                 image.PointsPossible = 100;
                 image.ImageName = dataEntries[0];
