@@ -15,7 +15,7 @@ namespace CyberPatriot.DiscordBot
         // I don't like big static properties
         public static DateTimeOffset StartupTime { get; private set; }
         public const int RequiredPermissions = 510016;
-        
+
         static void Main(string[] args)
            => new CyberPatriotDiscordBot().MainAsync().GetAwaiter().GetResult();
 
@@ -41,7 +41,17 @@ namespace CyberPatriot.DiscordBot
 
             if (bool.TryParse(enableUpNotificationConfSetting, out bool enableUpNotification) && enableUpNotification)
             {
-                _client.Ready += async () => await (await (await _client.GetApplicationInfoAsync())?.Owner?.GetOrCreateDMChannelAsync())?.SendMessageAsync($"[{DateTimeOffset.Now.ToString("g")}] Now online!");
+                _client.Ready += async () =>
+                {
+                    IUser owner = (await _client.GetApplicationInfoAsync())?.Owner;
+                    var currentTime = DateTimeOffset.UtcNow;
+                    TimeZoneInfo ownerTz;
+                    if ((ownerTz = await services.GetService<PreferenceProviderService>()?.GetTimeZoneAsync(user: owner)) != null)
+                    {
+                        currentTime = TimeZoneInfo.ConvertTime(currentTime, ownerTz);
+                    }
+                    await (await owner?.GetOrCreateDMChannelAsync())?.SendMessageAsync($"[{currentTime.ToString("g")}] Now online!");
+                };
             }
 
             _client.Ready += () =>
@@ -74,7 +84,8 @@ namespace CyberPatriot.DiscordBot
                 // Scoreboard trial order: live, JSON archive, CSV released archive
                 .AddSingleton<IScoreRetrievalService, FallbackScoreRetrievalService>(prov => new FallbackScoreRetrievalService(
                     prov,
-                    async innerProv => { 
+                    async innerProv =>
+                    {
                         var httpServ = new HttpScoreboardScoreRetrievalService();
                         await httpServ.InitializeAsync(innerProv);
                         return httpServ;
