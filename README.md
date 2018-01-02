@@ -6,4 +6,4 @@ Supported features:
 - All Service teams are shown rankings with categories taken into account
 - Get notifications in chat when your team changes in placement
 
-[Add me](https://discordapp.com/oauth2/authorize?client_id=389204961717649408&permissions=116736&scope=bot) to your server.
+[Add me](https://discordapp.com/oauth2/authorize?client_id=389204961717649408&permissions=510016&scope=bot) to your server.

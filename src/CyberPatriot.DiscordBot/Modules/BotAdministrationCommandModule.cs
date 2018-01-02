@@ -26,7 +26,7 @@ namespace CyberPatriot.DiscordBot.Modules
             await ReplyAsync(string.Empty, embed: await new EmbedBuilder()
                 .WithAuthor(Context.Client.CurrentUser.Username, Context.Client.CurrentUser.GetAvatarUrlOrDefault())
                 .WithDescription("**Purpose:** A bot for interaction with CyberPatriot scoreboards.\n"
-                + "**Code:** [On GitHub](https://github.com/glen3b/CyPatScoreboardBot) - [Add me to your server!](https://discordapp.com/oauth2/authorize?client_id=389204961717649408&permissions=116736&scope=bot)\n"
+                + $"**Code:** [On GitHub](https://github.com/glen3b/CyPatScoreboardBot) - [Add me to your server!](https://discordapp.com/oauth2/authorize?client_id={appinfo.Id}&permissions={CyberPatriotDiscordBot.RequiredPermissions}&scope=bot)\n"
                 + "**Disclaimer:** This bot is not affiliated with the Air Force Association nor the CyberPatriot program. All scores displayed, even those marked \"official,\" are non-binding unofficial scores and should be treated as such. Official scores can only be found [on the CyberPatriot website](http://www.uscyberpatriot.org/competition/current-competition/scores).")
                 .WithFooter("Made by glen3b | Written in C# using Discord.Net", "https://avatars.githubusercontent.com/glen3b")
                 .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Prefix").WithValue((Context.Guild != null ? (await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id))?.Prefix?.AppendPrepend("`") : null) ?? Context.Client.CurrentUser.Mention))
