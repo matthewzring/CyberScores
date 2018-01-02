@@ -17,7 +17,7 @@ namespace CyberPatriot.DiscordBot.Modules
     public class GuildAdministrationCommandModule : ModuleBase
     {
         [Group("prefix")]
-        [RequireUserPermission(GuildPermission.Administrator, Group = "RolePermission")]
+        [RequireUserPermission(GuildPermission.ManageGuild, Group = "RolePermission")]
         [RequireOwner(Group = "RolePermission")]
         [RequireContext(ContextType.Guild)]
         public class PrefixModule : ModuleBase
@@ -52,7 +52,7 @@ namespace CyberPatriot.DiscordBot.Modules
         }
 
         [Group("timezone"), Alias("tz")]
-        [RequireUserPermission(GuildPermission.Administrator, Group = "RolePermission")]
+        [RequireUserPermission(GuildPermission.ManageGuild, Group = "RolePermission")]
         [RequireOwner(Group = "RolePermission")]
         [RequireContext(ContextType.Guild)]
         public class TimezoneModule : ModuleBase
