@@ -30,6 +30,7 @@ namespace CyberPatriot.DiscordBot.Services
         // note the delay may be up to 3s
         protected IRateLimitProvider RateLimiter { get; set; } = new TimerRateLimitProvider(1500, 3);
         private ICompetitionRoundLogicService _roundInferenceService = null;
+        private IExternalCategoryProviderService _categoryProvider = null;
 
         #region Rate Limiting Implementation
         protected interface IRateLimitProvider
@@ -260,6 +261,9 @@ namespace CyberPatriot.DiscordBot.Services
             }
 
             _roundInferenceService = provider.GetService<ICompetitionRoundLogicService>() ?? _roundInferenceService;
+            
+            // optionally, attempt to deduce categories
+            _categoryProvider = provider.GetService<IExternalCategoryProviderService>();
 
             return Task.CompletedTask;
         }
@@ -335,6 +339,7 @@ namespace CyberPatriot.DiscordBot.Services
                     string[] dataEntries = teamsTable[i].ChildNodes.Select(n => n.InnerText.Trim()).ToArray();
                     ScoreboardSummaryEntry summary = new ScoreboardSummaryEntry();
                     summary.TeamId = TeamId.Parse(dataEntries[0]);
+                    summary.Category = _categoryProvider?.GetCategory(summary.TeamId);
                     summary.Location = dataEntries[1];
                     if (Utilities.TryParseEnumSpaceless<Division>(dataEntries[2], out Division division))
                     {
@@ -395,6 +400,7 @@ namespace CyberPatriot.DiscordBot.Services
             var summaryRow = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/table[1]/tr[2]");
             // ID, Division (labeled location, their bug), Location (labeled division, their bug), tier, scored img, play time, score time, current score, warn
             retVal.Summary.TeamId = TeamId.Parse(summaryRow.ChildNodes[0].InnerText);
+            retVal.Summary.Category = _categoryProvider?.GetCategory(retVal.TeamId);
             if (Utilities.TryParseEnumSpaceless<Division>(summaryRow.ChildNodes[1].InnerText, out Division division))
             {
                 retVal.Summary.Division = division;

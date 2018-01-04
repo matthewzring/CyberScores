@@ -34,7 +34,7 @@ namespace CyberPatriot.DiscordBot
                 services.GetRequiredService<IDataPersistenceService>().InitializeAsync(services),
                 services.GetRequiredService<CyberPatriotEventHandlingService>().InitializeAsync(services),
                 services.GetRequiredService<IScoreRetrievalService>().InitializeAsync(services),
-                services.GetRequiredService<ICompetitionRoundLogicService>().InitializeAsync(services)
+                services.GetService<IExternalCategoryProviderService>()?.InitializeAsync(services) ?? Task.CompletedTask
             );
 
             string enableUpNotificationConfSetting = _config["enableUpNotification"] ?? "false";
@@ -96,6 +96,7 @@ namespace CyberPatriot.DiscordBot
                     async innerProv => await new SpreadsheetScoreRetrievalService().InitializeFromConfiguredCsvAsync(innerProv)
                 ))
                 .AddSingleton<ICompetitionRoundLogicService, CyberPatriotTenCompetitionRoundLogicService>()
+                .AddSingleton<IExternalCategoryProviderService, FileBackedCategoryProviderService>()
                 .AddSingleton<FlagProviderService>()
                 .AddSingleton<CyberPatriotEventHandlingService>()
                 .AddSingleton<ScoreboardMessageBuilderService>()
