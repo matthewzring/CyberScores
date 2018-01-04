@@ -74,6 +74,50 @@ namespace CyberPatriot.DiscordBot.Services
             return stringBuilder.ToString();
         }
 
+        public string CreatePeerLeaderboardEmbed(CompleteScoreboardSummary scoreboard, ScoreboardDetails teamDetails, TimeZoneInfo timeZone = null, int topTeams = 3, int nearbyTeams = 5)
+        {
+            var peerTeams = CompetitionLogic.GetPeerTeams(ScoreRetriever.Round, scoreboard, teamDetails.Summary);
+            var stringBuilder = new StringBuilder();
+            stringBuilder.AppendLine("**CyberPatriot Scoreboard**");
+            DateTimeOffset timestamp = timeZone == null ? scoreboard.SnapshotTimestamp : TimeZoneInfo.ConvertTime(scoreboard.SnapshotTimestamp, timeZone);
+            stringBuilder.AppendFormat("*Competing against: {0} | As of: ", teamDetails.TeamId);
+            stringBuilder.AppendFormat("{0:g}", timestamp);
+            stringBuilder.Append(' ').Append(timeZone == null ? "UTC" : TimeZoneNames.TZNames.GetAbbreviationsForTimeZone(timeZone.Id, "en-US").Generic).AppendLine("*");
+            stringBuilder.AppendLine("```bash");
+            // zero-based rank of the given team
+            int pos = peerTeams.IndexOfWhere(team => team.TeamId == teamDetails.TeamId);
+            if (pos < nearbyTeams + topTeams + 1)
+            {
+                peerTeams.Take(nearbyTeams + pos + 1)
+                          .Select((team, i) => stringBuilder.AppendFormat("{8}{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + 1, team.TeamId, team.Location, ScoreRetriever.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier, team.TeamId == teamDetails.TeamId ? ">" : "#").AppendLine())
+                          .Consume();
+            }
+            else
+            {
+                peerTeams.Take(topTeams)
+                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + 1, team.TeamId, team.Location, ScoreRetriever.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
+                          .Consume();
+                stringBuilder.AppendLine("...");
+                peerTeams.Skip(pos - nearbyTeams)
+                          .Take(nearbyTeams)
+                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + pos - nearbyTeams + 1, team.TeamId, team.Location, ScoreRetriever.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
+                          .Consume();
+                stringBuilder.AppendFormat(">{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", pos + 1, teamDetails.TeamId, teamDetails.Summary.Location, ScoreRetriever.FormattingOptions.FormatScoreForLeaderboard(teamDetails.Summary.TotalScore), teamDetails.Summary.PlayTime, teamDetails.Summary.Warnings.ToConciseString(), teamDetails.Summary.Division.ToConciseString(), teamDetails.Summary.Tier).AppendLine();
+                // since pos and i are both zero-based, i + pos + 2 returns correct team rank for teams after given team
+                peerTeams.Skip(pos + 1)
+                          .Take(nearbyTeams)
+                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + pos + 2, team.TeamId, team.Location, ScoreRetriever.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
+                          .Consume();
+            }
+
+            stringBuilder.AppendLine("```");
+            if (scoreboard.OriginUri != null)
+            {
+                stringBuilder.AppendLine(scoreboard.OriginUri.ToString());
+            }
+            return stringBuilder.ToString();
+        }
+
         public EmbedBuilder CreateTeamDetailsEmbed(ScoreboardDetails teamScore, CompleteScoreboardSummary peerScoreboard = null)
         {
             if (teamScore == null)
