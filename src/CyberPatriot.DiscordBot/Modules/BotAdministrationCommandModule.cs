@@ -48,6 +48,8 @@ namespace CyberPatriot.DiscordBot.Modules
         [Summary("Terminates the bot instance.")]
         public Task KillAsync()
         {
+            // don't wait on the reply
+            ReplyAsync("Goodbye!");
             Environment.Exit(0);
             return Task.CompletedTask;
         }
