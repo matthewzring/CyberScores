@@ -16,6 +16,8 @@ namespace CyberPatriot.DiscordBot.Modules
 
         public PreferenceProviderService Preferences { get; set; }
 
+        public ICompetitionRoundLogicService CompetitionRoundLogicService { get; set; }
+
         [Command("team"), Alias("getteam"), Summary("Gets score information for a given team.")]
         public async Task GetTeamAsync(TeamId teamId)
         {
@@ -77,6 +79,23 @@ namespace CyberPatriot.DiscordBot.Modules
                     throw new Exception("Error obtaining scoreboard.");
                 }
                 await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User)));
+            }
+        }
+
+        [Command("scoreboard"), Alias("leaderboard"), Summary("Returns the current CyberPatriot leaderboard consisting of only peer teams of the provided team."), Priority(int.MaxValue)]
+        public async Task GenerateLeaderboardAsync(TeamId team)
+        {
+            using (Context.Channel.EnterTypingState())
+            {
+                ScoreboardDetails teamDetails = await ScoreRetrievalService.GetDetailsAsync(team);
+                if (teamDetails == null)
+                {
+                    throw new Exception("Error obtaining team score.");
+                }
+
+                CompleteScoreboardSummary scoreboard = await ScoreRetrievalService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter);
+
+                await ReplyAsync(ScoreEmbedBuilder.CreatePeerLeaderboardEmbed(scoreboard, teamDetails, await Preferences.GetTimeZoneAsync(Context.Guild, Context.User)));
             }
         }
     }
