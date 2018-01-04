@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CyberPatriotDiscordBot", "s
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CyberPatriot.Models", "src\CyberPatriot.Models\CyberPatriot.Models.csproj", "{C4517923-3517-4AB6-9EB3-074869BCF38C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CyberPatriot.BitmapProvider", "src\CyberPatriot.BitmapProvider\CyberPatriot.BitmapProvider.csproj", "{6C3BBAF5-F535-42D6-B623-7A2374D19307}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{C4517923-3517-4AB6-9EB3-074869BCF38C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C4517923-3517-4AB6-9EB3-074869BCF38C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C4517923-3517-4AB6-9EB3-074869BCF38C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C3BBAF5-F535-42D6-B623-7A2374D19307}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C3BBAF5-F535-42D6-B623-7A2374D19307}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C3BBAF5-F535-42D6-B623-7A2374D19307}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C3BBAF5-F535-42D6-B623-7A2374D19307}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
