@@ -82,8 +82,8 @@ namespace CyberPatriot.DiscordBot.Modules
             }
         }
 
-        [Command("scoreboard"), Alias("leaderboard"), Summary("Returns the current CyberPatriot leaderboard consisting of only peer teams of the provided team."), Priority(int.MaxValue)]
-        public async Task GenerateLeaderboardAsync(TeamId team)
+        [Command("scoreboard"), Alias("leaderboard", "peerboard", "peerleaderboard", "peerscoreboard"), Summary("Shows the given team's placement on the current CyberPatriot leaderboard consisting only of its peers."), Priority(5)]
+        public async Task GeneratePeerLeaderboardAsync(TeamId team)
         {
             using (Context.Channel.EnterTypingState())
             {
