@@ -101,7 +101,8 @@ namespace CyberPatriot.DiscordBot.Services
 
                 string[] headers = null;
                 int[] maxImagePoints = null;
-                int teamIdInd = -1, divInd = -1, locInd = -1, tierInd = -1;
+                int teamIdInd = -1, divInd = -1, locInd = -1, tierInd = -1, catInd = -1;
+                Division defaultDiv = 0;
 
                 int lowerDataBound = 0, upperDataBound = 0;
 
@@ -158,10 +159,18 @@ namespace CyberPatriot.DiscordBot.Services
                             {
                                 teamIdInd = 0;
                             }
-                            divInd = Array.IndexOf(headers, "Division");
-                            if (divInd == -1)
+                            catInd = Array.IndexOf(headers, "Category");
+                            if (catInd == -1)
                             {
-                                divInd = 1;
+                                divInd = Array.IndexOf(headers, "Division");
+                                if (divInd == -1)
+                                {
+                                    divInd = 1;
+                                }
+                            }
+                            else
+                            {
+                                defaultDiv = Division.AllService;
                             }
                             locInd = Array.IndexOf(headers, "Location");
                             if (locInd == -1)
@@ -199,11 +208,11 @@ namespace CyberPatriot.DiscordBot.Services
                                     headers[j] = imageHeaderComponents[0];
                                     if (decimal.TryParse(imageHeaderComponents[1], out decimal maxScore))
                                     {
-                                        maxImagePoints[j] = (int) (maxScore * 100m);
+                                        maxImagePoints[j] = (int)(maxScore * 100m);
                                     }
                                 }
                             }
-                            
+
                             // now in data-parsing mode
                             state = 2;
                             break;
@@ -217,9 +226,15 @@ namespace CyberPatriot.DiscordBot.Services
                             teamInfo.Summary.Location = data[locInd];
                             teamInfo.Summary.PlayTime = TimeSpan.Zero;
                             teamInfo.Summary.Tier = tierInd == -1 ? null : data[tierInd];
-                            if (Utilities.TryParseEnumSpaceless(data[divInd], out Division division))
+                            if (catInd >= 0)
+                            {
+                                teamInfo.Summary.Division = defaultDiv;
+                                teamInfo.Summary.Category = data[catInd];
+                            }
+                            else if(Utilities.TryParseEnumSpaceless(data[divInd], out Division division))
                             {
                                 teamInfo.Summary.Division = division;
+
                             }
                             teamInfo.Summary.TeamId = TeamId.Parse(data[teamIdInd]);
                             teamInfo.ScoreTime = TimeSpan.Zero;

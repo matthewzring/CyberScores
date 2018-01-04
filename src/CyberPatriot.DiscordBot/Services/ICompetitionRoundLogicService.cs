@@ -13,48 +13,14 @@ namespace CyberPatriot.DiscordBot.Services
     {
         CompetitionRound InferRound(DateTimeOffset date);
 
-        IList<ScoreboardSummaryEntry> GetPeerTeams(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamDetails);
+        IList<ScoreboardSummaryEntry> GetPeerTeams(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamInfo);
 
         string GetEffectiveDivisionDescriptor(ScoreboardSummaryEntry team);
-        Task InitializeAsync(IServiceProvider provider);
     }
 
     public class CyberPatriotTenCompetitionRoundLogicService : ICompetitionRoundLogicService
     {
-        private IDictionary<TeamId, string> _allServiceCategoryMap;
-
-        public async Task InitializeAsync(IServiceProvider provider)
-        {
-            _allServiceCategoryMap = new Dictionary<TeamId, string>();
-            string allServiceCategoryMapFile = provider.GetRequiredService<IConfiguration>().GetValue<string>("allServiceCategoryMapFile", null);
-            if (!string.IsNullOrWhiteSpace(allServiceCategoryMapFile) && File.Exists(allServiceCategoryMapFile))
-            {
-                foreach (var line in await File.ReadAllLinesAsync(allServiceCategoryMapFile))
-                {
-                    try
-                    {
-                        string[] components = line.Split(new[] { ':' }, 2);
-                        _allServiceCategoryMap[TeamId.Parse(components[0].Trim())] = components[1].Trim();
-                    }
-                    catch
-                    {
-                        // oh well
-                    }
-                }
-            }
-        }
-
-        public string GetEffectiveDivisionDescriptor(ScoreboardSummaryEntry team) => GetCategory(team.TeamId) ?? team.Division.ToStringCamelCaseToSpace();
-
-        protected virtual string GetCategory(TeamId allServiceTeam)
-        {
-            if (_allServiceCategoryMap != null && _allServiceCategoryMap.TryGetValue(allServiceTeam, out string category))
-            {
-                return category;
-            }
-
-            return null;
-        }
+        public string GetEffectiveDivisionDescriptor(ScoreboardSummaryEntry team) => team.Category ?? team.Division.ToStringCamelCaseToSpace();
 
         public CompetitionRound InferRound(DateTimeOffset date)
         {
@@ -94,7 +60,7 @@ namespace CyberPatriot.DiscordBot.Services
 
         public IList<ScoreboardSummaryEntry> GetPeerTeams(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamDetails)
         {
-            // make a clone, we'll mutate this later but it doesn't matter because it's a local copy
+            // make a clone because we'll mutate this later
             divisionScoreboard = divisionScoreboard.Clone().WithFilter(teamDetails.Division, null);
             if (teamDetails.Division == Division.MiddleSchool)
             {
@@ -134,8 +100,7 @@ namespace CyberPatriot.DiscordBot.Services
             }
 
             // just need to filter the list by category
-            string myCategory = GetCategory(teamDetails.TeamId);
-            if (myCategory == null)
+            if (teamDetails.Category == null)
             {
                 // silent fail
                 return divisionScoreboard.TeamList;
@@ -143,7 +108,7 @@ namespace CyberPatriot.DiscordBot.Services
 
             // there might be some A.S. teams whose categories we don't know
             // they get treated as not-my-problem, that is, not part of my category
-            return divisionScoreboard.TeamList.Where(t => GetCategory(t.TeamId) == myCategory).ToIList();
+            return divisionScoreboard.TeamList.Where(t => t.Category == teamDetails.Category).ToIList();
         }
     }
 }

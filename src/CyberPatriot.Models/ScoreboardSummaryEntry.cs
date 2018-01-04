@@ -6,6 +6,7 @@ namespace CyberPatriot.Models
     {
         public TeamId TeamId { get; set; }
         public string Location { get; set; }
+        public string Category { get; set; }
         public Division Division { get; set; }
         public string Tier { get; set; }
         public int ImageCount { get; set; }
@@ -19,12 +20,12 @@ namespace CyberPatriot.Models
             {
                 var hashCode = (TeamId != null ? TeamId.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Location != null ? Location.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (int) Division;
+                hashCode = (hashCode * 397) ^ (int)Division;
                 hashCode = (hashCode * 397) ^ (Tier != null ? Tier.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ ImageCount;
                 hashCode = (hashCode * 397) ^ PlayTime.GetHashCode();
                 hashCode = (hashCode * 397) ^ TotalScore;
-                hashCode = (hashCode * 397) ^ (int) Warnings;
+                hashCode = (hashCode * 397) ^ (int)Warnings;
                 return hashCode;
             }
         }
@@ -39,7 +40,7 @@ namespace CyberPatriot.Models
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != this.GetType()) return false;
-            return Equals((ScoreboardSummaryEntry) obj);
+            return Equals((ScoreboardSummaryEntry)obj);
         }
     }
 }
