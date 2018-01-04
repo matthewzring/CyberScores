@@ -23,6 +23,7 @@ namespace CyberPatriot.DiscordBot.Modules
         public async Task InfoAsync()
         {
             var appinfo = (await Context.Client.GetApplicationInfoAsync());
+            ulong[] allUsers = await Context.Client.GetGuildsAsync().TaskToAsyncEnumerable<IGuild, IReadOnlyCollection<IGuild>>().SelectMany(g => g.GetUsersAsync().TaskToAsyncEnumerable<IGuildUser, IReadOnlyCollection<IGuildUser>>().Select(u => u.Id)).ToArray();
             await ReplyAsync(string.Empty, embed: await new EmbedBuilder()
                 .WithAuthor(Context.Client.CurrentUser.Username, Context.Client.CurrentUser.GetAvatarUrlOrDefault())
                 .WithDescription("**Purpose:** A bot for interaction with CyberPatriot scoreboards.\n"
@@ -39,7 +40,7 @@ namespace CyberPatriot.DiscordBot.Modules
                     .Select((v, i) => new {Value = v, Index = i}) 
                     .GroupBy(x => x.Index / 4)
                     .Select(x => x.Select(y => y.Value)).Select(x => string.Join(" ", x)))))
-                .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Users").WithValue(await Context.Client.GetGuildsAsync().TaskToAsyncEnumerable<IGuild, IReadOnlyCollection<IGuild>>().SumParallelAsync(async g => (await g.GetUsersAsync()).Count)))
+                .AddField(fb => fb.WithIsInline(true).WithName("Users").WithValue(allUsers.Length + $" total\n{allUsers.Distinct().Count()} unique"))
                 .BuildAsync());
         }
 
