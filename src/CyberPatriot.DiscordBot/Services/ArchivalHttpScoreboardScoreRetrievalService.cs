@@ -7,6 +7,6 @@ namespace CyberPatriot.DiscordBot.Services
     {
         protected override Uri BuildDetailsUri(TeamId team) => new Uri($"https://{Hostname}/cpix/r4_html_scoreboard/{team}.html");
 
-        protected override Uri BuildScoreboardUri(Division? divisionFilter, string tierFilter) => new Uri($"https://{Hostname}/cpix/r4_html_scoreboard/");
+        protected override Uri BuildScoreboardUri(Division? divisionFilter, Tier? tierFilter) => new Uri($"https://{Hostname}/cpix/r4_html_scoreboard/");
     }
 }

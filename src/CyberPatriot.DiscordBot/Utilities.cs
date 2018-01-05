@@ -37,36 +37,6 @@ namespace CyberPatriot.DiscordBot
             }
             return result.ToString();
         }
-        public static string SanitizeTier(string tier)
-        {
-            if (string.IsNullOrWhiteSpace(tier))
-            {
-                return null;
-            }
-
-            // make the tier into common casing
-            char[] tierCharArray = tier.Trim().ToCharArray();
-            StringBuilder newTier = new StringBuilder(tierCharArray.Length);
-            bool prevWhitespace = true;
-            for (int i = 0; i < tierCharArray.Length; i++)
-            {
-                if (char.IsWhiteSpace(tierCharArray[i]))
-                {
-                    prevWhitespace = true;
-                    continue;
-                }
-                if (prevWhitespace)
-                {
-                    newTier.Append(char.ToUpperInvariant(tierCharArray[i]));
-                    prevWhitespace = false;
-                }
-                else
-                {
-                    newTier.Append(char.ToLowerInvariant(tierCharArray[i]));
-                }
-            }
-            return newTier.ToString();
-        }
         public static TimeSpan ParseHourMinuteTimespan(string hhmm)
         {
             // works nicely in normal cases but we put it here in case it doesn't
@@ -85,16 +55,6 @@ namespace CyberPatriot.DiscordBot
                            int.Parse(hhmmSplit[1]),         // minutes
                            0);                              // seconds
         }
-        public static bool IsFakeTier(string tierString)
-        {
-            if (string.IsNullOrWhiteSpace(tierString))
-            {
-                return true;
-            }
-            string tier = tierString.Trim().ToLower();
-            return tier == "high school" || tier == "middle school";
-        }
-
         public static string ToConciseString(this ScoreWarnings warnings)
         {
             StringBuilder resBuild = new StringBuilder(2);

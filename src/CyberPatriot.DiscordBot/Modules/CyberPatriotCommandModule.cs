@@ -39,10 +39,13 @@ namespace CyberPatriot.DiscordBot.Modules
         [Command("rank"), Alias("getrank"), Summary("Gets score information for the team with the given rank.")]
         public Task GetTeamWithRankCommandAsync(int rank) => GetTeamWithRankAsync(rank);
 
-        [Command("rank"), Alias("getrank"), Summary("Gets score information for the team with the given rank in the given division and tier.")]
-        public Task GetTeamWithRankCommandAsync(int rank, Division division, string tier = null) => GetTeamWithRankAsync(rank, division, tier);
+        [Command("rank"), Alias("getrank"), Summary("Gets score information for the team with the given rank in the given division.")]
+        public Task GetTeamWithRankCommandAsync(int rank, Division division) => GetTeamWithRankAsync(rank, division);
 
-        public async Task GetTeamWithRankAsync(int rank, Division? division = null, string tier = null)
+        [Command("rank"), Alias("getrank"), Summary("Gets score information for the team with the given rank in the given division and tier.")]
+        public Task GetTeamWithRankCommandAsync(int rank, Division division, Tier tier) => GetTeamWithRankAsync(rank, division, tier);
+
+        public async Task GetTeamWithRankAsync(int rank, Division? division = null, Tier? tier = null)
         {
             using (Context.Channel.EnterTypingState())
             {
@@ -51,7 +54,7 @@ namespace CyberPatriot.DiscordBot.Modules
                     throw new ArgumentOutOfRangeException(nameof(rank));
                 }
 
-                var teams = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(division, Utilities.SanitizeTier(tier)));
+                var teams = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(division, tier));
                 var team = teams.TeamList[rank - 1];
                 ScoreboardDetails teamScore = await ScoreRetrievalService.GetDetailsAsync(team.TeamId);
                 if (teamScore == null)
@@ -91,11 +94,11 @@ namespace CyberPatriot.DiscordBot.Modules
         }
 
         [Command("scoreboard"), Alias("leaderboard"), Summary("Returns the current CyberPatriot leaderboard for the given division and tier.")]
-        public async Task GetLeaderboardAsync(Division division, string tier, int pageNumber = 1)
+        public async Task GetLeaderboardAsync(Division division, Tier tier, int pageNumber = 1)
         {
             using (Context.Channel.EnterTypingState())
             {
-                CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(division, Utilities.SanitizeTier(tier)));
+                CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(division, tier));
                 if (teamScore == null)
                 {
                     throw new Exception("Error obtaining scoreboard.");

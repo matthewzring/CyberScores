@@ -4,14 +4,14 @@ namespace CyberPatriot.Models
     {
         public static readonly ScoreboardFilterInfo NoFilter = new ScoreboardFilterInfo(null, null);
 
-        public ScoreboardFilterInfo(Division? divFilter, string tierFilter)
+        public ScoreboardFilterInfo(Division? divFilter, Tier? tierFilter)
         {
             Division = divFilter;
             Tier = tierFilter;
         }
 
         public Division? Division { get; private set; }
-        public string Tier { get; private set; }
+        public Tier? Tier { get; private set; }
 
         public override bool Equals(object obj)
         {
@@ -29,7 +29,7 @@ namespace CyberPatriot.Models
             {
                 int hashCode = 19;
                 hashCode = (hashCode * 401) ^ (Division.HasValue ? Division.Value.GetHashCode() : 0);
-                hashCode = (hashCode * 401) ^ (!string.IsNullOrEmpty(Tier) ? Tier.GetHashCode() : 0);
+                hashCode = (hashCode * 401) ^ (Tier.HasValue ? Tier.Value.GetHashCode() : 0);
                 return hashCode;
             }
         }

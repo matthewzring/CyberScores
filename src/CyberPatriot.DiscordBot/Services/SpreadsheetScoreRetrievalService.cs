@@ -225,7 +225,7 @@ namespace CyberPatriot.DiscordBot.Services
                             teamInfo.Summary.ImageCount = upperDataBound - lowerDataBound;
                             teamInfo.Summary.Location = data[locInd];
                             teamInfo.Summary.PlayTime = TimeSpan.Zero;
-                            teamInfo.Summary.Tier = tierInd == -1 ? null : data[tierInd];
+                            teamInfo.Summary.Tier = tierInd == -1 || !Enum.TryParse<Tier>(data[tierInd], true, out Tier tier) ? null : (Tier?)tier;
                             if (catInd >= 0)
                             {
                                 teamInfo.Summary.Division = defaultDiv;

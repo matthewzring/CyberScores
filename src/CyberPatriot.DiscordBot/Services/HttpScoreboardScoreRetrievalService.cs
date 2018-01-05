@@ -261,14 +261,14 @@ namespace CyberPatriot.DiscordBot.Services
             }
 
             _roundInferenceService = provider.GetService<ICompetitionRoundLogicService>() ?? _roundInferenceService;
-            
+
             // optionally, attempt to deduce categories
             _categoryProvider = provider.GetService<IExternalCategoryProviderService>();
 
             return Task.CompletedTask;
         }
 
-        protected virtual Uri BuildScoreboardUri(Division? divisionFilter, string tierFilter)
+        protected virtual Uri BuildScoreboardUri(Division? divisionFilter, Tier? tierFilter)
         {
 
             var builder = new UriBuilder();
@@ -281,10 +281,10 @@ namespace CyberPatriot.DiscordBot.Services
             {
                 queryList.Add("division=" + WebUtility.UrlEncode(divisionFilter.Value.ToStringCamelCaseToSpace()));
             }
-            if (tierFilter != null)
+            if (tierFilter.HasValue)
             {
 
-                queryList.Add("tier=" + WebUtility.UrlEncode(tierFilter));
+                queryList.Add("tier=" + WebUtility.UrlEncode(tierFilter.Value.ToString()));
             }
 
             builder.Query = string.Join("&", queryList);
@@ -345,9 +345,9 @@ namespace CyberPatriot.DiscordBot.Services
                     {
                         summary.Division = division;
                     }
-                    if (!Utilities.IsFakeTier(dataEntries[3]))
+                    if (Enum.TryParse<Tier>(dataEntries[3]?.Trim(), true, out Tier tier))
                     {
-                        summary.Tier = dataEntries[3];
+                        summary.Tier = tier;
                     }
                     summary.ImageCount = int.Parse(dataEntries[4]);
                     summary.PlayTime = Utilities.ParseHourMinuteTimespan(dataEntries[5]);
@@ -406,10 +406,9 @@ namespace CyberPatriot.DiscordBot.Services
                 retVal.Summary.Division = division;
             }
             retVal.Summary.Location = summaryRow.ChildNodes[2].InnerText;
-            retVal.Summary.Tier = summaryRow.ChildNodes[3].InnerText;
-            if (Utilities.IsFakeTier(retVal.Summary.Tier))
+            if (Enum.TryParse<Tier>(summaryRow.ChildNodes[3].InnerText, true, out Tier tier))
             {
-                retVal.Summary.Tier = null;
+                retVal.Summary.Tier = tier;
             }
             retVal.Summary.ImageCount = int.Parse(summaryRow.ChildNodes[4].InnerText.Trim());
             retVal.Summary.PlayTime = Utilities.ParseHourMinuteTimespan(summaryRow.ChildNodes[5].InnerText);

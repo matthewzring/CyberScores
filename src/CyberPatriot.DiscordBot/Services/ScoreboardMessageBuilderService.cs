@@ -146,19 +146,22 @@ namespace CyberPatriot.DiscordBot.Services
 
             // tier -> color on side
             // colors borrowed from AFA's spreadsheet
-            switch (teamScore.Summary.Tier?.Trim().ToLower())
+            if (teamScore.Summary.Tier.HasValue)
             {
-                case "platinum":
-                    // tweaked from AFA spreadsheet to be more distinct from silver
-                    // AFA original is #DAE3F3
-                    builder.WithColor(183, 201, 243);
-                    break;
-                case "gold":
-                    builder.WithColor(0xFF, 0xE6, 0x99);
-                    break;
-                case "silver":
-                    builder.WithColor(0xF2, 0xF2, 0xF2);
-                    break;
+                switch (teamScore.Summary.Tier.Value)
+                {
+                    case Tier.Platinum:
+                        // tweaked from AFA spreadsheet to be more distinct from silver
+                        // AFA original is #DAE3F3
+                        builder.WithColor(183, 201, 243);
+                        break;
+                    case Tier.Gold:
+                        builder.WithColor(0xFF, 0xE6, 0x99);
+                        break;
+                    case Tier.Silver:
+                        builder.WithColor(0xF2, 0xF2, 0xF2);
+                        break;
+                }
             }
 
             // TODO image lookup for location? e.g. thumbnail with flag?

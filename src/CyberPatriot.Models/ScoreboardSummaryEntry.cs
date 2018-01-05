@@ -8,7 +8,7 @@ namespace CyberPatriot.Models
         public string Location { get; set; }
         public string Category { get; set; }
         public Division Division { get; set; }
-        public string Tier { get; set; }
+        public Tier? Tier { get; set; }
         public int ImageCount { get; set; }
         public TimeSpan PlayTime { get; set; }
         public int TotalScore { get; set; }

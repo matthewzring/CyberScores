@@ -10,22 +10,7 @@ namespace CyberPatriot.Models
         public DateTimeOffset SnapshotTimestamp { get; set; }
         public Uri OriginUri { get; set; }
 
-        private ScoreboardFilterInfo _filterInfo = ScoreboardFilterInfo.NoFilter;
-        public ScoreboardFilterInfo Filter
-        {
-            get
-            {
-                return _filterInfo;
-            }
-            set
-            {
-                if (value == null)
-                {
-                    throw new ArgumentNullException(nameof(value));
-                }
-                _filterInfo = value;
-            }
-        }
+        public ScoreboardFilterInfo Filter { get; set; } = ScoreboardFilterInfo.NoFilter;
 
 
         public CompleteScoreboardSummary Clone()
@@ -50,12 +35,12 @@ namespace CyberPatriot.Models
             {
                 throw new ArgumentNullException(nameof(filter));
             }
-            
+
             if (Filter.Division.HasValue && Filter.Division != filter.Division)
             {
                 throw new ArgumentException("Cannot change an existing DivisionFilter.");
             }
-            if (Filter.Tier != null && Filter.Tier != filter.Tier)
+            if (Filter.Tier.HasValue && Filter.Tier != filter.Tier)
             {
                 throw new ArgumentException("Cannot change an existing TierFilter.");
             }
@@ -65,34 +50,34 @@ namespace CyberPatriot.Models
             {
                 newTeamList = newTeamList.Where(summary => summary.Division == filter.Division.Value);
             }
-            if (filter.Tier != null)
+            if (filter.Tier.HasValue)
             {
-                newTeamList = newTeamList.Where(summary => summary.Tier == filter.Tier);
+                newTeamList = newTeamList.Where(summary => summary.Tier == filter.Tier.Value);
             }
-            
+
             Filter = filter;
             TeamList = newTeamList as IList<ScoreboardSummaryEntry> ?? newTeamList.ToList();
             return this;
         }
-        
-        public CompleteScoreboardSummary WithFilter(Division? newDivisionFilter, string newTierFilter)
+
+        public CompleteScoreboardSummary WithFilter(Division? newDivisionFilter, Tier? newTierFilter)
         {
             if (Filter.Division.HasValue && Filter.Division != newDivisionFilter)
             {
                 throw new ArgumentException("Cannot change an existing DivisionFilter.");
             }
-            if (Filter.Tier != null && Filter.Tier != newTierFilter)
+            if (Filter.Tier.HasValue && Filter.Tier != newTierFilter)
             {
                 throw new ArgumentException("Cannot change an existing TierFilter.");
             }
             IEnumerable<ScoreboardSummaryEntry> newTeamList = TeamList;
-            if (newDivisionFilter != null)
+            if (newDivisionFilter.HasValue)
             {
                 newTeamList = newTeamList.Where(summary => summary.Division == newDivisionFilter.Value);
             }
-            if (newTierFilter != null)
+            if (newTierFilter.HasValue)
             {
-                newTeamList = newTeamList.Where(summary => summary.Tier == newTierFilter);
+                newTeamList = newTeamList.Where(summary => summary.Tier == newTierFilter.Value);
             }
             Filter = new ScoreboardFilterInfo(newDivisionFilter, newTierFilter);
             TeamList = newTeamList as IList<ScoreboardSummaryEntry> ?? newTeamList.ToList();
