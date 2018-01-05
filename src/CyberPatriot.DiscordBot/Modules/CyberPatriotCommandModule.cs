@@ -5,6 +5,8 @@ using Discord.Commands;
 using Discord.WebSocket;
 using CyberPatriot.DiscordBot.Services;
 using CyberPatriot.Models;
+using System.Linq;
+using CyberPatriot.BitmapProvider;
 
 namespace CyberPatriot.DiscordBot.Modules
 {
@@ -15,6 +17,8 @@ namespace CyberPatriot.DiscordBot.Modules
         public ScoreboardMessageBuilderService ScoreEmbedBuilder { get; set; }
 
         public PreferenceProviderService Preferences { get; set; }
+
+        public IGraphProviderService GraphProvider { get; set; }
 
         public ICompetitionRoundLogicService CompetitionRoundLogicService { get; set; }
 
@@ -96,6 +100,22 @@ namespace CyberPatriot.DiscordBot.Modules
                 CompleteScoreboardSummary scoreboard = await ScoreRetrievalService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter);
 
                 await ReplyAsync(ScoreEmbedBuilder.CreatePeerLeaderboardEmbed(scoreboard, teamDetails, await Preferences.GetTimeZoneAsync(Context.Guild, Context.User)));
+            }
+        }
+
+        [Command("histogram"), Alias("scoregraph", "scorestats"), Summary("Generates a histogram of the scores on the current CyberPatriot leaderboard.")]
+        public async Task GenerateHistogramAsync()
+        {
+            decimal[] data = (await ScoreRetrievalService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter)).TeamList
+                // nasty hack
+                .Select(datum => decimal.TryParse(ScoreRetrievalService.FormattingOptions.FormatScore(datum.TotalScore), out decimal d) ? d : datum.TotalScore)
+                .OrderBy(d => d).ToArray();
+            using (var memStr = new System.IO.MemoryStream())
+            {
+                await GraphProvider.WriteHistogramPngAsync(data, "Score", "Frequency", BitmapProvider.Color.White, BitmapProvider.Color.Blue, BitmapProvider.Color.Black, memStr);
+                memStr.Position = 0;
+                await Context.Channel.SendFileAsync(memStr, "histogram.png", $"**CyberPatriot Score Analysis**\n"
+                    + $"**Teams:** {data.Length}\n**Mean:** {data.Average()}\n**Median:** {data[data.Length / 2]}");
             }
         }
     }

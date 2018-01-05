@@ -7,6 +7,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using LiteDB;
 using CyberPatriot.DiscordBot.Services;
+using CyberPatriot.BitmapProvider;
 
 namespace CyberPatriot.DiscordBot
 {
@@ -80,6 +81,7 @@ namespace CyberPatriot.DiscordBot
                 .AddSingleton(_config)
                 .AddSingleton<IDataPersistenceService, LiteDbDataPersistenceService>(prov => new LiteDbDataPersistenceService(new LiteDatabase(_config["databaseFilename"])))
                 .AddSingleton<PreferenceProviderService>()
+                .AddSingleton<IGraphProviderService, BitmapProvider.ImageSharp.ImageSharpGraphProviderService>()
                 // CyPat
                 // Scoreboard trial order: live, JSON archive, CSV released archive
                 .AddSingleton<IScoreRetrievalService, FallbackScoreRetrievalService>(prov => new FallbackScoreRetrievalService(

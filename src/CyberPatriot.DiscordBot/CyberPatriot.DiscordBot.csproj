@@ -22,6 +22,8 @@
     <PackageReference Include="TimeZoneNames" Version="3.2.0" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\CyberPatriot.BitmapProvider.ImageSharp\CyberPatriot.BitmapProvider.ImageSharp.csproj" />
+    <ProjectReference Include="..\CyberPatriot.BitmapProvider\CyberPatriot.BitmapProvider.csproj" />
     <ProjectReference Include="..\CyberPatriot.Models\CyberPatriot.Models.csproj">
       <Project>{C4517923-3517-4AB6-9EB3-074869BCF38C}</Project>
       <Name>CyberPatriot.Models</Name>
