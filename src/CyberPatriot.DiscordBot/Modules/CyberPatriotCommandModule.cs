@@ -36,6 +36,38 @@ namespace CyberPatriot.DiscordBot.Modules
             }
         }
 
+        [Command("rank"), Alias("getrank"), Summary("Gets score information for the team with the given rank.")]
+        public async Task GetTeamWithRankCommandAsync(int rank)
+        {
+            await GetTeamWithRankAsync(rank);
+        }
+
+        [Command("rank"), Alias("getrank"), Summary("Gets score information for the team with the given rank in the given division and tier.")]
+        public async Task GetTeamWithRankCommandAsync(int rank, Division division, string tier = null)
+        {
+            await GetTeamWithRankAsync(rank, division, tier);
+        }
+
+        public async Task GetTeamWithRankAsync(int rank, Division? division = null, string tier = null)
+        {
+            using (Context.Channel.EnterTypingState())
+            {
+                if (rank < 1)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(rank));
+                }
+
+                var teams = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(division, tier));
+                var team = teams.TeamList[rank - 1];
+                ScoreboardDetails teamScore = await ScoreRetrievalService.GetDetailsAsync(team.TeamId);
+                if (teamScore == null)
+                {
+                    throw new Exception("Error obtaining team score.");
+                }
+                await ReplyAsync(string.Empty, embed: ScoreEmbedBuilder.CreateTeamDetailsEmbed(teamScore, await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(teamScore.Summary.Division, null))).Build());
+            }
+        }
+
         [Command("scoreboard"), Alias("leaderboard"), Summary("Returns the current CyberPatriot leaderboard.")]
         public async Task GetLeaderboardAsync(int pageNumber = 1)
         {
