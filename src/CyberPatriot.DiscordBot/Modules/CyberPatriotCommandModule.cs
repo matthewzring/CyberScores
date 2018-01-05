@@ -37,16 +37,10 @@ namespace CyberPatriot.DiscordBot.Modules
         }
 
         [Command("rank"), Alias("getrank"), Summary("Gets score information for the team with the given rank.")]
-        public async Task GetTeamWithRankCommandAsync(int rank)
-        {
-            await GetTeamWithRankAsync(rank);
-        }
+        public Task GetTeamWithRankCommandAsync(int rank) => GetTeamWithRankAsync(rank);
 
         [Command("rank"), Alias("getrank"), Summary("Gets score information for the team with the given rank in the given division and tier.")]
-        public async Task GetTeamWithRankCommandAsync(int rank, Division division, string tier = null)
-        {
-            await GetTeamWithRankAsync(rank, division, tier);
-        }
+        public Task GetTeamWithRankCommandAsync(int rank, Division division, string tier = null) => GetTeamWithRankAsync(rank, division, tier);
 
         public async Task GetTeamWithRankAsync(int rank, Division? division = null, string tier = null)
         {
@@ -57,7 +51,7 @@ namespace CyberPatriot.DiscordBot.Modules
                     throw new ArgumentOutOfRangeException(nameof(rank));
                 }
 
-                var teams = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(division, tier));
+                var teams = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(division, Utilities.SanitizeTier(tier)));
                 var team = teams.TeamList[rank - 1];
                 ScoreboardDetails teamScore = await ScoreRetrievalService.GetDetailsAsync(team.TeamId);
                 if (teamScore == null)
@@ -101,15 +95,7 @@ namespace CyberPatriot.DiscordBot.Modules
         {
             using (Context.Channel.EnterTypingState())
             {
-                if (!string.IsNullOrWhiteSpace(tier))
-                {
-                    // transform some common mistakes with the tier
-                    // first letter capital
-                    char[] tierCharArray = tier.ToCharArray();
-                    tierCharArray[0] = char.ToUpper(tierCharArray[0]);
-                    tier = new string(tierCharArray);
-                }
-                CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(division, tier));
+                CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(division, Utilities.SanitizeTier(tier)));
                 if (teamScore == null)
                 {
                     throw new Exception("Error obtaining scoreboard.");

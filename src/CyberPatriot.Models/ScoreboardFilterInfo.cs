@@ -1,6 +1,6 @@
 namespace CyberPatriot.Models
 {
-    public class ScoreboardFilterInfo
+    public struct ScoreboardFilterInfo
     {
         public static readonly ScoreboardFilterInfo NoFilter = new ScoreboardFilterInfo(null, null);
 

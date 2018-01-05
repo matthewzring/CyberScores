@@ -37,6 +37,36 @@ namespace CyberPatriot.DiscordBot
             }
             return result.ToString();
         }
+        public static string SanitizeTier(string tier)
+        {
+            if (string.IsNullOrWhiteSpace(tier))
+            {
+                return null;
+            }
+
+            // make the tier into common casing
+            char[] tierCharArray = tier.Trim().ToCharArray();
+            StringBuilder newTier = new StringBuilder(tierCharArray.Length);
+            bool prevWhitespace = true;
+            for (int i = 0; i < tierCharArray.Length; i++)
+            {
+                if (char.IsWhiteSpace(tierCharArray[i]))
+                {
+                    prevWhitespace = true;
+                    continue;
+                }
+                if (prevWhitespace)
+                {
+                    newTier.Append(char.ToUpperInvariant(tierCharArray[i]));
+                    prevWhitespace = false;
+                }
+                else
+                {
+                    newTier.Append(char.ToLowerInvariant(tierCharArray[i]));
+                }
+            }
+            return newTier.ToString();
+        }
         public static TimeSpan ParseHourMinuteTimespan(string hhmm)
         {
             // works nicely in normal cases but we put it here in case it doesn't
@@ -110,7 +140,7 @@ namespace CyberPatriot.DiscordBot
                 }, () => rootEnumerator.Current, () => rootEnumerator.Dispose());
             });
         }
-        
+
         public static async Task<int> SumParallelAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, Task<int>> transform)
         {
             List<Task<int>> transformTasks = await enumerable.Select(transform).ToList().ConfigureAwait(false);
@@ -259,7 +289,7 @@ namespace CyberPatriot.DiscordBot
             }
             return response.ToString().Trim();
         }
-        
+
         /// <summary>
         /// Finds a read-only predicated list from a data persistence service, managing the context automatically.
         /// ToIList is called on the whole thing.
