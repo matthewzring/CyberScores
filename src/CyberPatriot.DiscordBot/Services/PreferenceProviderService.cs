@@ -16,6 +16,11 @@ namespace CyberPatriot.DiscordBot.Services
         }
 
         #region Timezone
+
+        /// <summary>
+        /// Gets a non-null TimeZoneInfo object for the preferred timezone of the given user (if given) in the given guild (if given). 
+        /// The timezone of last resort is UTC.
+        /// </summary>
         public async Task<TimeZoneInfo> GetTimeZoneAsync(IGuild guild = null, IUser user = null)
         {
             // Bot default

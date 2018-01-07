@@ -15,9 +15,24 @@ namespace CyberPatriot.DiscordBot.Modules
     {
         public IScoreRetrievalService ScoreService { get; set; }
         public IDataPersistenceService Database { get; set; }
-        
+        public PreferenceProviderService Preferences { get; set; }
+
         [Command("ping"), Summary("Pings the bot. Responds with the internal socket client's estimated latency, if available.")]
-        public Task PingAsync() => ReplyAsync("Pong!" + (Context.Client is Discord.WebSocket.DiscordSocketClient socketClient ? " " + socketClient.Latency + "ms" : string.Empty));
+        public async Task PingAsync()
+        {
+            var messageContents = new System.Text.StringBuilder();
+            messageContents.AppendLine("**__Pong!__**");
+            if (Context.Client is Discord.WebSocket.DiscordSocketClient socketClient)
+            {
+                messageContents.AppendFormat("Socket Latency: `{0}ms`", socketClient.Latency).AppendLine();
+            }
+            var stopwatch = new System.Diagnostics.Stopwatch();
+            stopwatch.Start();
+            IUserMessage myMessage = await ReplyAsync(messageContents.ToString());
+            stopwatch.Stop();
+            messageContents.AppendFormat("Message RTT: `{0}ms`", stopwatch.ElapsedMilliseconds);
+            await myMessage.ModifyAsync(mp => mp.Content = messageContents.ToString());
+        }
 
         [Command("info"), Alias("about"), Summary("Returns information about the bot.")]
         public async Task InfoAsync()
@@ -37,7 +52,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 .AddField(fb => fb.WithIsInline(true).WithName("Uptime").WithValue(string.Join("\n",
                     (DateTimeOffset.UtcNow - CyberPatriotDiscordBot.StartupTime).ToLongString()
                     .Split(' ')
-                    .Select((v, i) => new {Value = v, Index = i}) 
+                    .Select((v, i) => new { Value = v, Index = i })
                     .GroupBy(x => x.Index / 4)
                     .Select(x => x.Select(y => y.Value)).Select(x => string.Join(" ", x)))))
                 .AddField(fb => fb.WithIsInline(true).WithName("Users").WithValue(allUsers.Length + $" total\n{allUsers.Distinct().Count()} unique"))
@@ -46,12 +61,10 @@ namespace CyberPatriot.DiscordBot.Modules
 
         [Command("kill"), Alias("die"), RequireOwner]
         [Summary("Terminates the bot instance.")]
-        public Task KillAsync()
+        public async Task KillAsync()
         {
-            // don't wait on the reply
-            ReplyAsync("Goodbye!");
+            await ReplyAsync("Goodbye!");
             Environment.Exit(0);
-            return Task.CompletedTask;
         }
 
         [Command("setavatar"), Alias("seticon"), RequireOwner]
@@ -105,15 +118,8 @@ namespace CyberPatriot.DiscordBot.Modules
                         }
                     }
                     rawWriteStream.Position = 0;
-                    string tzId = (await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id))?.TimeZone;
-                    TimeZoneInfo tz = null;
-                    if (tzId != null)
-                    {
-                        tz = TimeZoneInfo.FindSystemTimeZoneById(tzId);
-                    }
-                    DateTimeOffset timestamp = tz == null
-                        ? scoreSummary.SnapshotTimestamp
-                        : TimeZoneInfo.ConvertTime(scoreSummary.SnapshotTimestamp, tz);
+                    TimeZoneInfo tz = await Preferences.GetTimeZoneAsync(Context.Guild, Context.User);
+                    DateTimeOffset timestamp = TimeZoneInfo.ConvertTime(scoreSummary.SnapshotTimestamp, tz);
 
                     await Context.Channel.SendFileAsync(rawWriteStream, fileName,
                         $"JSON scoreboard snapshot for {timestamp:g} {tz?.GetAbbreviations().Generic ?? "UTC"}");
