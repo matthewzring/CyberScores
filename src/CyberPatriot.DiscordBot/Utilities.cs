@@ -441,6 +441,38 @@ namespace CyberPatriot.DiscordBot
             return prev + baseString + next;
         }
 
+        /// <summary>
+        /// Appends and prepends to a string, unless it is null or whitespace.
+        /// In that case, returns the empty string.
+        /// </summary>
+        public static string AppendPrependIfNonEmpty(this string baseString, string prev, string next = null)
+        {
+            if (string.IsNullOrWhiteSpace(baseString))
+            {
+                return string.Empty;
+            }
+
+            return AppendPrepend(baseString, prev, next);
+        }
+
+        public static decimal Median(this decimal[] sortedData)
+        {
+            if (sortedData.Length == 0)
+            {
+                throw new ArgumentException("Cannot compute the median of a zero-length array.");
+            }
+
+            int center = sortedData.Length / 2;
+
+
+            if (sortedData.Length % 2 == 0)
+            {
+                return (sortedData[center] + sortedData[center + 1]) / 2;
+            }
+
+            return sortedData[center];
+        }
+
         public static class PeriodicTask
         {
             public static async Task Run<TState>(Func<TState, Task> action, TimeSpan period, TState state, System.Threading.CancellationToken cancellationToken)

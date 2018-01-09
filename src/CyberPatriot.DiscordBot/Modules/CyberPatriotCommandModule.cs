@@ -124,10 +124,43 @@ namespace CyberPatriot.DiscordBot.Modules
             }
         }
 
-        [Command("histogram"), Alias("scoregraph", "scorestats"), Summary("Generates a histogram of the scores on the current CyberPatriot leaderboard.")]
-        public async Task GenerateHistogramAsync()
+        #region Histogram
+
+        [Command("histogram"), Alias("scoregraph", "scorestats"), Summary("Generates a histogram of all scores on the current CyberPatriot leaderboard. Scores are processed as overall scores unless an image name is specified, in which case only scores on that image are analyzed.")]
+        public Task HistogramCommandAsync(string imageName = null) => GenerateHistogramAsync(ScoreboardFilterInfo.NoFilter, imageName);
+
+        [Command("histogram"), Alias("scoregraph", "scorestats"), Summary("Generates a histogram of the given division's scores on the current CyberPatriot leaderboard. Scores are processed as overall scores unless an image name is specified, in which case only scores on that image are analyzed.")]
+        public Task HistogramCommandAsync(Division div, string imageName = null) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, null), imageName);
+
+        [Command("histogram"), Alias("scoregraph", "scorestats"), Summary("Generates a histogram of the given tier's scores on the current CyberPatriot leaderboard. Scores are processed as overall scores unless an image name is specified, in which case only scores on that image are analyzed.")]
+        public Task HistogramCommandAsync(Division div, Tier tier, string imageName = null) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, tier), imageName);
+
+        public async Task GenerateHistogramAsync(ScoreboardFilterInfo filter, string imageName)
         {
-            decimal[] data = (await ScoreRetrievalService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter)).TeamList
+            var descBuilder = new System.Text.StringBuilder();
+            if (filter.Division.HasValue)
+            {
+                descBuilder.Append(' ').Append(filter.Division.Value.ToStringCamelCaseToSpace());
+            }
+            if (filter.Tier.HasValue)
+            {
+                descBuilder.Append(' ').Append(filter.Tier.Value);
+            }
+            if (imageName != null)
+            {
+                throw new NotSupportedException("Per-image histograms are not yet supported.");
+
+// unreachable code - not implemented on the data-aggregation/filter side, but this code Should Work:tm: for constructing the title
+#pragma warning disable 0162
+                if (descBuilder.Length > 0)
+                {
+                    descBuilder.Append(": ");
+                }
+                descBuilder.Append(imageName);
+#pragma warning restore 0162
+            }
+
+            decimal[] data = (await ScoreRetrievalService.GetScoreboardAsync(filter)).TeamList
                 // nasty hack
                 .Select(datum => decimal.TryParse(ScoreRetrievalService.FormattingOptions.FormatScore(datum.TotalScore), out decimal d) ? d : datum.TotalScore)
                 .OrderBy(d => d).ToArray();
@@ -135,9 +168,11 @@ namespace CyberPatriot.DiscordBot.Modules
             {
                 await GraphProvider.WriteHistogramPngAsync(data, "Score", "Frequency", BitmapProvider.Color.White, BitmapProvider.Color.Blue, BitmapProvider.Color.Black, memStr);
                 memStr.Position = 0;
-                await Context.Channel.SendFileAsync(memStr, "histogram.png", $"**CyberPatriot Score Analysis**\n"
-                    + $"**Teams:** {data.Length}\n**Mean:** {data.Average()}\n**Median:** {data[data.Length / 2]}");
+                await Context.Channel.SendFileAsync(memStr, "histogram.png", $"__**CyberPatriot Score Analysis" + descBuilder.ToString().Trim().AppendPrependIfNonEmpty(": ", "") + "**__\n"
+                    + $"**Teams:** {data.Length}\n**Mean:** {data.Average():0.##}\n**Median:** {data.Median():0.##}");
             }
         }
+
+        #endregion
     }
 }
