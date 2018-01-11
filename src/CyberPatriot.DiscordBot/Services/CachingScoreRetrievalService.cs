@@ -9,7 +9,7 @@ using System.Collections;
 
 namespace CyberPatriot.DiscordBot.Services
 {
-    public class CachingScoreRetrievalService : IScoreRetrievalService, IComposingService<IScoreRetrievalService>
+    public class CachingScoreRetrievalService : IScoreRetrievalService, IComposingService<IScoreRetrievalService>, IDisposable
     {
         public IScoreRetrievalService Backend { get; set; }
         public TimeSpan MaxTeamLifespan { get; set; } = TimeSpan.FromMinutes(.75);
@@ -21,9 +21,14 @@ namespace CyberPatriot.DiscordBot.Services
         public CompetitionRound Round => Backend.Round;
         public ScoreFormattingOptions FormattingOptions => Backend.FormattingOptions;
 
+
+        protected Timer PurgeTimer { get; private set; }
+
+
         public CachingScoreRetrievalService(IScoreRetrievalService backend)
         {
             Backend = backend;
+            PurgeTimer = new Timer(PurgeCacheTimerTick, null, MaxTeamLifespan * 5, MaxTeamLifespan * 5);
         }
 
         public Task InitializeAsync(IServiceProvider provider) => Backend.InitializeAsync(provider);
@@ -65,13 +70,30 @@ namespace CyberPatriot.DiscordBot.Services
 
         #region Team Details
 
+        protected void PurgeCacheTimerTick(object state)
+        {
+            // 50ms to wait: if we're in the middle of something which is taking a while another thread is busy with this collection
+            // then we shouldn't bother with this cleanup, that thread probably did
+            if (teamCacheLock.Wait(50))
+            {
+                try
+                {
+                    EnsureTeamCacheCapacity(overrideCountCheck: true);
+                }
+                finally
+                {
+                    teamCacheLock.Release();
+                }
+            }
+        }
+
         protected ConcurrentDictionary<TeamId, HitTrackingCachedObject<ScoreboardDetails>> cachedTeamInformations = new ConcurrentDictionary<TeamId, HitTrackingCachedObject<ScoreboardDetails>>();
         protected readonly SemaphoreSlim teamCacheLock = new SemaphoreSlim(1);
 
         // does NOT enter the teamCacheLock, caller MUST
-        protected void EnsureTeamCacheCapacity()
+        protected void EnsureTeamCacheCapacity(bool overrideCountCheck = false)
         {
-            if (cachedTeamInformations.Count >= MaxCachedTeamDetails)
+            if (overrideCountCheck || cachedTeamInformations.Count >= MaxCachedTeamDetails)
             {
                 // start by purging all old items
                 // ToArray to avoid enumeration + modification
@@ -195,6 +217,48 @@ namespace CyberPatriot.DiscordBot.Services
             {
                 scoreboardCacheLock.Release();
             }
+        }
+        #endregion
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects).
+                    if (Backend is IDisposable d)
+                    {
+                        d.Dispose();
+                    }
+                    PurgeTimer?.Dispose();
+                    scoreboardCacheLock?.Dispose();
+                    teamCacheLock?.Dispose();
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
+                // TODO: set large fields to null.
+
+                disposedValue = true;
+            }
+        }
+
+        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+        // ~CachingScoreRetrievalService() {
+        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+        //   Dispose(false);
+        // }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            // TODO: uncomment the following line if the finalizer is overridden above.
+            // GC.SuppressFinalize(this);
         }
         #endregion
     }
