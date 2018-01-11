@@ -65,6 +65,36 @@ namespace CyberPatriot.DiscordBot.Modules
             }
         }
 
+        [Command("percentile"), Summary("Gets score information for the team at the given percentile rank.")]
+        public Task GetTeamWithPercentileCommandAsync([InclusiveRange(0, 100)] double rank) => GetTeamWithPercentileAsync(rank);
+
+        [Command("percentile"), Summary("Gets score information for the team at the given percentile rank in the given division.")]
+        public Task GetTeamWithPercentileCommandAsync([InclusiveRange(0, 100)] double rank, Division division) => GetTeamWithPercentileAsync(rank, division);
+
+        [Command("percentile"), Summary("Gets score information for the team at the given percentile rank in the given division and tier.")]
+        public Task GetTeamWithPercentileCommandAsync([InclusiveRange(0, 100)] double rank, Division division, Tier tier) => GetTeamWithPercentileAsync(rank, division, tier);
+
+        public async Task GetTeamWithPercentileAsync(double rank, Division? division = null, Tier? tier = null)
+        {
+            using (Context.Channel.EnterTypingState())
+            {
+                if (rank < 1)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(rank));
+                }
+
+                var teams = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(division, tier));
+                // teams list in descending order
+                int expectedIndex = ((int)Math.Round(((100 - rank) / 100) * teams.TeamList.Count)).Clamp(0, teams.TeamList.Count);
+                ScoreboardDetails teamScore = await ScoreRetrievalService.GetDetailsAsync(teams.TeamList[expectedIndex].TeamId);
+                if (teamScore == null)
+                {
+                    throw new Exception("Error obtaining team score.");
+                }
+                await ReplyAsync(string.Empty, embed: ScoreEmbedBuilder.CreateTeamDetailsEmbed(teamScore, await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(teamScore.Summary.Division, null))).Build());
+            }
+        }
+
         [Command("scoreboard"), Alias("leaderboard"), Summary("Returns the current CyberPatriot leaderboard.")]
         public async Task GetLeaderboardAsync(int pageNumber = 1)
         {
@@ -150,7 +180,7 @@ namespace CyberPatriot.DiscordBot.Modules
             {
                 throw new NotSupportedException("Per-image histograms are not yet supported.");
 
-// unreachable code - not implemented on the data-aggregation/filter side, but this code Should Work:tm: for constructing the title
+                // unreachable code - not implemented on the data-aggregation/filter side, but this code Should Work:tm: for constructing the title
 #pragma warning disable 0162
                 if (descBuilder.Length > 0)
                 {

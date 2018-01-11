@@ -55,6 +55,20 @@ namespace CyberPatriot.DiscordBot
                            int.Parse(hhmmSplit[1]),         // minutes
                            0);                              // seconds
         }
+        public static int Clamp(this int i, int lowerInclusive, int upperExclusive)
+        {
+            if (i < lowerInclusive)
+            {
+                return lowerInclusive;
+            }
+
+            if (i >= upperExclusive)
+            {
+                return upperExclusive - 1;
+            }
+
+            return i;
+        }
         public static string ToConciseString(this ScoreWarnings warnings)
         {
             StringBuilder resBuild = new StringBuilder(2);
