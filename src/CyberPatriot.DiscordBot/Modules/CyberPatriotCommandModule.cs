@@ -36,6 +36,34 @@ namespace CyberPatriot.DiscordBot.Modules
             }
         }
 
+        [Command("exportcsv"), Alias("csv", "csvexport"), Summary("Exports the scoreboard summary as a CSV file.")]
+        public async Task ExportSummaryCommandAsync()
+        {
+            using (Context.Channel.EnterTypingState())
+            {
+                var scoreboardTask = ScoreRetrievalService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter);
+                using (var targetStream = new System.IO.MemoryStream())
+                {
+                    var targetWriter = new System.IO.StreamWriter(targetStream);
+                    await targetWriter.WriteLineAsync("TeamId,Division,Category,Location,Tier,ImageCount,PlayTime,Score,Warnings");
+                    CompleteScoreboardSummary scoreboard = await scoreboardTask;
+                    foreach (var team in scoreboard.TeamList)
+                    {
+                        await targetWriter.WriteLineAsync($"{team.TeamId},{team.Division.ToStringCamelCaseToSpace()},{team.Category ?? string.Empty},{team.Location},{(team.Tier.HasValue ? team.Tier.Value.ToString() : string.Empty)},{team.ImageCount},{team.PlayTime:hh\\:mm},{ScoreRetrievalService.FormattingOptions.FormatScore(team.TotalScore)},{team.Warnings.ToConciseString()}");
+                    }
+
+                    targetStream.Position = 0;
+
+                    TimeZoneInfo tz = await Preferences.GetTimeZoneAsync(Context.Guild, Context.User);
+                    string tzAbbr = tz.GetAbbreviations().Generic;
+                    DateTimeOffset snapshotTimestamp = TimeZoneInfo.ConvertTime(scoreboard.SnapshotTimestamp, tz);
+                    await Context.Channel.SendFileAsync(targetStream, "scoreboard.csv", $"Scoreboard summary CSV export\nScore timestamp: {snapshotTimestamp:g} {tzAbbr}\nExported: {TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, tz):g} {tzAbbr}");
+                }
+            }
+        }
+
+        #region Rank
+
         [Command("rank"), Alias("getrank"), Summary("Gets score information for the team with the given rank.")]
         public Task GetTeamWithRankCommandAsync(int rank) => GetTeamWithRankAsync(rank);
 
@@ -64,6 +92,9 @@ namespace CyberPatriot.DiscordBot.Modules
                 await ReplyAsync(string.Empty, embed: ScoreEmbedBuilder.CreateTeamDetailsEmbed(teamScore, await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(teamScore.Summary.Division, null))).Build());
             }
         }
+
+        #endregion
+        #region Percentile
 
         [Command("percentile"), Summary("Gets score information for the team at the given percentile rank.")]
         public Task GetTeamWithPercentileCommandAsync([InclusiveRange(0, 100)] double rank) => GetTeamWithPercentileAsync(rank);
@@ -94,6 +125,9 @@ namespace CyberPatriot.DiscordBot.Modules
                 await ReplyAsync(string.Empty, embed: ScoreEmbedBuilder.CreateTeamDetailsEmbed(teamScore, await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(teamScore.Summary.Division, null))).Build());
             }
         }
+
+        #endregion
+        #region Scoreboard
 
         [Command("scoreboard"), Alias("leaderboard"), Summary("Returns the current CyberPatriot leaderboard.")]
         public async Task GetLeaderboardAsync(int pageNumber = 1)
@@ -154,6 +188,7 @@ namespace CyberPatriot.DiscordBot.Modules
             }
         }
 
+        #endregion
         #region Histogram
 
         [Command("histogram"), Alias("scoregraph", "scorestats"), Summary("Generates a histogram of all scores on the current CyberPatriot leaderboard. Scores are processed as overall scores unless an image name is specified, in which case only scores on that image are analyzed.")]
