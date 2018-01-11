@@ -74,9 +74,12 @@ namespace CyberPatriot.DiscordBot.Services
                 IMessageChannel ch;
                 await (ch = (sg.DefaultChannel as IMessageChannel ?? await sg.Owner.GetOrCreateDMChannelAsync()))
                     .SendMessageAsync(
-                        $"Hello! I am the CyberPatriot scoreboard Discord bot{(ch is IDMChannel ? ", and I've just been added to your server " + sg.Name?.AppendPrepend("\"") : string.Empty)}. To get started, " +
+                        $"Hello! I am the __unofficial__ CyberPatriot scoreboard Discord bot{(ch is IDMChannel ? ", and I've just been added to your server " + sg.Name?.AppendPrepend("\"") : string.Empty)}. To get started, " +
                         $"give me a prefix:\n\"{_discord.CurrentUser.Mention} admin prefix set <your prefix here>\"\n" +
-                        $"You can say \"{_discord.CurrentUser.Mention} about\" to get more info about me, or run \"{_discord.CurrentUser.Mention} help\" for a list of commands.");
+                        $"You can say \"{_discord.CurrentUser.Mention} about\" to get more info about me, or run \"{_discord.CurrentUser.Mention} help\" for a list of commands.\n\n" +
+                        $"Please keep in mind this bot is 100% *unofficial*, and is not in any way affiliated with the Air Force Association or the CyberPatriot program. All scores " +
+                        $"reported by the bot, even those marked \"official\", are a best-effort representation of the corresponding AFA-published details - accuracy is not guaranteed. " +
+                        $"Refer to the about command for more information.");
             };
             return Task.CompletedTask;
         }
