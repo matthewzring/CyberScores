@@ -7,7 +7,7 @@ namespace CyberPatriot.BitmapProvider
 {
     public class NonImplementedGraphProviderService : IGraphProviderService
     {
-        Task IGraphProviderService.WriteHistogramPngAsync(IEnumerable<decimal> dataset, string horizontalAxisLabel, string verticalAxisLabel, Color backColor, Color barColor, Color labelColor, Stream target)
+        Task IGraphProviderService.WriteHistogramPngAsync(IEnumerable<decimal> dataset, string horizontalAxisLabel, string verticalAxisLabel, Func<decimal, decimal, string> getDataRangeLabel, Color backColor, Color barColor, Color labelColor, Stream target)
             => Task.FromException(new NotImplementedException());
     }
 }

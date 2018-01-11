@@ -166,7 +166,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 .OrderBy(d => d).ToArray();
             using (var memStr = new System.IO.MemoryStream())
             {
-                await GraphProvider.WriteHistogramPngAsync(data, "Score", "Frequency", BitmapProvider.Color.White, BitmapProvider.Color.Blue, BitmapProvider.Color.Black, memStr);
+                await GraphProvider.WriteHistogramPngAsync(data, "Score", "Frequency", (lower, upper) => $"{lower:0.0#} - {upper:0.0#}", BitmapProvider.Color.White, BitmapProvider.Color.Blue, BitmapProvider.Color.Black, memStr);
                 memStr.Position = 0;
                 await Context.Channel.SendFileAsync(memStr, "histogram.png", $"__**CyberPatriot Score Analysis" + descBuilder.ToString().Trim().AppendPrependIfNonEmpty(": ", "") + "**__\n"
                     + $"**Teams:** {data.Length}\n**Mean:** {data.Average():0.##}\n**Median:** {data.Median():0.##}");

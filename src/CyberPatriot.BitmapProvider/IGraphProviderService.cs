@@ -9,6 +9,7 @@ namespace CyberPatriot.BitmapProvider
     {
         Task WriteHistogramPngAsync(IEnumerable<decimal> dataset,
             string horizontalAxisLabel, string verticalAxisLabel,
+            Func<decimal, decimal, string> getDataRangeLabel,
             Color backColor, Color barColor, Color labelColor,
             Stream target);
     }
