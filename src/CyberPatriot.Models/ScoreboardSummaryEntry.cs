@@ -33,7 +33,7 @@ namespace CyberPatriot.Models
 
         protected bool Equals(ScoreboardSummaryEntry other)
         {
-            return TeamId == other.TeamId && string.Equals(Location, other.Location) && StringComparer.Equals(Category, other.Category) && Division == other.Division && string.Equals(Tier, other.Tier) && ImageCount == other.ImageCount && PlayTime.Equals(other.PlayTime) && TotalScore == other.TotalScore && Warnings == other.Warnings;
+            return TeamId == other.TeamId && string.Equals(Location, other.Location) && string.Equals(Category, other.Category) && Division == other.Division && string.Equals(Tier, other.Tier) && ImageCount == other.ImageCount && PlayTime.Equals(other.PlayTime) && TotalScore == other.TotalScore && Warnings == other.Warnings;
         }
 
         public override bool Equals(object obj)
