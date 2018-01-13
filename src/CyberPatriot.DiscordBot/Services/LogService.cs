@@ -36,7 +36,7 @@ namespace CyberPatriot.DiscordBot.Services
         private Task LogErrorToOwnerDM(LogMessage message)
         {
             // lower indicates higher priority
-            if (!((message.Severity <= LogSeverity.Warning && message.Exception != null) || message.Severity <= LogSeverity.Error))
+            if (message.Severity > LogSeverity.Error)
             {
                 return Task.CompletedTask;
             }
