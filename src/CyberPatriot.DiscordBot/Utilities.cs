@@ -488,6 +488,18 @@ namespace CyberPatriot.DiscordBot
             return sortedData[center];
         }
 
+        public static decimal StandardDeviation(this decimal[] data)
+        {
+            if (data.Length == 0)
+            {
+                throw new ArgumentException("Cannot compute the median of a zero-length array.");
+            }
+
+            decimal average = data.Average();
+            decimal sumOfSquaresOfDifferences = data.Select(val => (val - average) * (val - average)).Sum();
+            return (decimal)Math.Sqrt((double)(sumOfSquaresOfDifferences / data.Length));
+        }
+
         public static class PeriodicTask
         {
             public static async Task Run<TState>(Func<TState, Task> action, TimeSpan period, TState state, System.Threading.CancellationToken cancellationToken)

@@ -235,8 +235,21 @@ namespace CyberPatriot.DiscordBot.Modules
                 {
                     await GraphProvider.WriteHistogramPngAsync(data, "Score", "Frequency", datum => datum.ToString("0.0#"), BitmapProvider.Color.Parse("#36393E"), BitmapProvider.Color.Parse("#7289DA"), BitmapProvider.Color.White, BitmapProvider.Color.Gray, memStr).ConfigureAwait(false);
                     memStr.Position = 0;
-                    await Context.Channel.SendFileAsync(memStr, "histogram.png", $"__**CyberPatriot Score Analysis" + descBuilder.ToString().Trim().AppendPrependIfNonEmpty(": ", "") + "**__\n"
-                        + $"**Teams:** {data.Length}\n**Mean:** {data.Average():0.##}\n**Median:** {data.Median():0.##}").ConfigureAwait(false);
+
+                    var histogramEmbed = new EmbedBuilder()
+                                         .WithTitle("CyberPatriot Score Analysis")
+                                         .WithDescription(filter == ScoreboardFilterInfo.NoFilter ? "All Teams" : Utilities.JoinNonNullNonEmpty(" | ", filter.Division, filter.Tier))
+                                         .AddInlineField("Teams", data.Length)
+                                         .AddInlineField("Mean", $"{data.Average():0.##}")
+                                         .AddInlineField("Standard Deviation", $"{data.StandardDeviation():0.##}")
+                                         .AddInlineField("First Quartile", $"{data.Take(data.Length / 2).ToArray().Median():0.##}")
+                                         .AddInlineField("Median", $"{data.Median():0.##}")
+                                         .AddInlineField("Third Quartile", $"{data.Skip(data.Length / 2).ToArray().Median():0.##}")
+                                         .AddInlineField("Min Score", $"{data.Min()}")
+                                         .AddInlineField("Max Score", $"{data.Max()}");
+
+                    await Context.Channel.SendMessageAsync("", embed: histogramEmbed).ConfigureAwait(false);
+                    await Context.Channel.SendFileAsync(memStr, "histogram.png").ConfigureAwait(false);
                 }
             }
         }
