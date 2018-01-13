@@ -18,7 +18,7 @@ namespace CyberPatriot.BitmapProvider
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
-            return obj is Color && Equals((Color) obj);
+            return obj is Color && Equals((Color)obj);
         }
 
         public override int GetHashCode()
@@ -83,7 +83,7 @@ namespace CyberPatriot.BitmapProvider
             R = components[0];
             G = components[1];
             B = components[2];
-            A = components.Length > 3 ? components[3] : (byte) 255;
+            A = components.Length > 3 ? components[3] : (byte)255;
         }
 
         /// <summary>
@@ -163,6 +163,7 @@ namespace CyberPatriot.BitmapProvider
         public static Color Red { get; } = new Color(255, 0, 0);
         public static Color Green { get; } = new Color(0, 255, 0);
         public static Color Blue { get; } = new Color(0, 0, 255);
+        public static Color Gray { get; } = new Color(0x80, 0x80, 0x80);
 
         #endregion
     }
