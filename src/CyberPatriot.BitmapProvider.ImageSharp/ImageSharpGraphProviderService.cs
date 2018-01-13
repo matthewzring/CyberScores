@@ -66,7 +66,7 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
             float pixelsPerUnitCount = 0.95f * (imageHeight - (drawRegionTopOffset + drawRegionBottomOffset)) / ((float)countsByBucket.Max());
 
             // TODO better font selection
-            FontFamily fontFamily = SystemFonts.Families.First();
+            FontFamily fontFamily = SystemFonts.Families.FirstOrDefault(ff => ff.Name == "Arial") ?? SystemFonts.Families.First();
             Font font = fontFamily.CreateFont(14, FontStyle.Bold);
 
             // relatively arbitrarily rounded

@@ -233,7 +233,7 @@ namespace CyberPatriot.DiscordBot.Modules
                     .OrderBy(d => d).ToArray().ConfigureAwait(false);
                 using (var memStr = new System.IO.MemoryStream())
                 {
-                    await GraphProvider.WriteHistogramPngAsync(data, "Score", "Frequency", datum => datum.ToString("0.0#"), BitmapProvider.Color.White, BitmapProvider.Color.Blue, BitmapProvider.Color.Black, BitmapProvider.Color.Gray, memStr).ConfigureAwait(false);
+                    await GraphProvider.WriteHistogramPngAsync(data, "Score", "Frequency", datum => datum.ToString("0.0#"), BitmapProvider.Color.Parse("#36393E"), BitmapProvider.Color.Parse("#7289DA"), BitmapProvider.Color.White, BitmapProvider.Color.Gray, memStr).ConfigureAwait(false);
                     memStr.Position = 0;
                     await Context.Channel.SendFileAsync(memStr, "histogram.png", $"__**CyberPatriot Score Analysis" + descBuilder.ToString().Trim().AppendPrependIfNonEmpty(": ", "") + "**__\n"
                         + $"**Teams:** {data.Length}\n**Mean:** {data.Average():0.##}\n**Median:** {data.Median():0.##}").ConfigureAwait(false);
