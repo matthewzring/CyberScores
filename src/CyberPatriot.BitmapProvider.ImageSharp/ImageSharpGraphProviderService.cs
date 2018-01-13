@@ -16,7 +16,7 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
         public Task WriteHistogramPngAsync(
             IEnumerable<decimal> dataset,
             string horizontalAxisLabel, string verticalAxisLabel,
-            Func<decimal, decimal, string> getDataRangeLabel,
+            Func<decimal, string> getDataEdgeLabel,
             Color backColor, Color barColor, Color labelColor,
             Stream target
         )
@@ -62,30 +62,13 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
                 using (var image = new Image<Rgba32>(imageWidth, imageHeight))
                 {
                     image.Mutate(context =>
-                    {
-                        // context's origin: top left
+                    {   // context's origin: top left
                         context.Fill(new SolidBrush<Rgba32>(backColor.ToRgba32()));
 
                         int highestRenderedY = -1;
 
-                        // start by drawing the data, we'll render on top of stuff that gets in our way
-                        for (int i = 0; i < countsByBucket.Length; i++)
+                        void RenderSlantedXAxisText(string relevantText, PointF bottomLeft)
                         {
-                            PointF bottomLeft = new PointF(drawRegionLeftOffset + (i * bucketPixelWidth), imageHeight - drawRegionBottomOffset);
-
-                            PointF[] boundingBox = new PointF[]{
-                                bottomLeft,
-                                new PointF(drawRegionLeftOffset + ((i + 1) * bucketPixelWidth), imageHeight - drawRegionBottomOffset),
-                                new PointF(drawRegionLeftOffset + ((i + 1) * bucketPixelWidth), imageHeight - drawRegionBottomOffset - (pixelsPerUnitCount * countsByBucket[i])),
-                                new PointF(drawRegionLeftOffset + (i * bucketPixelWidth), imageHeight - drawRegionBottomOffset - (pixelsPerUnitCount * countsByBucket[i]))
-                            };
-
-                            // rectangle and border
-                            context.FillPolygon(new SolidBrush<Rgba32>(barColor.ToRgba32()), boundingBox);
-                            context.DrawLines(labelColor.ToRgba32(), 2, boundingBox);
-
-                            string relevantText = getDataRangeLabel(lowerBoundsByBucket[i], lowerBoundsByBucket[i] + bucketWidth);
-
                             RectangleF textBounds = TextMeasurer.MeasureBounds(relevantText, new RendererOptions(font));
                             int higherDimension = (int)Math.Ceiling(Math.Max(textBounds.Width, textBounds.Height));
                             using (Image<Rgba32> textRenderImage = new Image<Rgba32>(higherDimension, higherDimension))
@@ -115,9 +98,9 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
                                     }
                                 }
 
-                                // the top right hand corner of our generated image is the edge of text, which we want to line up with the bar
+                                // the top right hand corner of our generated image is the edge of text, which we want to line up with the bar's edge
                                 // we also give a few Y pixel margin so it's not right up against the axis
-                                PointF renderPosition = bottomLeft + new PointF((bucketPixelWidth / 2) - tipX, 5);
+                                PointF renderPosition = bottomLeft + new PointF(-tipX, 5);
                                 context.DrawImage(textRenderImage, 100, textRenderImage.Size(), (Point)renderPosition);
 
                                 if (textRenderImage.Height + renderPosition.Y > highestRenderedY)
@@ -125,8 +108,33 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
                                     highestRenderedY = textRenderImage.Height + (int)renderPosition.Y;
                                 }
                             }
+                        }
 
 
+                        // start by drawing the data, we'll render on top of stuff that gets in our way
+                        for (int i = 0; i < countsByBucket.Length; i++)
+                        {
+                            PointF bottomLeft = new PointF(drawRegionLeftOffset + (i * bucketPixelWidth), imageHeight - drawRegionBottomOffset);
+
+                            PointF[] boundingBox = new PointF[]{
+                                bottomLeft,
+                                new PointF(drawRegionLeftOffset + ((i + 1) * bucketPixelWidth), imageHeight - drawRegionBottomOffset),
+                                new PointF(drawRegionLeftOffset + ((i + 1) * bucketPixelWidth), imageHeight - drawRegionBottomOffset - (pixelsPerUnitCount * countsByBucket[i])),
+                                new PointF(drawRegionLeftOffset + (i * bucketPixelWidth), imageHeight - drawRegionBottomOffset - (pixelsPerUnitCount * countsByBucket[i]))
+                            };
+
+                            // rectangle and border
+                            context.FillPolygon(new SolidBrush<Rgba32>(barColor.ToRgba32()), boundingBox);
+                            context.DrawLines(labelColor.ToRgba32(), 2, boundingBox);
+
+                            RenderSlantedXAxisText(getDataEdgeLabel(lowerBoundsByBucket[i]), bottomLeft);
+
+                            if (i == countsByBucket.Length - 1)
+                            {
+                                // Fencepost
+                                // Render the last label
+                                RenderSlantedXAxisText(getDataEdgeLabel(last), bottomLeft + new PointF(bucketPixelWidth, 0));
+                            }
                         }
 
                         // X axis
