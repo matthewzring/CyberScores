@@ -37,11 +37,11 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
             const int imageWidth = 1600;
             const int imageHeight = 800;
 
-            const int drawRegionLeftOffset = 50;
+            const int drawRegionLeftOffset = 110;
             const int drawRegionRightOffset = 40;
 
             const int drawRegionTopOffset = 50;
-            const int drawRegionBottomOffset = 150;
+            const int drawRegionBottomOffset = 110;
 
             decimal[] data = dataset.OrderBy(x => x).ToArray();
 
@@ -62,19 +62,34 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
             }
 
             float bucketPixelWidth = (imageWidth - (drawRegionLeftOffset + drawRegionRightOffset)) / ((float)countsByBucket.Length);
-            float pixelsPerUnitCount = (imageHeight - (drawRegionTopOffset + drawRegionBottomOffset)) / ((float)countsByBucket.Max());
+            // leading float multiplier: N% of the draw region can have data, the rest (at the top) is padding
+            float pixelsPerUnitCount = 0.95f * (imageHeight - (drawRegionTopOffset + drawRegionBottomOffset)) / ((float)countsByBucket.Max());
 
             // TODO better font selection
             FontFamily fontFamily = SystemFonts.Families.First();
             Font font = fontFamily.CreateFont(14, FontStyle.Bold);
 
             // relatively arbitrarily rounded
-            // 15 is approximate desired number of lines
-            int frequencyGraphLineStep = (int)(Math.Floor((countsByBucket.Max() / 15.0) / 5.0) * 5);
+            // divisor is approximate desired number of lines
+            int frequencyGraphLineStep = (int)Math.Round(countsByBucket.Max() / 20.0);
             if (frequencyGraphLineStep < 1)
             {
                 // we don't want an infinite loop
                 frequencyGraphLineStep = 1;
+            }
+            else if (frequencyGraphLineStep > 5)
+            {
+                // make the steps clean multiples once we're past small numbers
+                frequencyGraphLineStep = (int)(Math.Round(frequencyGraphLineStep / 5.0) * 5.0);
+            }
+
+            float textFontHeight = TextMeasurer.Measure("0123456789", new RendererOptions(font)).Height;
+
+            while (frequencyGraphLineStep * pixelsPerUnitCount < 1.1f * textFontHeight)
+            {
+                // make sure we have enough space so the vertical label numbers don't overlap
+                // we won't get the nice-multiple mechanic, but if we're in this situation we're really crunching the graph
+                frequencyGraphLineStep++;
             }
 
             using (var image = new Image<Rgba32>(imageWidth, imageHeight))
@@ -83,7 +98,9 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
                 {   // context's origin: top left
                     context.Fill(new SolidBrush<Rgba32>(backColor.ToRgba32()));
 
+                    // for axis label placement
                     int highestRenderedY = -1;
+                    int lowestRenderedX = int.MaxValue;
 
                     // render the graph lines for the frequency axis
                     // it's imperative that we do this first so they can get drawn over
@@ -96,8 +113,13 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
                         const float axisDistance = 5;
                         // less imperative to do early, but render the labels here too - we already have the appropriate i
                         RectangleF textBounds = TextMeasurer.MeasureBounds(i.ToString(), new RendererOptions(font));
+                        float x = drawRegionLeftOffset - axisDistance - textBounds.Width;
+                        if (x < lowestRenderedX)
+                        {
+                            lowestRenderedX = (int)x;
+                        }
                         // no over two because, idk why. I'd expect textBounds.Height/2 for centering but apparently you don't divide by two. Not sure why, ImageSharp quirk probably.
-                        context.DrawText(i.ToString(), font, labelColor.ToRgba32(), new PointF(drawRegionLeftOffset - axisDistance - textBounds.Width, yVal - textBounds.Height));
+                        context.DrawText(i.ToString(), font, labelColor.ToRgba32(), new PointF(x, yVal - textBounds.Height));
                     }
 
                     void RenderSlantedXAxisText(string relevantText, PointF bottomLeft)
@@ -184,9 +206,29 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
 
                     Font labelFont = fontFamily.CreateFont(24, FontStyle.Regular);
 
-                    // render X-axis label with a comfortable Y-margin
-                    RectangleF xLabelBounds = TextMeasurer.MeasureBounds(horizontalAxisLabel, new RendererOptions(labelFont));
-                    context.DrawText(horizontalAxisLabel, labelFont, labelColor.ToRgba32(), new PointF((drawRegionLeftOffset + imageWidth - drawRegionRightOffset) / 2 - (xLabelBounds.Width / 2), highestRenderedY + 10));
+                    const float labelAxisOffset = 15;
+
+                    // render X-axis label centered in the horizontal space below the X-axis draw region
+                    // comfortable margin under existing labels
+                    context.DrawText(horizontalAxisLabel, labelFont, labelColor.ToRgba32(), new PointF((drawRegionLeftOffset + imageWidth - drawRegionRightOffset) / 2, highestRenderedY + labelAxisOffset), new TextGraphicsOptions(true)
+                    {
+                        HorizontalAlignment = HorizontalAlignment.Center
+                    });
+
+                    // Y-axis label, this one's rotated though
+                    RectangleF vLabelTextBounds = TextMeasurer.MeasureBounds(verticalAxisLabel, new RendererOptions(labelFont));
+                    int vLabelHigherDimension = (int)Math.Ceiling(Math.Max(vLabelTextBounds.Width, vLabelTextBounds.Height));
+                    using (Image<Rgba32> textRenderImage = new Image<Rgba32>(vLabelHigherDimension, vLabelHigherDimension))
+                    {
+                        textRenderImage.Mutate(tempContext =>
+                            tempContext
+                                .DrawText(verticalAxisLabel, labelFont, labelColor.ToRgba32(), PointF.Empty)
+                                .Rotate(-90));
+                        textRenderImage.MutateCropToColored();
+
+                        PointF renderPosition = new PointF(lowestRenderedX - textRenderImage.Width - labelAxisOffset, (imageHeight - drawRegionTopOffset - drawRegionBottomOffset) / 2 + drawRegionTopOffset - (textRenderImage.Height / 2));
+                        context.DrawImage(textRenderImage, 100, textRenderImage.Size(), (Point)renderPosition);
+                    }
                 });
                 image.SaveAsPng(target);
             }
