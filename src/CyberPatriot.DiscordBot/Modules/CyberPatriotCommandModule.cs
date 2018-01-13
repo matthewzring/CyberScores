@@ -191,13 +191,13 @@ namespace CyberPatriot.DiscordBot.Modules
         #endregion
         #region Histogram
 
-        [Command("histogram"), Alias("scoregraph", "scorestats"), Summary("Generates a histogram of all scores on the current CyberPatriot leaderboard. Scores are processed as overall scores unless an image name is specified, in which case only scores on that image are analyzed.")]
+        [Command("histogram"), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of all scores on the current CyberPatriot leaderboard. Scores are processed as overall scores unless an image name is specified, in which case only scores on that image are analyzed.")]
         public Task HistogramCommandAsync(string imageName = null) => GenerateHistogramAsync(ScoreboardFilterInfo.NoFilter, imageName);
 
-        [Command("histogram"), Alias("scoregraph", "scorestats"), Summary("Generates a histogram of the given division's scores on the current CyberPatriot leaderboard. Scores are processed as overall scores unless an image name is specified, in which case only scores on that image are analyzed.")]
+        [Command("histogram"), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given division's scores on the current CyberPatriot leaderboard. Scores are processed as overall scores unless an image name is specified, in which case only scores on that image are analyzed.")]
         public Task HistogramCommandAsync(Division div, string imageName = null) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, null), imageName);
 
-        [Command("histogram"), Alias("scoregraph", "scorestats"), Summary("Generates a histogram of the given tier's scores on the current CyberPatriot leaderboard. Scores are processed as overall scores unless an image name is specified, in which case only scores on that image are analyzed.")]
+        [Command("histogram"), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given tier's scores on the current CyberPatriot leaderboard. Scores are processed as overall scores unless an image name is specified, in which case only scores on that image are analyzed.")]
         public Task HistogramCommandAsync(Division div, Tier tier, string imageName = null) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, tier), imageName);
 
         public async Task GenerateHistogramAsync(ScoreboardFilterInfo filter, string imageName)
@@ -227,14 +227,22 @@ namespace CyberPatriot.DiscordBot.Modules
 #pragma warning restore 0162
                 }
 
-                decimal[] data = await ScoreRetrievalService.GetScoreboardAsync(filter).TaskPropertyToAsyncEnumerable(sb => sb.TeamList)
+                CompleteScoreboardSummary scoreboard = await ScoreRetrievalService.GetScoreboardAsync(filter).ConfigureAwait(false);
+                decimal[] data = scoreboard.TeamList
                     // nasty hack
                     .Select(datum => decimal.TryParse(ScoreRetrievalService.FormattingOptions.FormatScore(datum.TotalScore), out decimal d) ? d : datum.TotalScore)
-                    .OrderBy(d => d).ToArray().ConfigureAwait(false);
+                    .OrderBy(d => d).ToArray();
                 using (var memStr = new System.IO.MemoryStream())
                 {
-                    await GraphProvider.WriteHistogramPngAsync(data, "Score", "Frequency", datum => datum.ToString("0.0#"), BitmapProvider.Color.Parse("#36393E"), BitmapProvider.Color.Parse("#7289DA"), BitmapProvider.Color.White, BitmapProvider.Color.Gray, memStr).ConfigureAwait(false);
+                    await GraphProvider.WriteHistogramPngAsync(data, "Score", "Frequency", datum => datum.ToString("0.0#"), BitmapProvider.Color.Parse("#32363B"), BitmapProvider.Color.Parse("#7289DA"), BitmapProvider.Color.White, BitmapProvider.Color.Gray, memStr).ConfigureAwait(false);
                     memStr.Position = 0;
+
+                    // This shouldn't be necessary, Discord's API supports embedding attached images
+                    // BUT discord.net does not, see #796
+                    var httpClient = new System.Net.Http.HttpClient();
+                    var imagePostMessage = new System.Net.Http.StreamContent(memStr);
+                    imagePostMessage.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+                    Task<System.Net.Http.HttpResponseMessage> uploadUrlResponseTask = httpClient.PutAsync("https://transfer.sh/histogram.png", imagePostMessage);
 
                     var histogramEmbed = new EmbedBuilder()
                                          .WithTitle("CyberPatriot Score Analysis")
@@ -246,10 +254,12 @@ namespace CyberPatriot.DiscordBot.Modules
                                          .AddInlineField("Median", $"{data.Median():0.##}")
                                          .AddInlineField("Third Quartile", $"{data.Skip(data.Length / 2).ToArray().Median():0.##}")
                                          .AddInlineField("Min Score", $"{data.Min()}")
-                                         .AddInlineField("Max Score", $"{data.Max()}");
+                                         .AddInlineField("Max Score", $"{data.Max()}")
+                                         .WithImageUrl(await (await uploadUrlResponseTask.ConfigureAwait(false)).Content.ReadAsStringAsync().ConfigureAwait(false))
+                                         .WithTimestamp(scoreboard.SnapshotTimestamp)
+                                         .WithFooter(ScoreRetrievalService.StaticSummaryLine);
 
                     await Context.Channel.SendMessageAsync("", embed: histogramEmbed).ConfigureAwait(false);
-                    await Context.Channel.SendFileAsync(memStr, "histogram.png").ConfigureAwait(false);
                 }
             }
         }
