@@ -202,39 +202,42 @@ namespace CyberPatriot.DiscordBot.Modules
 
         public async Task GenerateHistogramAsync(ScoreboardFilterInfo filter, string imageName)
         {
-            var descBuilder = new System.Text.StringBuilder();
-            if (filter.Division.HasValue)
+            using (Context.Channel.EnterTypingState())
             {
-                descBuilder.Append(' ').Append(filter.Division.Value.ToStringCamelCaseToSpace());
-            }
-            if (filter.Tier.HasValue)
-            {
-                descBuilder.Append(' ').Append(filter.Tier.Value);
-            }
-            if (imageName != null)
-            {
-                throw new NotSupportedException("Per-image histograms are not yet supported.");
-
-                // unreachable code - not implemented on the data-aggregation/filter side, but this code Should Work:tm: for constructing the title
-#pragma warning disable 0162
-                if (descBuilder.Length > 0)
+                var descBuilder = new System.Text.StringBuilder();
+                if (filter.Division.HasValue)
                 {
-                    descBuilder.Append(": ");
+                    descBuilder.Append(' ').Append(filter.Division.Value.ToStringCamelCaseToSpace());
                 }
-                descBuilder.Append(imageName);
-#pragma warning restore 0162
-            }
+                if (filter.Tier.HasValue)
+                {
+                    descBuilder.Append(' ').Append(filter.Tier.Value);
+                }
+                if (imageName != null)
+                {
+                    throw new NotSupportedException("Per-image histograms are not yet supported.");
 
-            decimal[] data = await ScoreRetrievalService.GetScoreboardAsync(filter).TaskPropertyToAsyncEnumerable(sb => sb.TeamList)
-                // nasty hack
-                .Select(datum => decimal.TryParse(ScoreRetrievalService.FormattingOptions.FormatScore(datum.TotalScore), out decimal d) ? d : datum.TotalScore)
-                .OrderBy(d => d).ToArray().ConfigureAwait(false);
-            using (var memStr = new System.IO.MemoryStream())
-            {
-                await GraphProvider.WriteHistogramPngAsync(data, "Score", "Frequency", datum => datum.ToString("0.0#"), BitmapProvider.Color.White, BitmapProvider.Color.Blue, BitmapProvider.Color.Black, BitmapProvider.Color.Gray, memStr).ConfigureAwait(false);
-                memStr.Position = 0;
-                await Context.Channel.SendFileAsync(memStr, "histogram.png", $"__**CyberPatriot Score Analysis" + descBuilder.ToString().Trim().AppendPrependIfNonEmpty(": ", "") + "**__\n"
-                    + $"**Teams:** {data.Length}\n**Mean:** {data.Average():0.##}\n**Median:** {data.Median():0.##}").ConfigureAwait(false);
+                    // unreachable code - not implemented on the data-aggregation/filter side, but this code Should Work:tm: for constructing the title
+#pragma warning disable 0162
+                    if (descBuilder.Length > 0)
+                    {
+                        descBuilder.Append(": ");
+                    }
+                    descBuilder.Append(imageName);
+#pragma warning restore 0162
+                }
+
+                decimal[] data = await ScoreRetrievalService.GetScoreboardAsync(filter).TaskPropertyToAsyncEnumerable(sb => sb.TeamList)
+                    // nasty hack
+                    .Select(datum => decimal.TryParse(ScoreRetrievalService.FormattingOptions.FormatScore(datum.TotalScore), out decimal d) ? d : datum.TotalScore)
+                    .OrderBy(d => d).ToArray().ConfigureAwait(false);
+                using (var memStr = new System.IO.MemoryStream())
+                {
+                    await GraphProvider.WriteHistogramPngAsync(data, "Score", "Frequency", datum => datum.ToString("0.0#"), BitmapProvider.Color.White, BitmapProvider.Color.Blue, BitmapProvider.Color.Black, BitmapProvider.Color.Gray, memStr).ConfigureAwait(false);
+                    memStr.Position = 0;
+                    await Context.Channel.SendFileAsync(memStr, "histogram.png", $"__**CyberPatriot Score Analysis" + descBuilder.ToString().Trim().AppendPrependIfNonEmpty(": ", "") + "**__\n"
+                        + $"**Teams:** {data.Length}\n**Mean:** {data.Average():0.##}\n**Median:** {data.Median():0.##}").ConfigureAwait(false);
+                }
             }
         }
 
