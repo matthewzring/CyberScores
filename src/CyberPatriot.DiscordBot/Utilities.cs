@@ -492,7 +492,7 @@ namespace CyberPatriot.DiscordBot
         {
             if (data.Length == 0)
             {
-                throw new ArgumentException("Cannot compute the median of a zero-length array.");
+                throw new ArgumentException("Cannot compute the standard deviation of a zero-length array.");
             }
 
             decimal average = data.Average();
