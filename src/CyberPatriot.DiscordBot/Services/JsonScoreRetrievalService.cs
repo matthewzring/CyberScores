@@ -43,11 +43,11 @@ namespace CyberPatriot.DiscordBot.Services
                     sr = new StreamReader(memStr);
 
                     // write
-                    await SerializeAsync(sw, summary, teamDetails, round);
+                    await SerializeAsync(sw, summary, teamDetails, round).ConfigureAwait(false);
 
                     // read
                     memStr.Position = 0;
-                    return await sr.ReadToEndAsync();
+                    return await sr.ReadToEndAsync().ConfigureAwait(false);
                 }
             }
             finally
@@ -65,17 +65,17 @@ namespace CyberPatriot.DiscordBot.Services
                 jw.CloseOutput = false;
 
                 // write
-                await jw.WriteStartObjectAsync();
-                await jw.WritePropertyNameAsync("summary");
+                await jw.WriteStartObjectAsync().ConfigureAwait(false);
+                await jw.WritePropertyNameAsync("summary").ConfigureAwait(false);
                 var serializer = JsonSerializer.CreateDefault();
                 // serialize
-                await Task.Run(() => serializer.Serialize(jw, summary));
-                await jw.WritePropertyNameAsync("teams");
-                await Task.Run(() => serializer.Serialize(jw, teamDetails));
-                await jw.WritePropertyNameAsync("round");
-                await jw.WriteValueAsync((int)round);
-                await jw.WriteEndObjectAsync();
-                await jw.FlushAsync();
+                serializer.Serialize(jw, summary);
+                await jw.WritePropertyNameAsync("teams").ConfigureAwait(false);
+                serializer.Serialize(jw, teamDetails);
+                await jw.WritePropertyNameAsync("round").ConfigureAwait(false);
+                await jw.WriteValueAsync((int)round).ConfigureAwait(false);
+                await jw.WriteEndObjectAsync().ConfigureAwait(false);
+                await jw.FlushAsync().ConfigureAwait(false);
             }
         }
 

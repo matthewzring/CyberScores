@@ -44,8 +44,8 @@ namespace CyberPatriot.DiscordBot.Services
             // per LogCommand (example code): "Don't risk blocking the logging task by awaiting a message send; ratelimits!?"    
             var _ = Task.Run(async () =>
             {
-                var appInfo = await _discord.GetApplicationInfoAsync();
-                var ownerDmChannel = await appInfo?.Owner?.GetOrCreateDMChannelAsync();
+                var appInfo = await _discord.GetApplicationInfoAsync().ConfigureAwait(false);
+                var ownerDmChannel = await appInfo?.Owner?.GetOrCreateDMChannelAsync().ConfigureAwait(false);
                 if (ownerDmChannel == null)
                 {
                     return;
@@ -60,7 +60,7 @@ namespace CyberPatriot.DiscordBot.Services
                     .WithTitle("Application Message: " + message.Severity.ToStringCamelCaseToSpace() + (message.Exception != null ? ": " + message.Exception.GetType().Name : string.Empty))
                     .WithDescription("```" + message.ToString().Replace("```", threeBackticksEscaped) + "```")
                     .WithColor(Color.Red)
-                    .Build());
+                    .Build()).ConfigureAwait(false);
             });
 
             return Task.CompletedTask;

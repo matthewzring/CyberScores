@@ -116,7 +116,7 @@ namespace CyberPatriot.DiscordBot.Services
 
             private async Task<TModel> InvokeFactoryAsync(Func<Task<TModel>> asyncFactory)
             {
-                var val = await asyncFactory();
+                var val = await asyncFactory().ConfigureAwait(false);
                 toWrite?.Add(val);
                 return val;
             }
@@ -128,7 +128,7 @@ namespace CyberPatriot.DiscordBot.Services
 
             public async Task<TModel> FindOneOrNewAsync(Expression<Func<TModel, bool>> predicate,
                 Func<Task<TModel>> asyncFactory)
-                => FindOne(predicate) ?? await InvokeFactoryAsync(asyncFactory);
+                => FindOne(predicate) ?? await InvokeFactoryAsync(asyncFactory).ConfigureAwait(false);
 
 
             public Task SaveAsync(TModel model)

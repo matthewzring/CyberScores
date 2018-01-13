@@ -44,10 +44,10 @@ namespace CyberPatriot.DiscordBot
             {
                 _client.Ready += async () =>
                 {
-                    IUser owner = (await _client.GetApplicationInfoAsync())?.Owner;
+                    IUser owner = (await _client.GetApplicationInfoAsync().ConfigureAwait(false))?.Owner;
                     var currentTime = DateTimeOffset.UtcNow;
                     TimeZoneInfo ownerTz;
-                    if ((ownerTz = await services.GetService<PreferenceProviderService>()?.GetTimeZoneAsync(user: owner)) != null)
+                    if ((ownerTz = await (services.GetService<PreferenceProviderService>()?.GetTimeZoneAsync(user: owner).ConfigureAwait(false))) != null)
                     {
                         currentTime = TimeZoneInfo.ConvertTime(currentTime, ownerTz);
                     }
@@ -89,13 +89,13 @@ namespace CyberPatriot.DiscordBot
                     async innerProv =>
                     {
                         var httpServ = new HttpScoreboardScoreRetrievalService();
-                        await httpServ.InitializeAsync(innerProv);
+                        await httpServ.InitializeAsync(innerProv).ConfigureAwait(false);
                         return httpServ;
                     },
                     async innerProv =>
                         // if the constructor throws an exception, e.g. missing config, means this provider is skipped
-                        new JsonScoreRetrievalService(await System.IO.File.ReadAllTextAsync(innerProv.GetRequiredService<IConfiguration>()["jsonSource"])),
-                    async innerProv => await new SpreadsheetScoreRetrievalService().InitializeFromConfiguredCsvAsync(innerProv)
+                        new JsonScoreRetrievalService(await System.IO.File.ReadAllTextAsync(innerProv.GetRequiredService<IConfiguration>()["jsonSource"]).ConfigureAwait(false)),
+                    async innerProv => await new SpreadsheetScoreRetrievalService().InitializeFromConfiguredCsvAsync(innerProv).ConfigureAwait(false)
                 ))
                 .AddSingleton<ICompetitionRoundLogicService, CyberPatriotTenCompetitionRoundLogicService>()
                 .AddSingleton<IExternalCategoryProviderService, FileBackedCategoryProviderService>()

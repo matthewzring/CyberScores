@@ -34,7 +34,7 @@ namespace CyberPatriot.DiscordBot.Services
             _provider = provider;
             _commands.AddTypeReader<CyberPatriot.Models.TeamId>(new TeamIdTypeReader());
             _commands.AddTypeReader<CyberPatriot.Models.Division>(new DivisionTypeReader());
-            await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
+            await _commands.AddModulesAsync(Assembly.GetEntryAssembly()).ConfigureAwait(false);
             await _commands.CreateModuleAsync("help", mb =>
             {
                 Dictionary<string, Action<Discord.Commands.Builders.ModuleBuilder>> buildersBySubmoduleName = new Dictionary<string, Action<Discord.Commands.Builders.ModuleBuilder>>();
@@ -100,7 +100,7 @@ namespace CyberPatriot.DiscordBot.Services
 
                 // add "help help" manually
                 mb.AddModule("help", smb => smb.AddCommand(string.Empty, (c, p, s, i) => HelpCommandAsync(c, p, s, new[] { new KeyValuePair<CommandInfo, string>(_commands.Commands.Single(cand => cand.Aliases[0] == "help"), "help") }), cb => cb.Summary = "Command help"));
-            });
+            }).ConfigureAwait(false);
         }
 
         private async Task<ExecuteResult> HelpOverallAsync(ICommandContext context, object[] parameters, IServiceProvider services, CommandInfo invokedHelpCmd)
@@ -134,7 +134,7 @@ namespace CyberPatriot.DiscordBot.Services
                     // all commands OK, except: generated help commands and commands where preconditions are not met
                     // only the overall help command should be displayed in help
                     return preconditionSuccess;
-                }).OrderBy(cmd => cmd.Aliases[0]).ToArray();
+                }).OrderBy(cmd => cmd.Aliases[0]).ToArray().ConfigureAwait(false);
             int pageCount = Utilities.CeilingDivision(cmds.Length, pageSize);
 
             if (pageNumber < 1 || pageNumber > pageCount)
@@ -162,7 +162,7 @@ namespace CyberPatriot.DiscordBot.Services
 
             builder.WithFooter(footer => footer.WithText($"Page {pageNumber} of {pageCount}"));
 
-            await context.Channel.SendMessageAsync(string.Empty, embed: builder.Build());
+            await context.Channel.SendMessageAsync(string.Empty, embed: builder.Build()).ConfigureAwait(false);
             return ExecuteResult.FromSuccess();
         }
 
@@ -237,7 +237,7 @@ namespace CyberPatriot.DiscordBot.Services
                 BuildHelpAsField(builder, kvp.Key, kvp.Value);
             }
 
-            await context.Channel.SendMessageAsync(string.Empty, embed: builder.Build());
+            await context.Channel.SendMessageAsync(string.Empty, embed: builder.Build()).ConfigureAwait(false);
             return ExecuteResult.FromSuccess();
         }
 
@@ -254,7 +254,7 @@ namespace CyberPatriot.DiscordBot.Services
                 if (message.Channel is SocketGuildChannel messageGuildChannel)
                 {
                     // check server prefix
-                    Models.Guild guildSettings = await _database.FindOneAsync<Models.Guild>(g => g.Id == messageGuildChannel.Guild.Id);
+                    Models.Guild guildSettings = await _database.FindOneAsync<Models.Guild>(g => g.Id == messageGuildChannel.Guild.Id).ConfigureAwait(false);
                     // intentional empty statement
                     if (guildSettings?.Prefix != null)
                     {
@@ -277,7 +277,7 @@ namespace CyberPatriot.DiscordBot.Services
             }
 
             var context = new SocketCommandContext(_discord, message);
-            var result = await _commands.ExecuteAsync(context, argPos, _provider);
+            var result = await _commands.ExecuteAsync(context, argPos, _provider).ConfigureAwait(false);
 
             if (result.Error.HasValue &&
                 result.Error.Value == CommandError.UnknownCommand)
@@ -291,7 +291,7 @@ namespace CyberPatriot.DiscordBot.Services
                         .WithColor(Color.Red)
                         .WithTitle("Error Executing Command" + (result.Error.HasValue ? ": " + ((result.Error.Value == CommandError.Exception && result is ExecuteResult ? new Nullable<ExecuteResult>((ExecuteResult)result) : null)?.Exception?.GetType()?.Name ?? result.Error.Value.ToString()).ToStringCamelCaseToSpace() : string.Empty))
                         .WithDescription(result.ErrorReason ?? "An unknown error occurred.")
-                        .WithTimestamp(message.CreatedAt));
+                        .WithTimestamp(message.CreatedAt)).ConfigureAwait(false);
             }
         }
 

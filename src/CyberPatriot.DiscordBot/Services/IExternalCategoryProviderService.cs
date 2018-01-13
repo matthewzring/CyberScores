@@ -29,7 +29,7 @@ namespace CyberPatriot.DiscordBot.Services
             string allServiceCategoryMapFile = provider.GetRequiredService<IConfiguration>().GetValue<string>("allServiceCategoryMapFile", null);
             if (!string.IsNullOrWhiteSpace(allServiceCategoryMapFile) && File.Exists(allServiceCategoryMapFile))
             {
-                foreach (var line in await File.ReadAllLinesAsync(allServiceCategoryMapFile))
+                foreach (var line in await File.ReadAllLinesAsync(allServiceCategoryMapFile).ConfigureAwait(false))
                 {
                     try
                     {

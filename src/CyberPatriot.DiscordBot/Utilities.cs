@@ -106,7 +106,7 @@ namespace CyberPatriot.DiscordBot
                 return AsyncEnumerable.CreateEnumerator(async ct =>
                 {
                     bool isNext;
-                    while ((isNext = await rootEnumerator.MoveNext()) && !(await predicate(rootEnumerator.Current)))
+                    while ((isNext = await rootEnumerator.MoveNext().ConfigureAwait(false)) && !(await predicate(rootEnumerator.Current).ConfigureAwait(false)))
                     {
 
                     }
@@ -132,6 +132,12 @@ namespace CyberPatriot.DiscordBot
 
         public static IAsyncEnumerable<TElem> TaskToAsyncEnumerable<TElem, TEnumerable>(this Task<TEnumerable> enumerableTask) where TEnumerable : IEnumerable<TElem>
             => new AsyncEnumerableTaskWrapper<TElem>(enumerableTask.ToSuperTask<TEnumerable, IEnumerable<TElem>>());
+
+        public static IAsyncEnumerable<TElem> TaskPropertyToAsyncEnumerable<TElem, TEnumerableContainer>(this Task<TEnumerableContainer> containerTask, Func<TEnumerableContainer, IEnumerable<TElem>> selector)
+        {
+            // TODO error handling
+            return new AsyncEnumerableTaskWrapper<TElem>(containerTask.ContinueWith<IEnumerable<TElem>>(finishedTask => selector(finishedTask.Result)));
+        }
 
         public static T Max<T>(params T[] args) where T : struct, IComparable<T>
         {
@@ -222,13 +228,13 @@ namespace CyberPatriot.DiscordBot
 
         public static async Task<Discord.EmbedBuilder> AddField(this Task<Discord.EmbedBuilder> builderTask, Action<Discord.EmbedFieldBuilder> fb)
         {
-            return (await builderTask).AddField(fb);
+            return (await builderTask.ConfigureAwait(false)).AddField(fb);
         }
 
         public static async Task<Discord.EmbedBuilder> AddFieldAsync(this Discord.EmbedBuilder builder, Func<Discord.EmbedFieldBuilder, Task> fieldBuilder)
         {
             var field = new Discord.EmbedFieldBuilder();
-            await fieldBuilder(field);
+            await fieldBuilder(field).ConfigureAwait(false);
             builder.AddField(field);
             return builder;
         }
@@ -236,13 +242,13 @@ namespace CyberPatriot.DiscordBot
         public static async Task<Discord.EmbedBuilder> AddFieldAsync(this Task<Discord.EmbedBuilder> builderTask, Func<Discord.EmbedFieldBuilder, Task> fieldBuilder)
         {
             var field = new Discord.EmbedFieldBuilder();
-            var builder = await builderTask;
+            var builder = await builderTask.ConfigureAwait(false);
             await fieldBuilder(field);
             builder.AddField(field);
             return builder;
         }
 
-        public static async Task<Discord.Embed> BuildAsync(this Task<Discord.EmbedBuilder> builderTask) => (await builderTask).Build();
+        public static async Task<Discord.Embed> BuildAsync(this Task<Discord.EmbedBuilder> builderTask) => (await builderTask.ConfigureAwait(false)).Build();
 
         public static string ToLongString(this TimeSpan difference, bool showSeconds = true, bool showZeroValues = false)
         {
@@ -268,13 +274,11 @@ namespace CyberPatriot.DiscordBot
         /// Finds a read-only predicated list from a data persistence service, managing the context automatically.
         /// ToIList is called on the whole thing.
         /// </summary>
-        public static Task<IList<T>> FindAllAsync<T>(this IDataPersistenceService persistence) where T : class
+        public static async Task<IList<T>> FindAllAsync<T>(this IDataPersistenceService persistence) where T : class
         {
             using (var context = persistence.OpenContext<T>(false))
             {
-                // enumeration could be in progress while disposal happens because tasks
-                // not a big deal for the LiteDb implementation
-                return context.FindAllAsync().ToIListAsync();
+                return await context.FindAllAsync().ToIListAsync().ConfigureAwait(false);
             }
         }
 
@@ -282,25 +286,22 @@ namespace CyberPatriot.DiscordBot
         /// Finds a read-only predicated list from a data persistence service, managing the context automatically.
         /// ToIList is called on the whole thing.
         /// </summary>
-        public static Task<IList<T>> FindAllAsync<T>(this IDataPersistenceService persistence, Expression<Func<T, bool>> predicate) where T : class
+        public static async Task<IList<T>> FindAllAsync<T>(this IDataPersistenceService persistence, Expression<Func<T, bool>> predicate) where T : class
         {
             using (var context = persistence.OpenContext<T>(false))
             {
-                // enumeration could be in progress while disposal happens because tasks
-                // not a big deal for the LiteDb implementation
-                return context.FindAllAsync(predicate).ToIListAsync();
+                return await context.FindAllAsync(predicate).ToIListAsync().ConfigureAwait(false);
             }
         }
 
         /// <summary>
         /// Finds a model element.
         /// </summary>
-        public static Task<T> FindOneAsync<T>(this IDataPersistenceService persistence, Expression<Func<T, bool>> predicate) where T : class
+        public static async Task<T> FindOneAsync<T>(this IDataPersistenceService persistence, Expression<Func<T, bool>> predicate) where T : class
         {
             using (var context = persistence.OpenContext<T>(false))
             {
-                // same issue with task and disposal, see Utilities.FindAllAsync<T>
-                return context.FindOneAsync(predicate);
+                return await context.FindOneAsync(predicate).ConfigureAwait(false);
             }
         }
 
@@ -423,10 +424,10 @@ namespace CyberPatriot.DiscordBot
             return enumerable.ToList().ToSuperTask<List<T>, IList<T>>();
         }
 
-        public static async Task<TSuper> ToSuperTask<TDerived, TSuper>(this Task<TDerived> derivedTask) where TDerived : TSuper
+        public static async Task<TSuper> ToSuperTask<TDerived, TSuper>(this Task<TDerived> derivedTask, bool continueOnCapturedContext = false) where TDerived : TSuper
         {
             // feels like there should be a nicer way
-            return await derivedTask;
+            return await derivedTask.ConfigureAwait(continueOnCapturedContext);
         }
 
         public static TService GetRoot<TRoot, TService>(this TRoot service) where TRoot : IComposingService<TService>, TService
@@ -520,6 +521,18 @@ namespace CyberPatriot.DiscordBot
             {
                 return Run(action, period, System.Threading.CancellationToken.None);
             }
+        }
+
+        // FIXME how should this work if our values are null
+
+        public static System.Runtime.CompilerServices.ConfiguredTaskAwaitable.ConfiguredTaskAwaiter GetAwaiter(this System.Runtime.CompilerServices.ConfiguredTaskAwaitable? task)
+        {
+            return task.Value.GetAwaiter();
+        }
+
+        public static System.Runtime.CompilerServices.ConfiguredTaskAwaitable<T>.ConfiguredTaskAwaiter GetAwaiter<T>(this System.Runtime.CompilerServices.ConfiguredTaskAwaitable<T>? task)
+        {
+            return task.Value.GetAwaiter();
         }
     }
 }

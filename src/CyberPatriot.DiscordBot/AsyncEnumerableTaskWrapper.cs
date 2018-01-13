@@ -28,7 +28,7 @@ namespace CyberPatriot.DiscordBot
             // this will be called FIRST in the use of the enumerator, so we can await the enumerator get task, the rest can use result safely
             public async Task<bool> MoveNext(CancellationToken cancellationToken)
             {
-                return (await GetEnumerator).MoveNext();
+                return (await GetEnumerator.ConfigureAwait(false)).MoveNext();
             }
 
             Task<IEnumerator<T>> GetEnumerator { get; set; }

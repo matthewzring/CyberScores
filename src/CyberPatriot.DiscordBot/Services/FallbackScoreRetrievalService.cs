@@ -81,7 +81,7 @@ namespace CyberPatriot.DiscordBot.Services
 
         public async Task ResolveBackendAsync(IServiceProvider provider = null, int upperSearchBound = -1)
         {
-            await _backendResolutionLock.WaitAsync();
+            await _backendResolutionLock.WaitAsync().ConfigureAwait(false);
             try
             {
                 provider = provider ?? _provider;
@@ -92,13 +92,13 @@ namespace CyberPatriot.DiscordBot.Services
                     var candidateBackendTaskFactory = _backendOptions[i];
                     try
                     {
-                        var candidateBackend = await candidateBackendTaskFactory(provider);
+                        var candidateBackend = await candidateBackendTaskFactory(provider).ConfigureAwait(false);
                         if (candidateBackend == null)
                         {
                             continue;
                         }
                         // try getting a summary to "test" the backend
-                        CompleteScoreboardSummary returnedSummary = await candidateBackend.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter);
+                        CompleteScoreboardSummary returnedSummary = await candidateBackend.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false);
                         if (!IsSummaryValid(returnedSummary))
                         {
                             // invalid summary
@@ -126,14 +126,14 @@ namespace CyberPatriot.DiscordBot.Services
                     if (upperSearchBound == -1)
                     {
                         // we searched all possible backends
-                        await _log.LogApplicationMessageAsync(Discord.LogSeverity.Error, "Could not find an IScoreRetrievalService for fallback, continuing with invalid service.", nameof(FallbackScoreRetrievalService));
+                        await _log.LogApplicationMessageAsync(Discord.LogSeverity.Error, "Could not find an IScoreRetrievalService for fallback, continuing with invalid service.", nameof(FallbackScoreRetrievalService)).ConfigureAwait(false);
                         throw new InvalidOperationException("No valid IScoreRetrievalService found.");
                     }
                     else
                     {
                         // we tried and failed to replace the backend with a higher-priority one, so now check lower priority ones
                         // use Backend.Backend to get the cache's backend
-                        if (IsSummaryValid(await Backend.Backend.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter)))
+                        if (IsSummaryValid(await Backend.Backend.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false)))
                         {
                             // update the refresh time to now, keep the existing backend
                             _lastBackendRefresh = DateTimeOffset.UtcNow;
@@ -141,7 +141,7 @@ namespace CyberPatriot.DiscordBot.Services
                         else
                         {
                             // current backend has failed: try again but allow deferring to lower-priority things
-                            await ResolveBackendAsync(provider, -1);
+                            await ResolveBackendAsync(provider, -1).ConfigureAwait(false);
                         }
                         return;
                     }
@@ -157,7 +157,7 @@ namespace CyberPatriot.DiscordBot.Services
 
                 // initialize the backend properly
                 // this initializes the cache, which passes through initialization to the real backend
-                await Backend.InitializeAsync(provider);
+                await Backend.InitializeAsync(provider).ConfigureAwait(false);
             }
             finally
             {
@@ -169,6 +169,10 @@ namespace CyberPatriot.DiscordBot.Services
 
         public Task RefreshBackendIfNeeded()
         {
+            // FIXME we might refresh twice in a row if this method is called
+            // because two threads could enter ResolveBackendAsync simultaneously, then hit the lock
+            // then we'd refresh once, then we'd refresh once more
+            // possibly we want to enter the lock here too? in that case the lock needs recursion support        
             if (_lastBackendRefresh + BackendLifespan < DateTimeOffset.UtcNow)
             {
                 return ResolveBackendAsync(upperSearchBound: _selectedBackendIndex);
@@ -179,12 +183,12 @@ namespace CyberPatriot.DiscordBot.Services
 
         public async Task<CompleteScoreboardSummary> GetScoreboardAsync(ScoreboardFilterInfo filter)
         {
-            await RefreshBackendIfNeeded();
-            var scoreboardDetails = await Backend.GetScoreboardAsync(filter);
+            await RefreshBackendIfNeeded().ConfigureAwait(false);
+            var scoreboardDetails = await Backend.GetScoreboardAsync(filter).ConfigureAwait(false);
             if (!IsSummaryValid(scoreboardDetails))
             {
                 // well this is awkward
-                await _log.LogApplicationMessageAsync(Discord.LogSeverity.Warning, "Returning known bad scoreboard summary!", nameof(FallbackScoreRetrievalService));
+                await _log.LogApplicationMessageAsync(Discord.LogSeverity.Warning, "Returning known bad scoreboard summary!", nameof(FallbackScoreRetrievalService)).ConfigureAwait(false);
                 // don't block the caller
                 // exceptions will NOT be caught (!) but there's a log call in there which should be Good Enough(TM) in problematic cases
 #pragma warning disable 4014
@@ -195,8 +199,8 @@ namespace CyberPatriot.DiscordBot.Services
         }
         public async Task<ScoreboardDetails> GetDetailsAsync(TeamId team)
         {
-            await RefreshBackendIfNeeded();
-            return await Backend.GetDetailsAsync(team);
+            await RefreshBackendIfNeeded().ConfigureAwait(false);
+            return await Backend.GetDetailsAsync(team).ConfigureAwait(false);
         }
 
     }

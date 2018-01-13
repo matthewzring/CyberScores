@@ -92,7 +92,7 @@ namespace CyberPatriot.DiscordBot.Services
 
             while (fileReadTasks.Count > 0)
             {
-                Task<string[]> completed = await Task.WhenAny(fileReadTasks);
+                Task<string[]> completed = await Task.WhenAny(fileReadTasks).ConfigureAwait(false);
                 fileReadTasks.Remove(completed);
                 // shouldn't switch tasks because completed is already completed
                 // will either immediately return or error out in the normal asyncy way

@@ -36,19 +36,19 @@ namespace CyberPatriot.DiscordBot.Modules
                 {
                     // FIXME inconsistent timezone IDs between platforms -_-
                     string tzType = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows) ? "Windows" : "IANA";
-                    await ReplyAsync($"That timezone is not recognized. Please make sure you are passing a valid *{tzType}* timezone identifier.");
+                    await ReplyAsync($"That timezone is not recognized. Please make sure you are passing a valid {tzType} timezone identifier.").ConfigureAwait(false);
                     return;
                 }
-                await PreferenceService.SetTimeZoneAsync(Context.User, newTz);
-                await ReplyAsync($"Updated personal timezone preference to {TimeZoneNames.TZNames.GetNamesForTimeZone(newTimezone, "en-US").Generic}.");
+                await PreferenceService.SetTimeZoneAsync(Context.User, newTz).ConfigureAwait(false);
+                await ReplyAsync($"Updated personal timezone preference to {TimeZoneNames.TZNames.GetNamesForTimeZone(newTimezone, "en-US").Generic}.").ConfigureAwait(false);
             }
 
             [Command("remove"), Alias("delete", "unset")]
             [Summary("Removes your designated timezone, reverting the default to individual guild preferences, or UTC if none specified.")]
             public async Task RemoveTimezone()
             {
-                await PreferenceService.SetTimeZoneAsync(Context.User, null);
-                await ReplyAsync("Removed personal timezone preference.");
+                await PreferenceService.SetTimeZoneAsync(Context.User, null).ConfigureAwait(false);
+                await ReplyAsync("Removed personal timezone preference.").ConfigureAwait(false);
             }
         }
     }

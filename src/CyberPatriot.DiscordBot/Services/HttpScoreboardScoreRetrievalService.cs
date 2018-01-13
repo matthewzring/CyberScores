@@ -111,7 +111,7 @@ namespace CyberPatriot.DiscordBot.Services
             string scoreboardPage;
             try
             {
-                scoreboardPage = await Client.GetStringAsync(scoreboardUri);
+                scoreboardPage = await Client.GetStringAsync(scoreboardUri).ConfigureAwait(false);
             }
             catch (HttpRequestException)
             {
@@ -176,13 +176,13 @@ namespace CyberPatriot.DiscordBot.Services
             string detailsPage;
             Uri detailsUri = BuildDetailsUri(team);
 
-            await RateLimiter.GetWorkAuthorizationAsync();
+            await RateLimiter.GetWorkAuthorizationAsync().ConfigureAwait(false);
 
             Task<string> stringTask = Client.GetStringAsync(detailsUri);
             RateLimiter.AddPrerequisite(stringTask);
             try
             {
-                detailsPage = await stringTask;
+                detailsPage = await stringTask.ConfigureAwait(false);
                 // hacky, cause they don't return a proper error page for nonexistant teams
                 if (!detailsPage.Contains(@"<div id='chart_div' class='chart'>"))
                 {
@@ -257,11 +257,11 @@ namespace CyberPatriot.DiscordBot.Services
         public virtual async Task<CompleteScoreboardSummary> GetScoreboardAsync(ScoreboardFilterInfo filter)
         {
             Uri scoreboardUri = BuildScoreboardUri(filter.Division, filter.Tier);
-            await RateLimiter.GetWorkAuthorizationAsync();
+            await RateLimiter.GetWorkAuthorizationAsync().ConfigureAwait(false);
             var docTask = GetHtmlForScoreboardUri(scoreboardUri);
             RateLimiter.AddPrerequisite(docTask);
 
-            var doc = await ParseHtmlDocumentAsync(await docTask);
+            var doc = await ParseHtmlDocumentAsync(await docTask).ConfigureAwait(false);
             var summaries = ProcessSummaries(doc, out DateTimeOffset snapshotTime);
 
             return new CompleteScoreboardSummary()

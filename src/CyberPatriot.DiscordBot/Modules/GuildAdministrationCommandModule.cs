@@ -30,11 +30,11 @@ namespace CyberPatriot.DiscordBot.Modules
             {
                 using (var context = Database.OpenContext<Guild>(true))
                 {
-                    Models.Guild guildSettings = await Guild.OpenWriteGuildSettingsAsync(context, Context.Guild.Id);
+                    Models.Guild guildSettings = await Guild.OpenWriteGuildSettingsAsync(context, Context.Guild.Id).ConfigureAwait(false);
                     guildSettings.Prefix = newPrefix;
-                    await context.WriteAsync();
+                    await context.WriteAsync().ConfigureAwait(false);
                 }
-                await ReplyAsync($"Prefix updated to `{newPrefix}` for this guild.");
+                await ReplyAsync($"Prefix updated to `{newPrefix}` for this guild.").ConfigureAwait(false);
             }
 
             [Command("remove"), Alias("delete", "unset")]
@@ -43,11 +43,11 @@ namespace CyberPatriot.DiscordBot.Modules
             {
                 using (var context = Database.OpenContext<Guild>(true))
                 {
-                    Models.Guild guildSettings = await Guild.OpenWriteGuildSettingsAsync(context, Context.Guild.Id);
+                    Models.Guild guildSettings = await Guild.OpenWriteGuildSettingsAsync(context, Context.Guild.Id).ConfigureAwait(false);
                     guildSettings.Prefix = null;
-                    await context.WriteAsync();
+                    await context.WriteAsync().ConfigureAwait(false);
                 }
-                await ReplyAsync("Removed prefix for this guild. Use an @mention to invoke commands.");
+                await ReplyAsync("Removed prefix for this guild. Use an @mention to invoke commands.").ConfigureAwait(false);
             }
         }
 
@@ -75,19 +75,19 @@ namespace CyberPatriot.DiscordBot.Modules
                 {
                     // FIXME inconsistent timezone IDs between platforms -_-
                     string tzType = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows) ? "Windows" : "IANA";
-                    await ReplyAsync($"That timezone is not recognized. Please make sure you are passing a valid *{tzType}* timezone identifier.");
+                    await ReplyAsync($"That timezone is not recognized. Please make sure you are passing a valid {tzType} timezone identifier.").ConfigureAwait(false);
                     return;
                 }
-                await PreferenceService.SetTimeZoneAsync(Context.Guild, newTz);
-                await ReplyAsync($"Updated timezone to {TimeZoneNames.TZNames.GetNamesForTimeZone(newTimezone, "en-US").Generic}.");
+                await PreferenceService.SetTimeZoneAsync(Context.Guild, newTz).ConfigureAwait(false);
+                await ReplyAsync($"Updated timezone to {TimeZoneNames.TZNames.GetNamesForTimeZone(newTimezone, "en-US").Generic}.").ConfigureAwait(false);
             }
 
             [Command("remove"), Alias("delete", "unset")]
             [Summary("Removes the designated timezone for this guild, reverting the default to UTC.")]
             public async Task RemoveTimezone()
             {
-                await PreferenceService.SetTimeZoneAsync(Context.Guild, null);
-                await ReplyAsync("Removed timezone. Displayed times will now be in UTC.");
+                await PreferenceService.SetTimeZoneAsync(Context.Guild, null).ConfigureAwait(false);
+                await ReplyAsync("Removed timezone. Displayed times will now be in UTC.").ConfigureAwait(false);
             }
         }
 
@@ -103,10 +103,10 @@ namespace CyberPatriot.DiscordBot.Modules
             {
                 // guaranteed guild context
                 channel = channel ?? (Context.Channel as ITextChannel);
-                Models.Guild guildSettings = await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id);
+                Models.Guild guildSettings = await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id).ConfigureAwait(false);
                 if (guildSettings == null || !guildSettings.ChannelSettings.TryGetValue(channel.Id, out Models.Channel channelSettings) || channelSettings?.MonitoredTeams == null || channelSettings.MonitoredTeams.Count == 0)
                 {
-                    await ReplyAsync($"{channel.Mention} is not monitoring any teams.");
+                    await ReplyAsync($"{channel.Mention} is not monitoring any teams.").ConfigureAwait(false);
                 }
                 else
                 {
@@ -116,7 +116,7 @@ namespace CyberPatriot.DiscordBot.Modules
                     {
                         retVal.AppendLine(teamId.ToString());
                     }
-                    await ReplyAsync(retVal.ToString());
+                    await ReplyAsync(retVal.ToString()).ConfigureAwait(false);
                 }
             }
 
@@ -130,7 +130,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 var channel = Context.Channel as ITextChannel;
                 using (var dbContext = Database.OpenContext<Models.Guild>(true))
                 {
-                    var guildSettings = await Guild.OpenWriteGuildSettingsAsync(dbContext, Context.Guild.Id);
+                    var guildSettings = await Guild.OpenWriteGuildSettingsAsync(dbContext, Context.Guild.Id).ConfigureAwait(false);
                     if (!guildSettings.ChannelSettings.TryGetValue(channel.Id, out Models.Channel channelSettings))
                     {
                         channelSettings = new Channel() { Id = channel.Id };
@@ -138,15 +138,15 @@ namespace CyberPatriot.DiscordBot.Modules
                     }
                     if (channelSettings.MonitoredTeams == null || !channelSettings.MonitoredTeams.Contains(team))
                     {
-                        await ReplyAsync("Could not unwatch that team; it was not being watched.");
+                        await ReplyAsync("Could not unwatch that team; it was not being watched.").ConfigureAwait(false);
                     }
                     else
                     {
                         channelSettings.MonitoredTeams.Remove(team);
-                        await ReplyAsync($"Unwatching team {team} in {channel.Mention}");
+                        await ReplyAsync($"Unwatching team {team} in {channel.Mention}").ConfigureAwait(false);
                     }
 
-                    await dbContext.WriteAsync();
+                    await dbContext.WriteAsync().ConfigureAwait(false);
                 }
             }
 
@@ -160,7 +160,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 var channel = Context.Channel as ITextChannel;
                 using (var dbContext = Database.OpenContext<Models.Guild>(true))
                 {
-                    var guildSettings = await Guild.OpenWriteGuildSettingsAsync(dbContext, Context.Guild.Id);
+                    var guildSettings = await Guild.OpenWriteGuildSettingsAsync(dbContext, Context.Guild.Id).ConfigureAwait(false);
                     if (!guildSettings.ChannelSettings.TryGetValue(channel.Id, out Models.Channel channelSettings))
                     {
                         channelSettings = new Channel() { Id = channel.Id };
@@ -168,7 +168,7 @@ namespace CyberPatriot.DiscordBot.Modules
                     }
                     if (channelSettings.MonitoredTeams != null && channelSettings.MonitoredTeams.Contains(team))
                     {
-                        await ReplyAsync("Could not watch that team; it is already being watched.");
+                        await ReplyAsync("Could not watch that team; it is already being watched.").ConfigureAwait(false);
                     }
                     else
                     {
@@ -177,10 +177,10 @@ namespace CyberPatriot.DiscordBot.Modules
                             channelSettings.MonitoredTeams = new List<TeamId>();
                         }
                         channelSettings.MonitoredTeams.Add(team);
-                        await ReplyAsync($"Watching team {team} in {channel.Mention}");
+                        await ReplyAsync($"Watching team {team} in {channel.Mention}").ConfigureAwait(false);
                     }
 
-                    await dbContext.WriteAsync();
+                    await dbContext.WriteAsync().ConfigureAwait(false);
                 }
             }
         }

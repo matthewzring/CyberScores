@@ -27,7 +27,7 @@ namespace CyberPatriot.DiscordBot.Services
             TimeZoneInfo val = TimeZoneInfo.Utc;
             if (guild != null)
             {
-                string tzStringGuild = (await Database.FindOneAsync<Models.Guild>(g => g.Id == guild.Id))?.TimeZone;
+                string tzStringGuild = (await Database.FindOneAsync<Models.Guild>(g => g.Id == guild.Id).ConfigureAwait(false))?.TimeZone;
                 if (tzStringGuild != null)
                 {
                     try
@@ -42,7 +42,7 @@ namespace CyberPatriot.DiscordBot.Services
             }
             if (user != null)
             {
-                string tzStringUser = (await Database.FindOneAsync<Models.User>(u => u.Id == user.Id))?.TimeZone;
+                string tzStringUser = (await Database.FindOneAsync<Models.User>(u => u.Id == user.Id).ConfigureAwait(false))?.TimeZone;
                 if (tzStringUser != null)
                 {
                     try
@@ -62,10 +62,10 @@ namespace CyberPatriot.DiscordBot.Services
         {
             using (var context = Database.OpenContext<Models.Guild>(true))
             {
-                var guildSettings = await context.FindOneOrNewAsync(g => g.Id == guild.Id, () => new Models.Guild() { Id = guild.Id });
+                var guildSettings = await context.FindOneOrNewAsync(g => g.Id == guild.Id, () => new Models.Guild() { Id = guild.Id }).ConfigureAwait(false);
                 guildSettings.TimeZone = tz?.Id;
-                await context.SaveAsync(guildSettings);
-                await context.WriteAsync();
+                await context.SaveAsync(guildSettings).ConfigureAwait(false);
+                await context.WriteAsync().ConfigureAwait(false);
             }
         }
 
@@ -73,10 +73,10 @@ namespace CyberPatriot.DiscordBot.Services
         {
             using (var context = Database.OpenContext<Models.User>(true))
             {
-                var userSettings = await context.FindOneOrNewAsync(u => u.Id == user.Id, () => new Models.User() { Id = user.Id });
+                var userSettings = await context.FindOneOrNewAsync(u => u.Id == user.Id, () => new Models.User() { Id = user.Id }).ConfigureAwait(false);
                 userSettings.TimeZone = tz?.Id;
-                await context.SaveAsync(userSettings);
-                await context.WriteAsync();
+                await context.SaveAsync(userSettings).ConfigureAwait(false);
+                await context.WriteAsync().ConfigureAwait(false);
             }
         }
     }

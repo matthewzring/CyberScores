@@ -71,15 +71,15 @@ namespace CyberPatriot.DiscordBot.Services
             };
             _discord.JoinedGuild += async sg =>
             {
-                IMessageChannel ch;
-                await (ch = (sg.DefaultChannel as IMessageChannel ?? await sg.Owner.GetOrCreateDMChannelAsync()))
+                IMessageChannel ch = (sg.DefaultChannel as IMessageChannel ?? await sg.Owner.GetOrCreateDMChannelAsync().ConfigureAwait(false));
+                await ch
                     .SendMessageAsync(
                         $"Hello! I am the __unofficial__ CyberPatriot scoreboard Discord bot{(ch is IDMChannel ? ", and I've just been added to your server " + sg.Name?.AppendPrepend("\"") : string.Empty)}. To get started, " +
                         $"give me a prefix:\n\"{_discord.CurrentUser.Mention} admin prefix set <your prefix here>\"\n" +
                         $"You can say \"{_discord.CurrentUser.Mention} about\" to get more info about me, or run \"{_discord.CurrentUser.Mention} help\" for a list of commands.\n\n" +
                         $"Please keep in mind this bot is 100% *unofficial*, and is not in any way affiliated with the Air Force Association or the CyberPatriot program. All scores " +
                         $"reported by the bot, even those marked \"official\", are a best-effort representation of the corresponding AFA-published details - accuracy is not guaranteed. " +
-                        $"Refer to the about command for more information.");
+                        $"Refer to the about command for more information.").ConfigureAwait(false);
             };
             return Task.CompletedTask;
         }
@@ -93,7 +93,7 @@ namespace CyberPatriot.DiscordBot.Services
                 if (_scoreRetriever.IsDynamic)
                 {
                     summaryLineBuilder.Append(" - ");
-                    var topTeam = (await _scoreRetriever.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter)).TeamList.FirstOrDefault();
+                    var topTeam = (await _scoreRetriever.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false)).TeamList.FirstOrDefault();
                     if (topTeam == null)
                     {
                         summaryLineBuilder.Append("No teams!");
@@ -103,11 +103,11 @@ namespace CyberPatriot.DiscordBot.Services
                         summaryLineBuilder.AppendFormat("Top: {0}, {1}pts", topTeam.TeamId, _scoreRetriever.FormattingOptions.FormatScore(topTeam.TotalScore));
                     }
                 }
-                await _discord.SetGameAsync(summaryLineBuilder.ToString());
+                await _discord.SetGameAsync(summaryLineBuilder.ToString()).ConfigureAwait(false);
             }
             else
             {
-                await _discord.SetGameAsync(null);
+                await _discord.SetGameAsync(null).ConfigureAwait(false);
             }
         }
 
@@ -118,7 +118,7 @@ namespace CyberPatriot.DiscordBot.Services
             {
                 CompleteScoreboardSummary masterScoreboard = null;
                 Dictionary<TeamId, int> teamIdsToPeerIndexes = new Dictionary<TeamId, int>();
-                while (await guildSettingEnumerator.MoveNext())
+                while (await guildSettingEnumerator.MoveNext().ConfigureAwait(false))
                 {
                     Models.Guild guildSettings = guildSettingEnumerator.Current;
 
@@ -135,13 +135,13 @@ namespace CyberPatriot.DiscordBot.Services
                             continue;
                         }
 
-                        IGuildChannel rawChan = await guild.GetChannelAsync(chanSettings.Id);
+                        IGuildChannel rawChan = await guild.GetChannelAsync(chanSettings.Id).ConfigureAwait(false);
                         if (!(rawChan is ITextChannel chan))
                         {
                             continue;
                         }
 
-                        masterScoreboard = await _scoreRetriever.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter);
+                        masterScoreboard = await _scoreRetriever.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false);
 
                         foreach (TeamId monitored in chanSettings.MonitoredTeams)
                         {
@@ -181,7 +181,7 @@ namespace CyberPatriot.DiscordBot.Services
                                     announceMessage.Append(" place**.");
                                     await chan.SendMessageAsync(announceMessage.ToString(), embed: _messageBuilder
                                         .CreateTeamDetailsEmbed(
-                                            await _scoreRetriever.GetDetailsAsync(monitored), masterScoreboard)
+                                            await _scoreRetriever.GetDetailsAsync(monitored).ConfigureAwait(false), masterScoreboard)
                                         .Build());
                                 }
                             }
@@ -205,8 +205,8 @@ namespace CyberPatriot.DiscordBot.Services
                 await message.Channel.SendMessageAsync(string.Empty,
                     embed: _messageBuilder
                         .CreateTeamDetailsEmbed(
-                            await _scoreRetriever.GetDetailsAsync(TeamId.Parse(scoreboardMatch.Groups[1].Value)))
-                        .Build());
+                            await _scoreRetriever.GetDetailsAsync(TeamId.Parse(scoreboardMatch.Groups[1].Value)).ConfigureAwait(false))
+                        .Build()).ConfigureAwait(false);
             }
         }
     }

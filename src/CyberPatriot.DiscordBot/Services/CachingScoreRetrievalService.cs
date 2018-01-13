@@ -123,9 +123,10 @@ namespace CyberPatriot.DiscordBot.Services
             Func<bool> cachedGoodEnough = () => cachedTeamInformations.TryGetValue(team, out cachedTeamData) && cachedTeamData.Age <= MaxTeamLifespan;
 
             // FIXME potential undefined/unwanted behavior if reordering dictionary in EnsureTeamCacheCapacity
-            // while hitting this branch (it reorders based on HitCount while we alter it)
+            // while hitting this branch (it reorders based on HitCount while we alter it, and we don't enter the lock)
             // I dont think this will ever do worse than return a just-removed cache item,
-            // or slightly screw up removal sorting, but I'm not sure
+            // or slightly screw up removal sorting (hitcount), but I'm not sure
+            // Intended optimization is to avoid hitting the lock if we've got a good enough item cache
             if (cachedGoodEnough())
             {
                 // cached info good enough
@@ -134,7 +135,7 @@ namespace CyberPatriot.DiscordBot.Services
             }
             else
             {
-                await teamCacheLock.WaitAsync();
+                await teamCacheLock.WaitAsync().ConfigureAwait(false);
                 try
                 {
                     // try our read again, but within the lock
@@ -153,7 +154,7 @@ namespace CyberPatriot.DiscordBot.Services
                     EnsureTeamCacheCapacity();
 
                     // pull from backend
-                    ScoreboardDetails teamInfo = await Backend.GetDetailsAsync(team);
+                    ScoreboardDetails teamInfo = await Backend.GetDetailsAsync(team).ConfigureAwait(false);
                     // add to cache
                     cachedTeamData = new HitTrackingCachedObject<ScoreboardDetails>(teamInfo);
                     Interlocked.Increment(ref cachedTeamData.HitCount);
@@ -179,7 +180,9 @@ namespace CyberPatriot.DiscordBot.Services
 
         public async Task<CompleteScoreboardSummary> GetScoreboardAsync(ScoreboardFilterInfo filter)
         {
-            await scoreboardCacheLock.WaitAsync();
+            // TODO do we need to enter this lock every call? or can we make a similar tweak to the get team call
+            // where we enter the lock and check again within the lock?
+            await scoreboardCacheLock.WaitAsync().ConfigureAwait(false);
             try
             {
                 if (!cachedScoreboards.TryGetValue(filter, out CachedObject<CompleteScoreboardSummary> scoreboard) || scoreboard.Age >= MaxCompleteScoreboardLifespan)
@@ -196,7 +199,7 @@ namespace CyberPatriot.DiscordBot.Services
                     else
                     {
                         // we need a new master scoreboard
-                        masterScoreboard = new CachedObject<CompleteScoreboardSummary>(await Backend.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter));
+                        masterScoreboard = new CachedObject<CompleteScoreboardSummary>(await Backend.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false));
                         cachedScoreboards[ScoreboardFilterInfo.NoFilter] = masterScoreboard;
                         if (filter == ScoreboardFilterInfo.NoFilter)
                         {

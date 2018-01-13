@@ -28,27 +28,33 @@ namespace CyberPatriot.DiscordBot.Modules
             }
             var stopwatch = new System.Diagnostics.Stopwatch();
             stopwatch.Start();
-            IUserMessage myMessage = await ReplyAsync(messageContents.ToString());
+            // TODO I don't know how the stopwatch behaves if we call methods on it across threads
+            // Until we figure that out all calls on the Stopwatch should be on the same thread
+            // As I understand it, the ConfigureAwait(true) does NOT guarantee this, it merely gurantees the same SynchronizationContext
+            // But that should be better in the event of an issue, and it's the default "sync-like" code behavior, meaning I wouldn't expect an issue
+            // TODO figure this out properly 
+            IUserMessage myMessage = await ReplyAsync(messageContents.ToString()).ConfigureAwait(true);
             stopwatch.Stop();
             messageContents.AppendFormat("Message RTT: `{0}ms`", stopwatch.ElapsedMilliseconds);
-            await myMessage.ModifyAsync(mp => mp.Content = messageContents.ToString());
+            // we can ConfigureAwait(false) here because we're done with the stopwatch
+            await myMessage.ModifyAsync(mp => mp.Content = messageContents.ToString()).ConfigureAwait(false);
         }
 
         [Command("info"), Alias("about"), Summary("Returns information about the bot.")]
         public async Task InfoAsync()
         {
-            var appinfo = (await Context.Client.GetApplicationInfoAsync());
-            ulong[] allUsers = await Context.Client.GetGuildsAsync().TaskToAsyncEnumerable<IGuild, IReadOnlyCollection<IGuild>>().SelectMany(g => g.GetUsersAsync().TaskToAsyncEnumerable<IGuildUser, IReadOnlyCollection<IGuildUser>>().Select(u => u.Id)).ToArray();
+            var appinfo = await Context.Client.GetApplicationInfoAsync().ConfigureAwait(false);
+            ulong[] allUsers = await Context.Client.GetGuildsAsync().TaskToAsyncEnumerable<IGuild, IReadOnlyCollection<IGuild>>().SelectMany(g => g.GetUsersAsync().TaskToAsyncEnumerable<IGuildUser, IReadOnlyCollection<IGuildUser>>().Select(u => u.Id)).ToArray().ConfigureAwait(false);
             await ReplyAsync(string.Empty, embed: await new EmbedBuilder()
                 .WithAuthor(Context.Client.CurrentUser.Username, Context.Client.CurrentUser.GetAvatarUrlOrDefault())
                 .WithDescription("**Purpose:** A bot for interaction with CyberPatriot scoreboards.\n"
                 + $"**Code:** [On GitHub](https://github.com/glen3b/CyPatScoreboardBot) - [Add me to your server!](https://discordapp.com/oauth2/authorize?client_id={appinfo.Id}&permissions={CyberPatriotDiscordBot.RequiredPermissions}&scope=bot)\n"
                 + "**Disclaimer:** This bot is not affiliated with the Air Force Association nor the CyberPatriot program. All scores displayed, even those marked \"official,\" are non-binding unofficial scores and should be treated as such. Official scores can only be found [on the CyberPatriot website](http://www.uscyberpatriot.org/competition/current-competition/scores). NO GUARANTEES OR WARRANTIES ARE MADE as to the accuracy of any information displayed by this bot. Refer to the GitHub README for more information.")
                 .WithFooter("Made by glen3b | Written in C# using Discord.Net", "https://avatars.githubusercontent.com/glen3b")
-                .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Prefix").WithValue((Context.Guild != null ? (await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id))?.Prefix?.AppendPrepend("`") : null) ?? Context.Client.CurrentUser.Mention))
+                .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Prefix").WithValue((Context.Guild != null ? (await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id).ConfigureAwait(false))?.Prefix?.AppendPrepend("`") : null) ?? Context.Client.CurrentUser.Mention))
                 .AddField(fb => fb.WithIsInline(true).WithName("Score Provider").WithValue(ScoreService.StaticSummaryLine))
-                .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Teams").WithValue((await ScoreService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter)).TeamList.Count))
-                .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Guilds").WithValue((await Context.Client.GetGuildsAsync()).Count))
+                .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Teams").WithValue((await ScoreService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false)).TeamList.Count))
+                .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Guilds").WithValue((await Context.Client.GetGuildsAsync().ConfigureAwait(false)).Count))
                 .AddField(fb => fb.WithIsInline(true).WithName("Uptime").WithValue(string.Join("\n",
                     (DateTimeOffset.UtcNow - CyberPatriotDiscordBot.StartupTime).ToLongString()
                     .Split(' ')
@@ -56,14 +62,14 @@ namespace CyberPatriot.DiscordBot.Modules
                     .GroupBy(x => x.Index / 4)
                     .Select(x => x.Select(y => y.Value)).Select(x => string.Join(" ", x)))))
                 .AddField(fb => fb.WithIsInline(true).WithName("Users").WithValue(allUsers.Length + $" total\n{allUsers.Distinct().Count()} unique"))
-                .BuildAsync());
+                .BuildAsync().ConfigureAwait(false)).ConfigureAwait(false);
         }
 
         [Command("kill"), Alias("die"), RequireOwner]
         [Summary("Terminates the bot instance.")]
         public async Task KillAsync()
         {
-            await ReplyAsync("Goodbye!");
+            await ReplyAsync("Goodbye!").ConfigureAwait(false);
             Environment.Exit(0);
         }
 
@@ -73,14 +79,14 @@ namespace CyberPatriot.DiscordBot.Modules
         {
             var iconDownloader = new System.Net.Http.HttpClient();
             string tempFileTargetName = Path.GetTempFileName();
-            using (var iconStream = await iconDownloader.GetStreamAsync(iconUrl))
+            using (var iconStream = await iconDownloader.GetStreamAsync(iconUrl).ConfigureAwait(false))
             using (var tempFileTarget = File.OpenWrite(tempFileTargetName))
             {
-                await iconStream.CopyToAsync(tempFileTarget);
+                await iconStream.CopyToAsync(tempFileTarget).ConfigureAwait(false);
             }
-            await Context.Client.CurrentUser.ModifyAsync(props => props.Avatar = new Image(tempFileTargetName));
+            await Context.Client.CurrentUser.ModifyAsync(props => props.Avatar = new Image(tempFileTargetName)).ConfigureAwait(false);
             File.Delete(tempFileTargetName);
-            await ReplyAsync("Avatar updated!");
+            await ReplyAsync("Avatar updated!").ConfigureAwait(false);
         }
 
         [Command("exportscoreboard"), Alias("savescoreboard", "exportscoreboardjson", "downloadscoreboard")]
@@ -88,13 +94,13 @@ namespace CyberPatriot.DiscordBot.Modules
         [Summary("Exports a GZip-compressed JSON scoreboard from the current backend to the current channel.")]
         public async Task DownloadScoreboardAsync()
         {
-            await ReplyAsync("Downloading scoreboard...");
+            await ReplyAsync("Downloading scoreboard...").ConfigureAwait(false);
 
             using (Context.Channel.EnterTypingState())
             {
-                var scoreSummary = await ScoreService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter);
+                var scoreSummary = await ScoreService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false);
                 IDictionary<TeamId, ScoreboardDetails> teamDetails =
-                (await Task.WhenAll(scoreSummary.TeamList.Select(team => ScoreService.GetDetailsAsync(team.TeamId)))
+                (await Task.WhenAll(scoreSummary.TeamList.Select(team => ScoreService.GetDetailsAsync(team.TeamId))).ConfigureAwait(false)
                 ).ToDictionary(entry => entry.TeamId);
                 MemoryStream rawWriteStream = null;
                 try
@@ -105,7 +111,7 @@ namespace CyberPatriot.DiscordBot.Modules
                     using (var writeStream = new GZipStream(rawWriteStream, CompressionMode.Compress))
                     {
                         await JsonScoreRetrievalService.SerializeAsync(new StreamWriter(writeStream), scoreSummary,
-                            teamDetails, ScoreService.Round);
+                            teamDetails, ScoreService.Round).ConfigureAwait(false);
                     }
                     rawWriteStream = new MemoryStream(rawWriteStream.ToArray());
 
@@ -114,15 +120,15 @@ namespace CyberPatriot.DiscordBot.Modules
                     {
                         using (var fileStream = File.Create(Path.Combine("scoreboardarchives", fileName)))
                         {
-                            await rawWriteStream.CopyToAsync(fileStream);
+                            await rawWriteStream.CopyToAsync(fileStream).ConfigureAwait(false);
                         }
                     }
                     rawWriteStream.Position = 0;
-                    TimeZoneInfo tz = await Preferences.GetTimeZoneAsync(Context.Guild, Context.User);
+                    TimeZoneInfo tz = await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false);
                     DateTimeOffset timestamp = TimeZoneInfo.ConvertTime(scoreSummary.SnapshotTimestamp, tz);
 
                     await Context.Channel.SendFileAsync(rawWriteStream, fileName,
-                        $"JSON scoreboard snapshot for {timestamp:g} {tz?.GetAbbreviations().Generic ?? "UTC"}");
+                        $"JSON scoreboard snapshot for {timestamp:g} {tz?.GetAbbreviations().Generic ?? "UTC"}").ConfigureAwait(false);
                 }
                 finally
                 {
