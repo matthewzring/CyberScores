@@ -175,7 +175,8 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
                                 bottomLeft,
                                 new PointF(drawRegionLeftOffset + ((i + 1) * bucketPixelWidth), imageHeight - drawRegionBottomOffset),
                                 new PointF(drawRegionLeftOffset + ((i + 1) * bucketPixelWidth), imageHeight - drawRegionBottomOffset - (pixelsPerUnitCount * countsByBucket[i])),
-                                new PointF(drawRegionLeftOffset + (i * bucketPixelWidth), imageHeight - drawRegionBottomOffset - (pixelsPerUnitCount * countsByBucket[i]))
+                                new PointF(drawRegionLeftOffset + (i * bucketPixelWidth), imageHeight - drawRegionBottomOffset - (pixelsPerUnitCount * countsByBucket[i])),
+                                bottomLeft
                         };
 
                         // rectangle and border
