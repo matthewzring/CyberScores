@@ -202,7 +202,7 @@ namespace CyberPatriot.DiscordBot.Modules
         // public Task HistogramCommandAsync(string imageName) => GenerateHistogramAsync(ScoreboardFilterInfo.NoFilter, imageName, null);
 
         [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of all scores on the current CyberPatriot leaderboard for teams in the given state.")]
-        public Task HistogramCommandAsync([OverrideTypeReader(typeof(LocationTypeReader))] string location) => GenerateHistogramAsync(ScoreboardFilterInfo.NoFilter, null, location);
+        public Task HistogramCommandAsync([OverrideTypeReader(typeof(LocationTypeReader)), Summary("The location (either two-letter postal code or three-letter country code, in all caps) to filter the analysis to.")] string location) => GenerateHistogramAsync(ScoreboardFilterInfo.NoFilter, null, location);
         // [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of all scores for the given image on the current CyberPatriot leaderboard for teams in the given state.")]
         // [Priority(-1)]
         // public Task HistogramCommandAsync([OverrideTypeReader(typeof(LocationTypeReader))] string location, string imageName) => GenerateHistogramAsync(ScoreboardFilterInfo.NoFilter, imageName, location);
@@ -215,7 +215,7 @@ namespace CyberPatriot.DiscordBot.Modules
 
 
         [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given division's scores within the given state on the current CyberPatriot leaderboard.")]
-        public Task HistogramCommandAsync([OverrideTypeReader(typeof(LocationTypeReader))] string location, Division div) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, null), null, location);
+        public Task HistogramCommandAsync([OverrideTypeReader(typeof(LocationTypeReader)), Summary("The location (either two-letter postal code or three-letter country code, in all caps) to filter the analysis to.")] string location, Division div) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, null), null, location);
         // [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given division's scores for the given image within the given state on the current CyberPatriot leaderboard.")]
         // [Priority(-1)]
         // public Task HistogramCommandAsync([OverrideTypeReader(typeof(LocationTypeReader))] string location, Division div, string imageName) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, null), imageName, location);
@@ -228,7 +228,7 @@ namespace CyberPatriot.DiscordBot.Modules
         // public Task HistogramCommandAsync(Division div, Tier tier, string imageName) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, tier), imageName, null);
 
         [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given tier's scores within the given state on the current CyberPatriot leaderboard.")]
-        public Task HistogramCommandAsync([OverrideTypeReader(typeof(LocationTypeReader))] string location, Division div, Tier tier) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, tier), null, location);
+        public Task HistogramCommandAsync([OverrideTypeReader(typeof(LocationTypeReader)), Summary("The location (either two-letter postal code or three-letter country code, in all caps) to filter the analysis to.")] string location, Division div, Tier tier) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, tier), null, location);
         // [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given tier's scores for the given image within the given state on the current CyberPatriot leaderboard.")]
         // [Priority(-1)]
         // public Task HistogramCommandAsync([OverrideTypeReader(typeof(LocationTypeReader))] string location, Division div, Tier tier, string imageName) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, tier), imageName, location);
