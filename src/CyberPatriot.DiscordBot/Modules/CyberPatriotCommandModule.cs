@@ -281,12 +281,7 @@ namespace CyberPatriot.DiscordBot.Modules
 
                     var histogramEmbed = new EmbedBuilder()
                                          .WithTitle("CyberPatriot Score Analysis")
-                                         .WithDescription(
-                                            (filter == ScoreboardFilterInfo.NoFilter ?
-                                                "All Teams"
-                                                : Utilities.JoinNonNullNonEmpty(" | ", filter.Division?.ToStringCamelCaseToSpace(), filter.Tier))
-                                            .AppendPrepend("", locCode.AppendPrependIfNonEmpty("\n", ""))
-                                         )
+                                         .WithDescription(Utilities.JoinNonNullNonEmpty(" | ", filter.Division?.ToStringCamelCaseToSpace(), filter.Tier, locCode).CoalesceBlank("All Teams"))
                                          .AddInlineField("Teams", data.Length)
                                          .AddInlineField("Mean", $"{data.Average():0.##}")
                                          .AddInlineField("Standard Deviation", $"{data.StandardDeviation():0.##}")

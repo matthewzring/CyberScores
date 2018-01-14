@@ -457,6 +457,8 @@ namespace CyberPatriot.DiscordBot
 
         public static string JoinNonNullNonEmpty(string joinString, IEnumerable<string> objects) => string.Join(joinString, objects?.Where(s => !string.IsNullOrWhiteSpace(s)));
 
+        public static string CoalesceBlank(this string baseString, string alternate) => string.IsNullOrWhiteSpace(baseString) ? alternate : baseString;
+
         public static string GetAvatarUrlOrDefault(this Discord.IUser user) => (user ?? throw new NullReferenceException()).GetAvatarUrl() ?? $"https://cdn.discordapp.com/embed/avatars/{user.DiscriminatorValue % 5}.png";
 
         public static string AppendPrepend(this string baseString, string prev, string next = null)
