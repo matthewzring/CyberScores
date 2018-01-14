@@ -215,6 +215,19 @@ namespace CyberPatriot.DiscordBot
             }
         }
 
+
+        public static IEnumerable<T> Conditionally<T>(this IEnumerable<T> enumerable, bool condition, Func<IEnumerable<T>, IEnumerable<T>> action)
+        {
+            if (condition)
+            {
+                return action(enumerable);
+            }
+
+            // TODO covariance
+            return enumerable;
+        }
+
+
         public static Discord.EmbedBuilder Conditionally(this Discord.EmbedBuilder builder, bool condition, Func<Discord.EmbedBuilder, Discord.EmbedBuilder> action) => condition ? action(builder) : builder;
 
         public static Discord.EmbedBuilder ForEach<T>(this Discord.EmbedBuilder builder, IEnumerable<T> collection, Action<Discord.EmbedBuilder, T> action)
@@ -457,7 +470,7 @@ namespace CyberPatriot.DiscordBot
         }
 
         /// <summary>
-        /// Appends and prepends to a string, unless it is null or whitespace.
+        /// Appends and prepends to a string, unless the base string is null or whitespace.
         /// In that case, returns the empty string.
         /// </summary>
         public static string AppendPrependIfNonEmpty(this string baseString, string prev, string next = null)
@@ -475,6 +488,14 @@ namespace CyberPatriot.DiscordBot
             if (sortedData.Length == 0)
             {
                 throw new ArgumentException("Cannot compute the median of a zero-length array.");
+            }
+            else if (sortedData.Length == 1)
+            {
+                return sortedData[0];
+            }
+            else if (sortedData.Length == 2)
+            {
+                return (sortedData[0] + sortedData[1]) / 2;
             }
 
             int center = sortedData.Length / 2;

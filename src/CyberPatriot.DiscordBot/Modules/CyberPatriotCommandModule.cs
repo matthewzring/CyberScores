@@ -191,16 +191,50 @@ namespace CyberPatriot.DiscordBot.Modules
         #endregion
         #region Histogram
 
-        [Command("histogram"), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of all scores on the current CyberPatriot leaderboard. Scores are processed as overall scores unless an image name is specified, in which case only scores on that image are analyzed.")]
-        public Task HistogramCommandAsync(string imageName = null) => GenerateHistogramAsync(ScoreboardFilterInfo.NoFilter, imageName);
+        private const string HistogramCommandName = "histogram";
+        // Unfortunately since it has to be a compile-time constant we can't refactor out the alias list
+        //private static readonly string[] HistogramAliases = { "scoregraph", "scorestats", "statistics" };
 
-        [Command("histogram"), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given division's scores on the current CyberPatriot leaderboard. Scores are processed as overall scores unless an image name is specified, in which case only scores on that image are analyzed.")]
-        public Task HistogramCommandAsync(Division div, string imageName = null) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, null), imageName);
+        [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of all scores on the current CyberPatriot leaderboard.")]
+        public Task HistogramCommandAsync() => GenerateHistogramAsync(ScoreboardFilterInfo.NoFilter, null, null);
+        // [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of all scores for the given image on the current CyberPatriot leaderboard.")]
+        // [Priority(-1)]
+        // public Task HistogramCommandAsync(string imageName) => GenerateHistogramAsync(ScoreboardFilterInfo.NoFilter, imageName, null);
 
-        [Command("histogram"), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given tier's scores on the current CyberPatriot leaderboard. Scores are processed as overall scores unless an image name is specified, in which case only scores on that image are analyzed.")]
-        public Task HistogramCommandAsync(Division div, Tier tier, string imageName = null) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, tier), imageName);
+        [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of all scores on the current CyberPatriot leaderboard for teams in the given state.")]
+        public Task HistogramCommandAsync([OverrideTypeReader(typeof(LocationTypeReader))] string location) => GenerateHistogramAsync(ScoreboardFilterInfo.NoFilter, null, location);
+        // [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of all scores for the given image on the current CyberPatriot leaderboard for teams in the given state.")]
+        // [Priority(-1)]
+        // public Task HistogramCommandAsync([OverrideTypeReader(typeof(LocationTypeReader))] string location, string imageName) => GenerateHistogramAsync(ScoreboardFilterInfo.NoFilter, imageName, location);
 
-        public async Task GenerateHistogramAsync(ScoreboardFilterInfo filter, string imageName)
+        [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given division's scores on the current CyberPatriot leaderboard.")]
+        public Task HistogramCommandAsync(Division div) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, null), null, null);
+        // [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given division's scores for the given image on the current CyberPatriot leaderboard.")]
+        // [Priority(-1)]
+        // public Task HistogramCommandAsync(Division div, string imageName) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, null), imageName, null);
+
+
+        [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given division's scores within the given state on the current CyberPatriot leaderboard.")]
+        public Task HistogramCommandAsync([OverrideTypeReader(typeof(LocationTypeReader))] string location, Division div) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, null), null, location);
+        // [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given division's scores for the given image within the given state on the current CyberPatriot leaderboard.")]
+        // [Priority(-1)]
+        // public Task HistogramCommandAsync([OverrideTypeReader(typeof(LocationTypeReader))] string location, Division div, string imageName) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, null), imageName, location);
+
+
+        [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given tier's scores on the current CyberPatriot leaderboard.")]
+        public Task HistogramCommandAsync(Division div, Tier tier) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, tier), null, null);
+        // [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given tier's scores for the given image on the current CyberPatriot leaderboard.")]
+        // [Priority(-1)]
+        // public Task HistogramCommandAsync(Division div, Tier tier, string imageName) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, tier), imageName, null);
+
+        [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given tier's scores within the given state on the current CyberPatriot leaderboard.")]
+        public Task HistogramCommandAsync([OverrideTypeReader(typeof(LocationTypeReader))] string location, Division div, Tier tier) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, tier), null, location);
+        // [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given tier's scores for the given image within the given state on the current CyberPatriot leaderboard.")]
+        // [Priority(-1)]
+        // public Task HistogramCommandAsync([OverrideTypeReader(typeof(LocationTypeReader))] string location, Division div, Tier tier, string imageName) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, tier), imageName, location);
+
+
+        public async Task GenerateHistogramAsync(ScoreboardFilterInfo filter, string imageName, string locCode)
         {
             using (Context.Channel.EnterTypingState())
             {
@@ -229,6 +263,7 @@ namespace CyberPatriot.DiscordBot.Modules
 
                 CompleteScoreboardSummary scoreboard = await ScoreRetrievalService.GetScoreboardAsync(filter).ConfigureAwait(false);
                 decimal[] data = scoreboard.TeamList
+                    .Conditionally(locCode != null, tle => tle.Where(t => t.Location == locCode))
                     // nasty hack
                     .Select(datum => decimal.TryParse(ScoreRetrievalService.FormattingOptions.FormatScore(datum.TotalScore), out decimal d) ? d : datum.TotalScore)
                     .OrderBy(d => d).ToArray();
@@ -246,7 +281,12 @@ namespace CyberPatriot.DiscordBot.Modules
 
                     var histogramEmbed = new EmbedBuilder()
                                          .WithTitle("CyberPatriot Score Analysis")
-                                         .WithDescription(filter == ScoreboardFilterInfo.NoFilter ? "All Teams" : Utilities.JoinNonNullNonEmpty(" | ", filter.Division, filter.Tier))
+                                         .WithDescription(
+                                            (filter == ScoreboardFilterInfo.NoFilter ?
+                                                "All Teams"
+                                                : Utilities.JoinNonNullNonEmpty(" | ", filter.Division?.ToStringCamelCaseToSpace(), filter.Tier))
+                                            .AppendPrepend("", locCode.AppendPrependIfNonEmpty("\n", ""))
+                                         )
                                          .AddInlineField("Teams", data.Length)
                                          .AddInlineField("Mean", $"{data.Average():0.##}")
                                          .AddInlineField("Standard Deviation", $"{data.StandardDeviation():0.##}")
