@@ -24,11 +24,12 @@ namespace CyberPatriot.DiscordBot.Services
         private ScoreboardMessageBuilderService _messageBuilder;
         private IScoreRetrievalService _scoreRetriever;
         private ICompetitionRoundLogicService _competitionLogic;
+        private LogService _logService;
         protected Regex _teamUrlRegex;
 
         public CyberPatriotEventHandlingService(IServiceProvider provider, DiscordSocketClient discord,
             IDataPersistenceService database, IConfiguration config, ScoreboardMessageBuilderService messageBuilder,
-            IScoreRetrievalService scoreRetriever, ICompetitionRoundLogicService competitionLogic)
+            IScoreRetrievalService scoreRetriever, ICompetitionRoundLogicService competitionLogic, LogService logService)
         {
             _discord = discord;
             _provider = provider;
@@ -37,6 +38,7 @@ namespace CyberPatriot.DiscordBot.Services
             _messageBuilder = messageBuilder;
             _scoreRetriever = scoreRetriever;
             _competitionLogic = competitionLogic;
+            _logService = logService;
 
             _discord.MessageReceived += MessageReceived;
             _teamUrlRegex = new Regex("https?://" + _config["httpConfig:defaultHostname"].Replace(".", "\\.") +
@@ -86,109 +88,130 @@ namespace CyberPatriot.DiscordBot.Services
 
         async Task UpdateGameBasedOnBackend()
         {
-            string staticSummary = _scoreRetriever.StaticSummaryLine;
-            if (staticSummary != null)
+            try
             {
-                var summaryLineBuilder = new StringBuilder(staticSummary);
-                if (_scoreRetriever.IsDynamic)
+                string staticSummary = _scoreRetriever.StaticSummaryLine;
+                if (staticSummary != null)
                 {
-                    summaryLineBuilder.Append(" - ");
-                    var topTeam = (await _scoreRetriever.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false)).TeamList.FirstOrDefault();
-                    if (topTeam == null)
+                    var summaryLineBuilder = new StringBuilder(staticSummary);
+                    if (_scoreRetriever.IsDynamic)
                     {
-                        summaryLineBuilder.Append("No teams!");
+                        summaryLineBuilder.Append(" - ");
+                        var topTeam = (await _scoreRetriever.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false)).TeamList.FirstOrDefault();
+                        if (topTeam == null)
+                        {
+                            summaryLineBuilder.Append("No teams!");
+                        }
+                        else
+                        {
+                            summaryLineBuilder.AppendFormat("Top: {0}, {1}pts", topTeam.TeamId, _scoreRetriever.FormattingOptions.FormatScore(topTeam.TotalScore));
+                        }
                     }
-                    else
-                    {
-                        summaryLineBuilder.AppendFormat("Top: {0}, {1}pts", topTeam.TeamId, _scoreRetriever.FormattingOptions.FormatScore(topTeam.TotalScore));
-                    }
+
+                    await _discord.SetGameAsync(summaryLineBuilder.ToString()).ConfigureAwait(false);
                 }
-                await _discord.SetGameAsync(summaryLineBuilder.ToString()).ConfigureAwait(false);
+                else
+                {
+                    await _discord.SetGameAsync(null).ConfigureAwait(false);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                await _discord.SetGameAsync(null).ConfigureAwait(false);
+                await _logService.LogApplicationMessageAsync(ex);
             }
         }
 
         async Task TeamPlacementChangeNotificationTimer(TimerStateWrapper state)
         {
-            using (var databaseContext = _database.OpenContext<Models.Guild>(false))
-            using (var guildSettingEnumerator = databaseContext.FindAllAsync().GetEnumerator())
+            try
             {
-                CompleteScoreboardSummary masterScoreboard = null;
-                Dictionary<TeamId, int> teamIdsToPeerIndexes = new Dictionary<TeamId, int>();
-                while (await guildSettingEnumerator.MoveNext().ConfigureAwait(false))
+                using (var databaseContext = _database.OpenContext<Models.Guild>(false))
+                using (var guildSettingEnumerator = databaseContext.FindAllAsync().GetEnumerator())
                 {
-                    Models.Guild guildSettings = guildSettingEnumerator.Current;
-
-                    if (guildSettings?.ChannelSettings == null || guildSettings.ChannelSettings.Count == 0)
+                    CompleteScoreboardSummary masterScoreboard = null;
+                    Dictionary<TeamId, int> teamIdsToPeerIndexes = new Dictionary<TeamId, int>();
+                    while (await guildSettingEnumerator.MoveNext().ConfigureAwait(false))
                     {
-                        return;
-                    }
+                        Models.Guild guildSettings = guildSettingEnumerator.Current;
 
-                    IGuild guild = _discord.GetGuild(guildSettings.Id);
-                    foreach (var chanSettings in guildSettings.ChannelSettings.Values)
-                    {
-                        if (chanSettings?.MonitoredTeams == null || chanSettings.MonitoredTeams.Count == 0)
+                        if (guildSettings?.ChannelSettings == null || guildSettings.ChannelSettings.Count == 0)
                         {
-                            continue;
+                            return;
                         }
 
-                        IGuildChannel rawChan = await guild.GetChannelAsync(chanSettings.Id).ConfigureAwait(false);
-                        if (!(rawChan is ITextChannel chan))
+                        IGuild guild = _discord.GetGuild(guildSettings.Id);
+                        foreach (var chanSettings in guildSettings.ChannelSettings.Values)
                         {
-                            continue;
-                        }
-
-                        masterScoreboard = await _scoreRetriever.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false);
-
-                        foreach (TeamId monitored in chanSettings.MonitoredTeams)
-                        {
-                            int masterScoreboardIndex =
-                                masterScoreboard.TeamList.IndexOfWhere(scoreEntry => scoreEntry.TeamId == monitored);
-                            if (masterScoreboardIndex == -1)
+                            if (chanSettings?.MonitoredTeams == null || chanSettings.MonitoredTeams.Count == 0)
                             {
                                 continue;
                             }
-                            ScoreboardSummaryEntry monitoredEntry = masterScoreboard.TeamList[masterScoreboardIndex];
-                            int peerIndex = _competitionLogic.GetPeerTeams(_scoreRetriever.Round, masterScoreboard, monitoredEntry).IndexOf(monitoredEntry);
-                            teamIdsToPeerIndexes[monitored] = peerIndex;
 
-                            // we've obtained all information, now compare to past data
-                            if (state.PreviousTeamListIndexes != null &&
-                                state.PreviousTeamListIndexes.TryGetValue(monitored, out int prevPeerIndex))
+                            IGuildChannel rawChan = await guild.GetChannelAsync(chanSettings.Id).ConfigureAwait(false);
+                            if (!(rawChan is ITextChannel chan))
                             {
-                                int indexDifference = peerIndex - prevPeerIndex;
-                                if (indexDifference != 0)
+                                continue;
+                            }
+
+                            masterScoreboard = await _scoreRetriever.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false);
+
+                            foreach (TeamId monitored in chanSettings.MonitoredTeams)
+                            {
+                                int masterScoreboardIndex =
+                                    masterScoreboard.TeamList.IndexOfWhere(scoreEntry => scoreEntry.TeamId == monitored);
+                                if (masterScoreboardIndex == -1)
                                 {
-                                    StringBuilder announceMessage = new StringBuilder();
-                                    announceMessage.Append("**");
-                                    announceMessage.Append(monitored);
-                                    announceMessage.Append("**");
-                                    if (indexDifference > 0)
+                                    continue;
+                                }
+
+                                ScoreboardSummaryEntry monitoredEntry = masterScoreboard.TeamList[masterScoreboardIndex];
+                                int peerIndex = _competitionLogic.GetPeerTeams(_scoreRetriever.Round, masterScoreboard, monitoredEntry).IndexOf(monitoredEntry);
+                                teamIdsToPeerIndexes[monitored] = peerIndex;
+
+                                // we've obtained all information, now compare to past data
+                                if (state.PreviousTeamListIndexes != null &&
+                                    state.PreviousTeamListIndexes.TryGetValue(monitored, out int prevPeerIndex))
+                                {
+                                    int indexDifference = peerIndex - prevPeerIndex;
+                                    if (indexDifference != 0)
                                     {
-                                        announceMessage.Append(" rose ");
+                                        StringBuilder announceMessage = new StringBuilder();
+                                        announceMessage.Append("**");
+                                        announceMessage.Append(monitored);
+                                        announceMessage.Append("**");
+                                        if (indexDifference > 0)
+                                        {
+                                            announceMessage.Append(" rose ");
+                                        }
+                                        else
+                                        {
+                                            announceMessage.Append(" fell ");
+                                            indexDifference *= -1;
+                                        }
+
+                                        announceMessage.Append(Utilities.Pluralize("place", indexDifference));
+                                        announceMessage.Append(" to **");
+                                        announceMessage.Append(Utilities.AppendOrdinalSuffix(peerIndex + 1));
+                                        announceMessage.Append(" place**.");
+                                        await chan.SendMessageAsync(
+                                        announceMessage.ToString(),
+                                        embed: _messageBuilder
+                                               .CreateTeamDetailsEmbed(
+                                               await _scoreRetriever.GetDetailsAsync(monitored).ConfigureAwait(false),
+                                               masterScoreboard)
+                                               .Build());
                                     }
-                                    else
-                                    {
-                                        announceMessage.Append(" fell ");
-                                        indexDifference *= -1;
-                                    }
-                                    announceMessage.Append(Utilities.Pluralize("place", indexDifference));
-                                    announceMessage.Append(" to **");
-                                    announceMessage.Append(Utilities.AppendOrdinalSuffix(peerIndex + 1));
-                                    announceMessage.Append(" place**.");
-                                    await chan.SendMessageAsync(announceMessage.ToString(), embed: _messageBuilder
-                                        .CreateTeamDetailsEmbed(
-                                            await _scoreRetriever.GetDetailsAsync(monitored).ConfigureAwait(false), masterScoreboard)
-                                        .Build());
                                 }
                             }
                         }
                     }
+
+                    state.PreviousTeamListIndexes = teamIdsToPeerIndexes;
                 }
-                state.PreviousTeamListIndexes = teamIdsToPeerIndexes;
+            }
+            catch (Exception ex)
+            {
+                await _logService.LogApplicationMessageAsync(ex);
             }
         }
 
