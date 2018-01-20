@@ -27,7 +27,7 @@ namespace CyberPatriot.DiscordBot
                     return TypeReaderResult.FromError(CommandError.ParseFailed, ParseError);
                 }
             }
-            return TypeReaderResult.FromSuccess(input);
+            return TypeReaderResult.FromSuccess((LocationCode)input);
         }
     }
 }
