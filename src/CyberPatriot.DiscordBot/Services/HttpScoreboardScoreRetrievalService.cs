@@ -26,9 +26,8 @@ namespace CyberPatriot.DiscordBot.Services
 
 
 
-        // 1 request every 1.5 seconds
-        // note the delay may be up to 3s
-        public IRateLimitProvider RateLimiter { get; protected set; } = new TimerRateLimitProvider(1500, 3);
+        // 1 request every 2 seconds
+        public IRateLimitProvider RateLimiter { get; protected set; } = new TimerRateLimitProvider(2000, 1);
         private ICompetitionRoundLogicService _roundInferenceService = null;
         private IExternalCategoryProviderService _categoryProvider = null;
 

@@ -61,7 +61,12 @@ namespace CyberPatriot.DiscordBot.Services
                         // this is the old prereq bag, nobody's modifying it (we've swapped it out)
                         // wait for all the prereqs, then clear the bag (we don't want a reference to them lying around)
                         // this is the blocking call that necessitates the lock
-                        Task.WhenAll(prereqBag).Wait();
+
+                        // ContinueWith null result: we don't care about the results, and we explicitly want to ignore exceptions
+                        // the important thing is that we await all of them
+                        // avoid a "using System.Linq" so we don't accidentally do something not threadsafe in this file
+                        Task.WhenAll(System.Linq.Enumerable.Select(prereqBag, tTmp => tTmp.ContinueWith(t => (object)null))).Wait();
+
                         prereqBag.Clear();
                         prereqBag = null;
 

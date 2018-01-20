@@ -453,6 +453,25 @@ namespace CyberPatriot.DiscordBot
             return serv;
         }
 
+        public static TService GetFirstFromChain<TService>(this TService chainRoot, Func<TService, bool> predicate, TService defVal = default(TService)) where TService : class
+        {
+            if (chainRoot == null)
+            {
+                return defVal;
+            }
+
+            TService service = chainRoot;
+            do
+            {
+                if (predicate(service))
+                {
+                    return service;
+                }
+            } while ((service = (service as IComposingService<TService>)?.Backend) != null);
+
+            return defVal;
+        }
+
         public static string JoinNonNullNonEmpty(string joinString, params object[] objects) => JoinNonNullNonEmpty(joinString, objects?.Select(o => o?.ToString()));
 
         public static string JoinNonNullNonEmpty(string joinString, IEnumerable<string> objects) => string.Join(joinString, objects?.Where(s => !string.IsNullOrWhiteSpace(s)));

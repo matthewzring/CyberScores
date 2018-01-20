@@ -89,7 +89,7 @@ namespace CyberPatriot.DiscordBot.Modules
             await ReplyAsync("Avatar updated!").ConfigureAwait(false);
         }
 
-        [Command("exportscoreboard"), Alias("savescoreboard", "exportscoreboardjson", "downloadscoreboard")]
+        [Command("exportscoreboard", RunMode = RunMode.Async), Alias("savescoreboard", "exportscoreboardjson", "downloadscoreboard")]
         [RequireOwner]
         [Summary("Exports a GZip-compressed JSON scoreboard from the current backend to the current channel.")]
         public async Task DownloadScoreboardAsync()
@@ -99,9 +99,45 @@ namespace CyberPatriot.DiscordBot.Modules
             using (Context.Channel.EnterTypingState())
             {
                 var scoreSummary = await ScoreService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false);
-                IDictionary<TeamId, ScoreboardDetails> teamDetails =
-                (await Task.WhenAll(scoreSummary.TeamList.Select(team => ScoreService.GetDetailsAsync(team.TeamId))).ConfigureAwait(false)
-                ).ToDictionary(entry => entry.TeamId);
+
+                var teamDetailRetrieveTasks = scoreSummary.TeamList.Select(team => ScoreService.GetDetailsAsync(team.TeamId)).ToList();
+
+                IDictionary<TeamId, ScoreboardDetails> teamDetails = new Dictionary<TeamId, ScoreboardDetails>();
+
+                do
+                {
+                    try
+                    {
+                        await Task.WhenAll(teamDetailRetrieveTasks).ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        // TODO handle this in a more logical place
+                        // assume a rate limit issue, treat this task as lost and cool down
+                        // here's a hack if I ever saw one
+                        var rateLimiter = (ScoreService.GetFirstFromChain<IScoreRetrievalService>(s => s is HttpScoreboardScoreRetrievalService) as HttpScoreboardScoreRetrievalService)?.RateLimiter;
+                        var delayTask = Task.Delay(15000);
+                        if (rateLimiter != null)
+                        {
+                            rateLimiter.AddPrerequisite(delayTask);
+                        }
+
+                        await delayTask.ConfigureAwait(false);
+                    }
+
+                    // add all completed results to the dictionary
+                    foreach (var retrieveTask in teamDetailRetrieveTasks.Where(t => t.IsCompletedSuccessfully))
+                    {
+                        // successful completion
+                        ScoreboardDetails details = retrieveTask.Result;
+                        teamDetails[details.TeamId] = details;
+                    }
+
+                    // remove all completed and faulted tasks
+                    teamDetailRetrieveTasks.RemoveAll(t => t.IsCompleted);
+                } while (teamDetailRetrieveTasks.Count > 0);
+
+
                 MemoryStream rawWriteStream = null;
                 try
                 {
