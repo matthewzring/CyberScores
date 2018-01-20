@@ -12,8 +12,10 @@ namespace CyberPatriot.DiscordBot.Services
     public class CachingScoreRetrievalService : IScoreRetrievalService, IComposingService<IScoreRetrievalService>, IDisposable
     {
         public IScoreRetrievalService Backend { get; set; }
-        public TimeSpan MaxTeamLifespan { get; set; } = TimeSpan.FromMinutes(.75);
-        public TimeSpan MaxCompleteScoreboardLifespan { get; set; } = TimeSpan.FromMinutes(1);
+        // Rationale: individual teams queried less often, but more teams are queried
+        // Overall scoreboard is a global resource so should be as up-to-date as reasonable
+        public TimeSpan MaxTeamLifespan { get; set; } = TimeSpan.FromSeconds(45);
+        public TimeSpan MaxCompleteScoreboardLifespan { get; set; } = TimeSpan.FromSeconds(20);
         public int MaxCachedTeamDetails { get; set; } = 20;
 
         public bool IsDynamic => Backend.IsDynamic;
