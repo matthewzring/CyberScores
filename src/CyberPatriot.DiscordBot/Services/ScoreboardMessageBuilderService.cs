@@ -251,12 +251,12 @@ namespace CyberPatriot.DiscordBot.Services
                     if (myDivMyTierTeams.Count != peerTeams.Count && !myDivMyTierTeams.Select(t => t.TeamId).OrderBy(t => t).SequenceEqual(peerTeams.Select(t => t.TeamId).OrderBy(t => t)))
                     {
                         // tier ranking, differing from peer ranking
-                        standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(myDivMyTierTeams.IndexOf(teamScore.Summary) + 1) + " of " + Utilities.Pluralize("team", myDivMyTierTeams.Count) + " in tier");
+                        standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(myDivMyTierTeams.IndexOfWhere(cand => cand.TeamId == teamScore.TeamId) + 1) + " of " + Utilities.Pluralize("team", myDivMyTierTeams.Count) + " in tier");
                     }
                     if (totalDivisionScoreboard.TeamList.Count > peerTeams.Count)
                     {
                         // division ranking, differing from peer ranking
-                        standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(totalDivisionScoreboard.TeamList.IndexOf(teamScore.Summary) + 1) + " of " + Utilities.Pluralize("team", totalDivisionScoreboard.TeamList.Count) + " in division");
+                        standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(totalDivisionScoreboard.TeamList.IndexOfWhere(cand => cand.TeamId == teamScore.TeamId) + 1) + " of " + Utilities.Pluralize("team", totalDivisionScoreboard.TeamList.Count) + " in division");
                     }
                     builder.AddInlineField("Standing", standingFieldBuilder.ToString());
                 }
