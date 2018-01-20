@@ -199,7 +199,7 @@ namespace CyberPatriot.DiscordBot.Services
                                                .CreateTeamDetailsEmbed(
                                                await _scoreRetriever.GetDetailsAsync(monitored).ConfigureAwait(false),
                                                masterScoreboard)
-                                               .Build());
+                                               .Build()).ConfigureAwait(false);
                                     }
                                 }
                             }
