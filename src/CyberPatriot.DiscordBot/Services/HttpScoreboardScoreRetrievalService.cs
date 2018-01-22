@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Text.RegularExpressions;
 
 namespace CyberPatriot.DiscordBot.Services
 {
@@ -250,6 +251,60 @@ namespace CyberPatriot.DiscordBot.Services
                 image.Warnings |= dataEntries[6].Contains("T") ? ScoreWarnings.TimeOver : 0;
                 image.Warnings |= dataEntries[6].Contains("M") ? ScoreWarnings.MultiImage : 0;
                 retVal.Images.Add(image);
+            }
+
+            // score graph
+            try
+            {
+                var teamScoreGraphHeader = new Regex(@"\['Time'(?:, '(\w+)')* *\]");
+                var teamScoreGraphEntry = new Regex(@"\['(\d{2}/\d{2} \d{2}:\d{2})'(?:, (\d+|null))*\]");
+                Match headerMatch = teamScoreGraphHeader.Match(detailsPage);
+                if (headerMatch?.Success ?? false)
+                {
+                    retVal.ImageScoresOverTime = new Dictionary<string, SortedDictionary<DateTimeOffset, int?>>();
+                    string[] imageHeaders = headerMatch.Groups[1].Captures.Select(c => c.Value).ToArray();
+                    SortedDictionary<DateTimeOffset, int?>[] dictArr = new SortedDictionary<DateTimeOffset, int?>[imageHeaders.Length];
+                    for (int i = 0; i < dictArr.Length; i++)
+                    {
+                        dictArr[i] = new SortedDictionary<DateTimeOffset, int?>();
+                        retVal.ImageScoresOverTime[imageHeaders[i]] = dictArr[i];
+                    }
+                    teamScoreGraphEntry.Matches(detailsPage).Where(g => g?.Success ?? false).Select<Match, object>((m, ind) =>
+                        {
+                            DateTimeOffset dto = default(DateTimeOffset);
+                            try
+                            {
+                                // MM/dd hh:mm
+                                string dateStr = m.Groups[1].Value;
+                                string[] dateStrComponents = dateStr.Split(' ');
+                                string[] dateComponents = dateStrComponents[0].Split('/');
+                                string[] timeComponents = dateStrComponents[1].Split(':');
+                                dto = new DateTimeOffset(DateTimeOffset.UtcNow.Year, int.Parse(dateComponents[0]), int.Parse(dateComponents[1]), int.Parse(timeComponents[0]), int.Parse(timeComponents[1]), 0, TimeSpan.Zero);
+                            }
+                            catch
+                            {
+                                return null;
+                            }
+
+                            var captures = m.Groups[2].Captures;
+
+                            for (int i = 0; i < captures.Count; i++)
+                            {
+                                int? scoreVal = null;
+                                if (int.TryParse(captures[i].Value, out int thingValTemp))
+                                {
+                                    scoreVal = thingValTemp;
+                                }
+                                dictArr[i][dto] = scoreVal;
+                            }
+
+                            return null;
+                        }).Consume();
+                }
+            }
+            catch
+            {
+                // TODO log
             }
             return retVal;
         }

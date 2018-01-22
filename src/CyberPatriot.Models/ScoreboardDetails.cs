@@ -17,5 +17,6 @@ namespace CyberPatriot.Models
         // FIXME: multi detail origin (hash property? null Uri?)
         public Uri OriginUri { get; set; }
         public DateTimeOffset SnapshotTimestamp { get; set; }
+        public Dictionary<string, SortedDictionary<DateTimeOffset, int?>> ImageScoresOverTime { get; set; } = null;
     }
 }
