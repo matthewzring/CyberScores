@@ -1,15 +1,17 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.0.0
-MinimumVisualStudioVersion = 10.0.0.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CyberPatriotDiscordBot", "src\CyberPatriot.DiscordBot\CyberPatriot.DiscordBot.csproj", "{4316457B-D0C7-41C4-A4A6-BC4C03D5FE40}"
+# Visual Studio 15
+VisualStudioVersion = 15.0.27004.2009
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CyberPatriot.DiscordBot", "src\CyberPatriot.DiscordBot\CyberPatriot.DiscordBot.csproj", "{4316457B-D0C7-41C4-A4A6-BC4C03D5FE40}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CyberPatriot.Models", "src\CyberPatriot.Models\CyberPatriot.Models.csproj", "{C4517923-3517-4AB6-9EB3-074869BCF38C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CyberPatriot.Models", "src\CyberPatriot.Models\CyberPatriot.Models.csproj", "{C4517923-3517-4AB6-9EB3-074869BCF38C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CyberPatriot.BitmapProvider", "src\CyberPatriot.BitmapProvider\CyberPatriot.BitmapProvider.csproj", "{6C3BBAF5-F535-42D6-B623-7A2374D19307}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CyberPatriot.BitmapProvider", "src\CyberPatriot.BitmapProvider\CyberPatriot.BitmapProvider.csproj", "{6C3BBAF5-F535-42D6-B623-7A2374D19307}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CyberPatriot.BitmapProvider.ImageSharp", "src\CyberPatriot.BitmapProvider.ImageSharp\CyberPatriot.BitmapProvider.ImageSharp.csproj", "{6267ADFD-66B6-4A4F-B199-19BA151CDC99}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CyberPatriot.BitmapProvider.ImageSharp", "src\CyberPatriot.BitmapProvider.ImageSharp\CyberPatriot.BitmapProvider.ImageSharp.csproj", "{6267ADFD-66B6-4A4F-B199-19BA151CDC99}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CsvToJsonShim", "src\CsvToJsonShim\CsvToJsonShim.csproj", "{B67B95C2-BB71-4005-9854-4749DC018E15}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,8 +35,15 @@ Global
 		{6267ADFD-66B6-4A4F-B199-19BA151CDC99}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6267ADFD-66B6-4A4F-B199-19BA151CDC99}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6267ADFD-66B6-4A4F-B199-19BA151CDC99}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B67B95C2-BB71-4005-9854-4749DC018E15}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B67B95C2-BB71-4005-9854-4749DC018E15}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B67B95C2-BB71-4005-9854-4749DC018E15}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B67B95C2-BB71-4005-9854-4749DC018E15}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CFE74700-467A-4085-8F49-66C4F92EAE46}
 	EndGlobalSection
 EndGlobal
