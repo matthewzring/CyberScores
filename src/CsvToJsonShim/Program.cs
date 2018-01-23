@@ -19,12 +19,14 @@ namespace CsvToJsonShim
             string servicePath = Console.ReadLine();
             Console.WriteLine("Enter round number:");
             int roundNumber = int.Parse(Console.ReadLine());
+            Console.WriteLine("Enter origin URI:");
+            string originUri = Console.ReadLine();
 
             Dictionary<TeamId, string> categories = new Dictionary<TeamId, string>();
 
             if (servicePath != "")
             {
-                categories = File.ReadAllLines(servicePath).ToDictionary(x => TeamId.Parse(x.Split(':')[0]), x => x.Split(':')[1]);
+                categories = File.ReadAllLines(servicePath).Select(x => x.Split(':')).Where(x => TeamId.TryParse(x[0], out TeamId _)).ToDictionary(x => TeamId.Parse(x[0]), x => x[1]);
             }
 
             var lines = File.ReadAllLines(path);
@@ -32,17 +34,18 @@ namespace CsvToJsonShim
             CompleteScoreboardSummary summary = new CompleteScoreboardSummary();
             summary.TeamList = new List<ScoreboardSummaryEntry>();
             summary.SnapshotTimestamp = DateTimeOffset.Parse(timestamp);
-            summary.OriginUri = new Uri("http://cpx-team-monitor.deaks.org/");
+            summary.OriginUri = string.IsNullOrEmpty(originUri) ? null : new Uri(originUri);
 
             Console.WriteLine("Loading score data");
 
             foreach (string[] data in lines.Skip(1).Select(line => line.Split(',')))
             {
+                System.Console.WriteLine(data[0]);
                 ScoreboardSummaryEntry entry = new ScoreboardSummaryEntry
                 {
                     TeamId = TeamId.Parse(data[0]),
                     Division = Enum.Parse<Division>(data[1].Replace(" ", ""), true),
-                    Category = string.IsNullOrEmpty(data[2]) ? categories.TryGetValue(TeamId.Parse(data[0]), out string c) ? c : "" : data[2],
+                    Category = string.IsNullOrEmpty(data[2]) ? categories.TryGetValue(TeamId.Parse(data[0]), out string c) ? c : null : data[2],
                     Location = data[3],
                     Tier = Enum.TryParse<Tier>(data[4],true,out Tier t) ? t : (Tier?)null,
                     ImageCount = int.Parse(data[5]),
