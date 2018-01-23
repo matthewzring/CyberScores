@@ -40,7 +40,6 @@ namespace CsvToJsonShim
 
             foreach (string[] data in lines.Skip(1).Select(line => line.Split(',')))
             {
-                System.Console.WriteLine(data[0]);
                 ScoreboardSummaryEntry entry = new ScoreboardSummaryEntry
                 {
                     TeamId = TeamId.Parse(data[0]),
