@@ -42,21 +42,20 @@ namespace CyberPatriot.DiscordBot.Modules
             using (Context.Channel.EnterTypingState())
             {
                 var scoreboardTask = ScoreRetrievalService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter);
-                using (var targetStream = new System.IO.MemoryStream())
+
+                var targetWriter = new System.IO.StringWriter();
+                await targetWriter.WriteLineAsync("TeamId,Division,Category,Location,Tier,ImageCount,PlayTime,Score,Warnings").ConfigureAwait(false);
+                CompleteScoreboardSummary scoreboard = await scoreboardTask.ConfigureAwait(false);
+                foreach (var team in scoreboard.TeamList)
                 {
-                    var targetWriter = new System.IO.StreamWriter(targetStream);
-                    await targetWriter.WriteLineAsync("TeamId,Division,Category,Location,Tier,ImageCount,PlayTime,Score,Warnings").ConfigureAwait(false);
-                    CompleteScoreboardSummary scoreboard = await scoreboardTask.ConfigureAwait(false);
-                    foreach (var team in scoreboard.TeamList)
-                    {
-                        await targetWriter.WriteLineAsync($"{team.TeamId},{team.Division.ToStringCamelCaseToSpace()},{team.Category ?? string.Empty},{team.Location},{(team.Tier.HasValue ? team.Tier.Value.ToString() : string.Empty)},{team.ImageCount},{team.PlayTime:hh\\:mm},{ScoreRetrievalService.FormattingOptions.FormatScore(team.TotalScore)},{team.Warnings.ToConciseString()}").ConfigureAwait(false);
-                    }
+                    await targetWriter.WriteLineAsync($"{team.TeamId},{team.Division.ToStringCamelCaseToSpace()},{team.Category ?? string.Empty},{team.Location},{(team.Tier.HasValue ? team.Tier.Value.ToString() : string.Empty)},{team.ImageCount},{team.PlayTime:hh\\:mm},{ScoreRetrievalService.FormattingOptions.FormatScore(team.TotalScore)},{team.Warnings.ToConciseString()}").ConfigureAwait(false);
+                }
 
-                    targetStream.Position = 0;
-
-                    TimeZoneInfo tz = await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false);
-                    string tzAbbr = tz.GetAbbreviations().Generic;
-                    DateTimeOffset snapshotTimestamp = TimeZoneInfo.ConvertTime(scoreboard.SnapshotTimestamp, tz);
+                TimeZoneInfo tz = await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false);
+                string tzAbbr = tz.GetAbbreviations().Generic;
+                DateTimeOffset snapshotTimestamp = TimeZoneInfo.ConvertTime(scoreboard.SnapshotTimestamp, tz);
+                using (var targetStream = new System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes(targetWriter.GetStringBuilder().ToString())))
+                {
                     await Context.Channel.SendFileAsync(targetStream, "scoreboard.csv", $"Scoreboard summary CSV export\nScore timestamp: {snapshotTimestamp:g} {tzAbbr}\nExported: {TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, tz):g} {tzAbbr}").ConfigureAwait(false);
                 }
             }
