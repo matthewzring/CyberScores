@@ -16,6 +16,7 @@ namespace CyberPatriot.DiscordBot.Modules
         public IScoreRetrievalService ScoreService { get; set; }
         public IDataPersistenceService Database { get; set; }
         public PreferenceProviderService Preferences { get; set; }
+        public LogService Log { get; set; }
 
         [Command("ping"), Summary("Pings the bot. Responds with the internal socket client's estimated latency, if available.")]
         public async Task PingAsync()
@@ -112,6 +113,7 @@ namespace CyberPatriot.DiscordBot.Modules
                     }
                     catch
                     {
+                        await Log.LogApplicationMessageAsync(LogSeverity.Error, "Error while retrieving some teams in full score export, excluding them silently!").ConfigureAwait(false);
                         // TODO handle this in a more logical place
                         // assume a rate limit issue, treat this task as lost and cool down
                         // here's a hack if I ever saw one
@@ -125,8 +127,11 @@ namespace CyberPatriot.DiscordBot.Modules
                         await delayTask.ConfigureAwait(false);
                     }
 
+                    // completed and faulted
+                    var completedTasks = teamDetailRetrieveTasks.Where(t => t.IsCompleted).ToArray();
+
                     // add all completed results to the dictionary
-                    foreach (var retrieveTask in teamDetailRetrieveTasks.Where(t => t.IsCompletedSuccessfully))
+                    foreach (var retrieveTask in completedTasks.Where(t => t.IsCompletedSuccessfully))
                     {
                         // successful completion
                         ScoreboardDetails details = retrieveTask.Result;
@@ -134,7 +139,10 @@ namespace CyberPatriot.DiscordBot.Modules
                     }
 
                     // remove all completed and faulted tasks
-                    teamDetailRetrieveTasks.RemoveAll(t => t.IsCompleted);
+                    foreach (var task in completedTasks)
+                    {
+                        teamDetailRetrieveTasks.Remove(task);
+                    }
                 } while (teamDetailRetrieveTasks.Count > 0);
 
 
