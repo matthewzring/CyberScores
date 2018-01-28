@@ -189,7 +189,13 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
                         {
                             // Fencepost
                             // Render the last label
-                            RenderSlantedXAxisText(getDataEdgeLabel(last), bottomLeft + new PointF(bucketPixelWidth, 0));
+                            // Last should be exclusive
+                            decimal displayLast = Math.Ceiling(last);
+                            if (displayLast <= last)
+                            {
+                                displayLast++;
+                            }
+                            RenderSlantedXAxisText(getDataEdgeLabel(displayLast), bottomLeft + new PointF(bucketPixelWidth, 0));
                         }
                     }
 
