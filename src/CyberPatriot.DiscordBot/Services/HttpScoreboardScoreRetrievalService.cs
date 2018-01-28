@@ -257,7 +257,7 @@ namespace CyberPatriot.DiscordBot.Services
             try
             {
                 var teamScoreGraphHeader = new Regex(@"\['Time'(?:, '(\w+)')* *\]");
-                var teamScoreGraphEntry = new Regex(@"\['(\d{2}/\d{2} \d{2}:\d{2})'(?:, (\d+|null))*\]");
+                var teamScoreGraphEntry = new Regex(@"\['(\d{2}/\d{2} \d{2}:\d{2})'(?:, (-?\d+|null))*\]");
                 Match headerMatch = teamScoreGraphHeader.Match(detailsPage);
                 if (headerMatch?.Success ?? false)
                 {
