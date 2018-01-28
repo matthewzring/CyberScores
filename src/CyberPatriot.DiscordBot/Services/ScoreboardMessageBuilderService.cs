@@ -287,7 +287,7 @@ namespace CyberPatriot.DiscordBot.Services
 
         private string CreateChartUrl(ScoreboardDetails teamScore)
         {
-            int min = teamScore.ImageScoresOverTime.Values.SelectMany(x => x.Values).Min(x => x ?? 0);
+            int min = teamScore.ImageScoresOverTime.Values.SelectMany(x => x.Values).Select(x => x == null || x > 0 ? 0 : x.Value).Min();
             int max = 100;
 
             Dictionary<string, string> imageScoreStrings = teamScore.ImageScoresOverTime.ToDictionary(image => image.Key, image => string.Join(',', image.Value.Values.Select(x => x?.ToString() ?? "-9999")));
