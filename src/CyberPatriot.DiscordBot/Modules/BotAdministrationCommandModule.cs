@@ -89,6 +89,35 @@ namespace CyberPatriot.DiscordBot.Modules
             await ReplyAsync("Avatar updated!").ConfigureAwait(false);
         }
 
+        [Command("getguilds"), Alias("guildlist", "listguilds"), RequireOwner]
+        [Summary("Lists the guilds this bot is a member of. Paginated.")]
+        public async Task ListGuilds(int pageNumber = 1)
+        {
+            IReadOnlyCollection<IGuild> guilds = await Context.Client.GetGuildsAsync().ConfigureAwait(false);
+
+            const int guildsPerPage = 10;
+            int highestPage = (int)Math.Ceiling((1.0 * guilds.Count) / guildsPerPage);
+            if (pageNumber <= 0 || pageNumber > highestPage)
+            {
+                throw new ArgumentOutOfRangeException(nameof(pageNumber));
+            }
+
+            var replyBuilder = new System.Text.StringBuilder();
+            replyBuilder.AppendLine($"**Guild List (Page {pageNumber} of {highestPage}):**");
+            replyBuilder.AppendFormat("*{0}*", Utilities.Pluralize("guild", guilds.Count)).AppendLine();
+            replyBuilder.AppendLine();
+
+            pageNumber--;
+
+            foreach (var guild in guilds.Skip(pageNumber * guildsPerPage).Take(guildsPerPage))
+            {
+                var owner = await guild.GetOwnerAsync().ConfigureAwait(false);
+                replyBuilder.AppendLine($"__{guild.Name}__ ({guild.Id}):\n- {Utilities.Pluralize("member", (await guild.GetUsersAsync().ConfigureAwait(false)).Count)}\n- {Utilities.Pluralize("text channel", (await guild.GetTextChannelsAsync().ConfigureAwait(false)).Count)}\n- Owned by: {owner.Username}#{owner.DiscriminatorValue} (<\\@{owner.Id}>)");
+            }
+
+            await ReplyAsync(replyBuilder.ToString()).ConfigureAwait(false);
+        }
+
         [Group("exportscoreboard")]
         [Alias("savescoreboard", "exportscoreboardjson", "downloadscoreboard")]
         [RequireOwner]
@@ -187,7 +216,7 @@ namespace CyberPatriot.DiscordBot.Modules
 
                         await Context.Channel.SendFileAsync(ms, fileName,
                             $"JSON scoreboard snapshot for {timestamp:g} {tz.GetAbbreviations().Generic}\n" +
-                            $"{Utilities.Pluralize("team", retState.TeamDetailCount)} total:\n" + 
+                            $"{Utilities.Pluralize("team", retState.TeamDetailCount)} total:\n" +
                             $"{Utilities.Pluralize("team", retState.DownloadTasks.Length)} downloaded from \"{ScoreService.StaticSummaryLine}\"\n" +
                             $"{downloadPercentSuccess:F1}% of downloads successful").ConfigureAwait(false);
                     }
