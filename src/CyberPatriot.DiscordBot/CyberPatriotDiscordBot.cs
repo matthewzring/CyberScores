@@ -99,6 +99,7 @@ namespace CyberPatriot.DiscordBot
                 ))
                 .AddSingleton<ICompetitionRoundLogicService, CyberPatriotTenCompetitionRoundLogicService>()
                 .AddSingleton<IExternalCategoryProviderService, FileBackedCategoryProviderService>()
+                .AddSingleton<ScoreboardDownloadService>()
                 .AddSingleton<FlagProviderService>()
                 .AddSingleton<CyberPatriotEventHandlingService>()
                 .AddSingleton<ScoreboardMessageBuilderService>()

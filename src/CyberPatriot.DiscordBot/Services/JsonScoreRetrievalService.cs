@@ -16,6 +16,8 @@ namespace CyberPatriot.DiscordBot.Services
         protected CompleteScoreboardSummary summary;
         protected Dictionary<TeamId, ScoreboardDetails> teamDetails;
 
+        public IReadOnlyDictionary<TeamId, ScoreboardDetails> StoredTeamDetails => teamDetails;
+
 
         public bool IsDynamic => false;
         public string StaticSummaryLine => "CCS Archive" + (Round == 0 ? string.Empty : (", " + Round.ToStringCamelCaseToSpace()));

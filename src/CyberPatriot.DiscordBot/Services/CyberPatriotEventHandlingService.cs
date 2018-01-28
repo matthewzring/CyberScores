@@ -117,7 +117,7 @@ namespace CyberPatriot.DiscordBot.Services
             }
             catch (Exception ex)
             {
-                await _logService.LogApplicationMessageAsync(ex).ConfigureAwait(false);
+                await _logService.LogApplicationMessageAsync(LogSeverity.Error, "Error in update game timer", ex).ConfigureAwait(false);
             }
         }
 
@@ -211,7 +211,7 @@ namespace CyberPatriot.DiscordBot.Services
             }
             catch (Exception ex)
             {
-                await _logService.LogApplicationMessageAsync(ex).ConfigureAwait(false);
+                await _logService.LogApplicationMessageAsync(LogSeverity.Error, "Error in team monitor timer task", ex).ConfigureAwait(false);
             }
         }
 

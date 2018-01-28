@@ -102,9 +102,9 @@ namespace CyberPatriot.DiscordBot.Services
             return Task.CompletedTask;
         }
 
-        public Task LogApplicationMessageAsync(LogSeverity severity, string message, [System.Runtime.CompilerServices.CallerMemberName] string source = "Application") => LogApplicationMessageAsync(new LogMessage(severity, source, message));
+        public Task LogApplicationMessageAsync(LogSeverity severity, string message, Exception exception = null, [System.Runtime.CompilerServices.CallerMemberName] string source = "Application") => LogApplicationMessageAsync(new LogMessage(severity, source, message, exception));
 
-        public Task LogApplicationMessageAsync(Exception e) => LogApplicationMessageAsync(new LogMessage(LogSeverity.Error, "Exception", e.ToString(), e));
+        // public Task LogApplicationMessageAsync(Exception e) => LogApplicationMessageAsync(new LogMessage(LogSeverity.Error, "Exception", e.ToString(), e));
 
         public Task LogApplicationMessageAsync(LogMessage message)
         {

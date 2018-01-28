@@ -126,7 +126,7 @@ namespace CyberPatriot.DiscordBot.Services
                     if (upperSearchBound == -1)
                     {
                         // we searched all possible backends
-                        await _log.LogApplicationMessageAsync(Discord.LogSeverity.Error, "Could not find an IScoreRetrievalService for fallback, continuing with invalid service.", nameof(FallbackScoreRetrievalService)).ConfigureAwait(false);
+                        await _log.LogApplicationMessageAsync(Discord.LogSeverity.Error, "Could not find an IScoreRetrievalService for fallback, continuing with invalid service.", source: nameof(FallbackScoreRetrievalService)).ConfigureAwait(false);
                         throw new InvalidOperationException("No valid IScoreRetrievalService found.");
                     }
                     else
@@ -188,7 +188,7 @@ namespace CyberPatriot.DiscordBot.Services
             if (!IsSummaryValid(scoreboardDetails))
             {
                 // well this is awkward
-                await _log.LogApplicationMessageAsync(Discord.LogSeverity.Warning, "Returning known bad scoreboard summary!", nameof(FallbackScoreRetrievalService)).ConfigureAwait(false);
+                await _log.LogApplicationMessageAsync(Discord.LogSeverity.Warning, "Returning known bad scoreboard summary!", source: nameof(FallbackScoreRetrievalService)).ConfigureAwait(false);
                 // don't block the caller
                 // exceptions will NOT be caught (!) but there's a log call in there which should be Good Enough(TM) in problematic cases
 #pragma warning disable 4014

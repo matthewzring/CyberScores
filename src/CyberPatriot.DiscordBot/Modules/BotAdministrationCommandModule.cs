@@ -8,6 +8,7 @@ using Discord;
 using Discord.Commands;
 using CyberPatriot.Models;
 using CyberPatriot.DiscordBot.Services;
+using System.Net.Http;
 
 namespace CyberPatriot.DiscordBot.Modules
 {
@@ -15,8 +16,6 @@ namespace CyberPatriot.DiscordBot.Modules
     {
         public IScoreRetrievalService ScoreService { get; set; }
         public IDataPersistenceService Database { get; set; }
-        public PreferenceProviderService Preferences { get; set; }
-        public LogService Log { get; set; }
 
         [Command("ping"), Summary("Pings the bot. Responds with the internal socket client's estimated latency, if available.")]
         public async Task PingAsync()
@@ -90,93 +89,109 @@ namespace CyberPatriot.DiscordBot.Modules
             await ReplyAsync("Avatar updated!").ConfigureAwait(false);
         }
 
-        [Command("exportscoreboard", RunMode = RunMode.Async), Alias("savescoreboard", "exportscoreboardjson", "downloadscoreboard")]
+        [Group("exportscoreboard")]
+        [Alias("savescoreboard", "exportscoreboardjson", "downloadscoreboard")]
         [RequireOwner]
-        [Summary("Exports a GZip-compressed JSON scoreboard from the current backend to the current channel.")]
-        public async Task DownloadScoreboardAsync()
+        public class ExportScoreboardModule : ModuleBase
         {
-            await ReplyAsync("Downloading scoreboard...").ConfigureAwait(false);
+            public ScoreboardDownloadService ScoreDownloader { get; set; }
+            public PreferenceProviderService Preferences { get; set; }
+            public IScoreRetrievalService ScoreService { get; set; }
 
-            using (Context.Channel.EnterTypingState())
+            [Command("status")]
+            [Summary("Gets the status of an ongoing scoreboard download.")]
+            public async Task GetStatus()
             {
-                var scoreSummary = await ScoreService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false);
+                var state = ScoreDownloader.GetState();
+                // list might be being modified, but array won't be
+                // statuses might change during execution but Task itself is threadsafe
 
-                var teamDetailRetrieveTasks = scoreSummary.TeamList.Select(team => ScoreService.GetDetailsAsync(team.TeamId)).ToList();
-
-                IDictionary<TeamId, ScoreboardDetails> teamDetails = new Dictionary<TeamId, ScoreboardDetails>();
-
-                do
+                if (state.OriginalTaskList == null)
                 {
-                    try
-                    {
-                        await Task.WhenAll(teamDetailRetrieveTasks).ConfigureAwait(false);
-                    }
-                    catch
-                    {
-                        await Log.LogApplicationMessageAsync(LogSeverity.Error, "Error while retrieving some teams in full score export, excluding them silently!").ConfigureAwait(false);
-                        // TODO handle this in a more logical place
-                        // assume a rate limit issue, treat this task as lost and cool down
-                        // here's a hack if I ever saw one
-                        var rateLimiter = (ScoreService.GetFirstFromChain<IScoreRetrievalService>(s => s is HttpScoreboardScoreRetrievalService) as HttpScoreboardScoreRetrievalService)?.RateLimiter;
-                        var delayTask = Task.Delay(15000);
-                        if (rateLimiter != null)
-                        {
-                            rateLimiter.AddPrerequisite(delayTask);
-                        }
+                    await ReplyAsync("__Status:__\nInitializing...").ConfigureAwait(false);
+                    return;
+                }
 
-                        await delayTask.ConfigureAwait(false);
-                    }
-
-                    // completed and faulted
-                    var completedTasks = teamDetailRetrieveTasks.Where(t => t.IsCompleted).ToArray();
-
-                    // add all completed results to the dictionary
-                    foreach (var retrieveTask in completedTasks.Where(t => t.IsCompletedSuccessfully))
-                    {
-                        // successful completion
-                        ScoreboardDetails details = retrieveTask.Result;
-                        teamDetails[details.TeamId] = details;
-                    }
-
-                    // remove all completed and faulted tasks
-                    foreach (var task in completedTasks)
-                    {
-                        teamDetailRetrieveTasks.Remove(task);
-                    }
-                } while (teamDetailRetrieveTasks.Count > 0);
+                // second might be higher because tasks continue executing during this
+                int completedCount = state.OriginalTaskList.Count(t => t.IsCompleted);
+                int faultedCount = state.OriginalTaskList.Count(t => t.IsFaulted);
 
 
-                MemoryStream rawWriteStream = null;
+                await ReplyAsync("__Status:__\n" +
+                $"Team downloads completed: {completedCount} / {state.OriginalTaskList.Length} ({(100.0 * completedCount) / state.OriginalTaskList.Length:F1}%)\n" +
+                $"Team downloads errored: {faultedCount}").ConfigureAwait(false);
+            }
+
+            [Command("redownload")]
+            [Summary("Redownloads the data for a given team.")]
+            public async Task Redownload(TeamId team)
+            {
+                var state = ScoreDownloader.GetState();
+
+                await state.ListLock.WaitAsync().ConfigureAwait(false);
                 try
                 {
-                    rawWriteStream = new MemoryStream();
-
-                    // need to close to get GZ tail, but this also closes underlying stream...
-                    using (var writeStream = new GZipStream(rawWriteStream, CompressionMode.Compress))
-                    {
-                        await JsonScoreRetrievalService.SerializeAsync(new StreamWriter(writeStream), scoreSummary,
-                            teamDetails, ScoreService.Round).ConfigureAwait(false);
-                    }
-                    rawWriteStream = new MemoryStream(rawWriteStream.ToArray());
-
-                    string fileName = $"scoreboard-{scoreSummary.SnapshotTimestamp.ToUnixTimeSeconds()}.json.gz";
-                    if (Directory.Exists("scoreboardarchives"))
-                    {
-                        using (var fileStream = File.Create(Path.Combine("scoreboardarchives", fileName)))
-                        {
-                            await rawWriteStream.CopyToAsync(fileStream).ConfigureAwait(false);
-                        }
-                    }
-                    rawWriteStream.Position = 0;
-                    TimeZoneInfo tz = await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false);
-                    DateTimeOffset timestamp = TimeZoneInfo.ConvertTime(scoreSummary.SnapshotTimestamp, tz);
-
-                    await Context.Channel.SendFileAsync(rawWriteStream, fileName,
-                        $"JSON scoreboard snapshot for {timestamp:g} {tz?.GetAbbreviations().Generic ?? "UTC"}").ConfigureAwait(false);
+                    state.DetailsTaskList.Add(ScoreService.GetDetailsAsync(team));
                 }
                 finally
                 {
-                    rawWriteStream?.Dispose();
+                    state.ListLock.Release();
+                }
+
+                await ReplyAsync($"Queued re-download for {team}.").ConfigureAwait(false);
+            }
+
+            // FIXME RunMode.Async means NO ERROR HANDLING
+            // the user will NOT see errors
+            [Command(RunMode = RunMode.Async)]
+            [Summary("Exports a GZip-compressed JSON scoreboard from the current backend to the current channel.")]
+            public async Task DownloadScoreboardAsync()
+            {
+                await ReplyAsync("Downloading scoreboard...").ConfigureAwait(false);
+
+
+                using (Context.Channel.EnterTypingState())
+                {
+                    IReadOnlyDictionary<TeamId, ScoreboardDetails> existingArchive = null;
+                    var retState = new ScoreboardDownloadService.ReturnedStateInfoWrapper();
+
+                    try
+                    {
+                        string attachmentUrl = Context.Message?.Attachments?.FirstOrDefault()?.Url;
+                        if (attachmentUrl != null)
+                        {
+                            using (var downloader = new HttpClient())
+                            using (var unzipStream = new GZipStream(await downloader.GetStreamAsync(attachmentUrl).ConfigureAwait(false), CompressionMode.Decompress))
+                            {
+                                existingArchive = new JsonScoreRetrievalService(await new StreamReader(unzipStream).ReadToEndAsync().ConfigureAwait(false)).StoredTeamDetails;
+                            }
+                        }
+                    }
+                    catch { }
+
+                    using (MemoryStream ms = await ScoreDownloader.DownloadFullScoreboardGzippedAsync(retState: retState, previousScoreStatus: existingArchive).ConfigureAwait(false))
+                    {
+                        string fileName = $"scoreboard-{retState.Summary.SnapshotTimestamp.ToUnixTimeSeconds()}.json.gz";
+                        if (Directory.Exists("scoreboardarchives"))
+                        {
+                            using (var fileStream = File.Create(Path.Combine("scoreboardarchives", fileName)))
+                            {
+                                await ms.CopyToAsync(fileStream).ConfigureAwait(false);
+                            }
+                        }
+                        ms.Position = 0;
+                        TimeZoneInfo tz = await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false);
+                        DateTimeOffset timestamp = TimeZoneInfo.ConvertTime(retState.Summary.SnapshotTimestamp, tz);
+
+                        double downloadPercentSuccess = retState.DownloadTasks.Length == 0 ? 100 : (100.0 * retState.DownloadTasks.Count(t => t.IsCompletedSuccessfully)) / retState.DownloadTasks.Length;
+
+                        await Context.Channel.SendFileAsync(ms, fileName,
+                            $"JSON scoreboard snapshot for {timestamp:g} {tz.GetAbbreviations().Generic}\n" +
+                            $"{Utilities.Pluralize("team", retState.TeamDetailCount)} total:\n" + 
+                            $"{Utilities.Pluralize("team", retState.DownloadTasks.Length)} downloaded from \"{ScoreService.StaticSummaryLine}\"\n" +
+                            $"{downloadPercentSuccess:F1}% of downloads successful").ConfigureAwait(false);
+                    }
+
                 }
             }
         }
