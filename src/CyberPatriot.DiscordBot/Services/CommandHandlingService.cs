@@ -34,6 +34,7 @@ namespace CyberPatriot.DiscordBot.Services
             _provider = provider;
             _commands.AddTypeReader<CyberPatriot.Models.TeamId>(new TeamIdTypeReader());
             _commands.AddTypeReader<CyberPatriot.Models.Division>(new DivisionTypeReader());
+            _commands.AddTypeReader<CyberPatriot.Models.Tier>(new TierTypeReader());
             // the nasty hack type
             _commands.AddTypeReader<LocationCode>(new LocationTypeReader());
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly()).ConfigureAwait(false);
