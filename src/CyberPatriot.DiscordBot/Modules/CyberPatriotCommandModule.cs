@@ -258,10 +258,10 @@ namespace CyberPatriot.DiscordBot.Modules
             }
         }
 
-        [Command("servicescoreboard"), Alias("allservicescoreboard", "serviceleaderboard", "allserviceleaderboard"), Summary("Returns the current CyberPatriot leaderboard for the given category of All Service teams.")]
+        [Command("servicescoreboard"), Alias("allservicescoreboard", "serviceleaderboard", "allserviceleaderboard", "categoryscoreboard", "categoryleaderboard"), Summary("Returns the current CyberPatriot leaderboard for the given category of All Service teams.")]
         public Task GetServiceLeaderboardAsync(string category, int pageNumber = 1) => GetServiceLeaderboardImplementationAsync(category, null, pageNumber);
 
-        [Command("servicescoreboard"), Alias("allservicescoreboard", "serviceleaderboard", "allserviceleaderboard"), Summary("Returns the current CyberPatriot leaderboard for the given category of All Service teams in the given tier.")]
+        [Command("servicescoreboard"), Alias("allservicescoreboard", "serviceleaderboard", "allserviceleaderboard", "categoryscoreboard", "categoryleaderboard"), Summary("Returns the current CyberPatriot leaderboard for the given category of All Service teams in the given tier.")]
         public Task GetServiceLeaderboardAsync(string category, Tier tier, int pageNumber = 1) => GetServiceLeaderboardImplementationAsync(category, tier, pageNumber);
 
         [Command("locationscoreboard"), Alias("statescoreboard", "locationleaderboard", "stateleaderboard"), Summary("Returns the current CyberPatriot leaderboard for teams in the given location.")]
