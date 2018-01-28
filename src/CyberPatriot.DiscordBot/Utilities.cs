@@ -417,6 +417,26 @@ namespace CyberPatriot.DiscordBot
             }
         }
 
+        public static bool StartsWithWhereElement<T>(this IEnumerable<T> enumerableToCheck, Func<T, bool> predicate, IEnumerable<T> comparisonEnumerable, IEqualityComparer<T> equalityComparer = null)
+        {
+            equalityComparer = equalityComparer ?? EqualityComparer<T>.Default;
+            var filteredCheck = enumerableToCheck.Where(predicate).GetEnumerator();
+            var filteredOther = comparisonEnumerable.Where(predicate).GetEnumerator();
+            while (filteredOther.MoveNext())
+            {
+                if (!filteredCheck.MoveNext())
+                {
+                    return false;
+                }
+                if (!equalityComparer.Equals(filteredCheck.Current, filteredOther.Current))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         public static IList<T> ToIList<T>(this IEnumerable<T> enumerable)
         {
             if (enumerable is IList<T> list)

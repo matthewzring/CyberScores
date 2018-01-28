@@ -188,6 +188,89 @@ namespace CyberPatriot.DiscordBot.Modules
         }
 
         #endregion
+        #region Specialized scoreboards
+        private bool CategoryEquals(ScoreboardSummaryEntry team, string category)
+        {
+            if (team.Category == null)
+            {
+                return category == null;
+            }
+
+            string teamCategory = team.Category.Trim().ToLowerInvariant();
+            category = category.Trim().ToLowerInvariant();
+            if (teamCategory.Equals(category))
+            {
+                return true;
+            }
+            if (teamCategory.StartsWith(category))
+            {
+                // starts to get really soft from this comparison onwards
+                return true;
+            }
+            if (teamCategory.StartsWithWhereElement(c => c != ' ', category))
+            {
+                return true;
+            }
+            // last check /shrug
+            return teamCategory.Replace(" ", "").Contains(category.Replace(" ", ""));
+        }
+
+        public async Task GetServiceLeaderboardImplementationAsync(string category, Tier? tier, int pageNumber)
+        {
+            using (Context.Channel.EnterTypingState())
+            {
+                CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(Division.AllService, tier)).ConfigureAwait(false);
+                if (teamScore == null)
+                {
+                    throw new Exception("Error obtaining scoreboard.");
+                }
+
+                // validate category
+                string realCategory = teamScore.TeamList.Where(t => CategoryEquals(t, category)).Select(t => t.Category).Distinct().SingleIfOne();
+                if (realCategory == null)
+                {
+                    throw new ArgumentException("The given category was not found - it was either ambiguous or invalid.", nameof(category));
+                }
+
+                await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, customFilter: new ScoreboardMessageBuilderService.CustomFiltrationInfo()
+                {
+                    Predicate = t => t.Category == realCategory,
+                    FilterDescription = realCategory
+                }, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false))).ConfigureAwait(false);
+            }
+        }
+
+        public async Task GetLocationLeaderboardImplementationAsync(string location, ScoreboardFilterInfo filterInfo, int pageNumber)
+        {
+            using (Context.Channel.EnterTypingState())
+            {
+                CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(filterInfo).ConfigureAwait(false);
+                if (teamScore == null)
+                {
+                    throw new Exception("Error obtaining scoreboard.");
+                }
+
+                await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, customFilter: new ScoreboardMessageBuilderService.CustomFiltrationInfo()
+                {
+                    Predicate = t => t.Location == location,
+                    FilterDescription = location // TODO full name of state?
+                }, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false))).ConfigureAwait(false);
+            }
+        }
+
+        [Command("servicescoreboard"), Alias("allservicescoreboard", "serviceleaderboard", "allserviceleaderboard"), Summary("Returns the current CyberPatriot leaderboard for the given category of All Service teams.")]
+        public Task GetServiceLeaderboardAsync(string category, int pageNumber = 1) => GetServiceLeaderboardImplementationAsync(category, null, pageNumber);
+
+        [Command("servicescoreboard"), Alias("allservicescoreboard", "serviceleaderboard", "allserviceleaderboard"), Summary("Returns the current CyberPatriot leaderboard for the given category of All Service teams in the given tier.")]
+        public Task GetServiceLeaderboardAsync(string category, Tier tier, int pageNumber = 1) => GetServiceLeaderboardImplementationAsync(category, tier, pageNumber);
+
+        [Command("locationscoreboard"), Alias("statescoreboard", "locationleaderboard", "stateleaderboard"), Summary("Returns the current CyberPatriot leaderboard for teams in the given location.")]
+        public Task GetLocationLeaderboardAsync(LocationCode location, int pageNumber = 1) => GetLocationLeaderboardImplementationAsync(location, ScoreboardFilterInfo.NoFilter, pageNumber);
+        [Command("locationscoreboard"), Alias("statescoreboard", "locationleaderboard", "stateleaderboard"), Summary("Returns the current CyberPatriot leaderboard for teams in the given location and division.")]
+        public Task GetLocationLeaderboardAsync(LocationCode location, Division division, int pageNumber = 1) => GetLocationLeaderboardImplementationAsync(location, new ScoreboardFilterInfo(division, null), pageNumber);
+        [Command("locationscoreboard"), Alias("statescoreboard", "locationleaderboard", "stateleaderboard"), Summary("Returns the current CyberPatriot leaderboard for teams in the given location, division, and tier.")]
+        public Task GetLocationLeaderboardAsync(LocationCode location, Division division, Tier tier, int pageNumber = 1) => GetLocationLeaderboardImplementationAsync(location, new ScoreboardFilterInfo(division, tier), pageNumber);
+        #endregion
         #region Histogram
 
         private const string HistogramCommandName = "histogram";

@@ -23,14 +23,22 @@ namespace CyberPatriot.DiscordBot.Services
             CompetitionLogic = competitionLogic;
         }
 
-        public string CreateTopLeaderboardEmbed(CompleteScoreboardSummary scoreboard, TimeZoneInfo timeZone = null, int pageNumber = 1, int pageSize = 15)
+        public class CustomFiltrationInfo
+        {
+            public Func<ScoreboardSummaryEntry, bool> Predicate { get; set; } = _ => true;
+            public string FilterDescription { get; set; }
+        }
+
+        public string CreateTopLeaderboardEmbed(CompleteScoreboardSummary scoreboard, CustomFiltrationInfo customFilter = null, TimeZoneInfo timeZone = null, int pageNumber = 1, int pageSize = 15)
         {
             if (pageSize <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(pageSize));
             }
 
-            int pageCount = (int)(Math.Ceiling((((double)scoreboard.TeamList.Count) / pageSize)));
+            Func<ScoreboardSummaryEntry, bool> predicate = customFilter?.Predicate == null ? _ => true : customFilter.Predicate;
+
+            int pageCount = (int)(Math.Ceiling((((double)scoreboard.TeamList.Count(predicate)) / pageSize)));
 
             if (--pageNumber < 0 || pageNumber >= pageCount)
             {
@@ -51,6 +59,12 @@ namespace CyberPatriot.DiscordBot.Services
             {
                 stringBuilder.Append(", ").Append(scoreboard.Filter.Tier).Append(" Tier");
             }
+
+            if (customFilter?.FilterDescription != null)
+            {
+                stringBuilder.Append(", ").Append(customFilter.FilterDescription);
+            }
+
             if (pageCount > 1)
             {
                 stringBuilder.Append(" (Page ").Append(pageNumber + 1).Append(" of ").Append(pageCount).Append(')');
@@ -63,7 +77,7 @@ namespace CyberPatriot.DiscordBot.Services
             stringBuilder.AppendLine("```");
 
             // FIXME time display logic according to FormattingOptions
-            scoreboard.TeamList.Skip(pageNumber * pageSize).Take(pageSize)
+            scoreboard.TeamList.Where(predicate).Skip(pageNumber * pageSize).Take(pageSize)
                 .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + 1 + (pageNumber * pageSize), team.TeamId, team.Location, ScoreRetriever.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
                 .Consume();
             stringBuilder.AppendLine("```");
