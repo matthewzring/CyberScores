@@ -17,11 +17,23 @@ namespace CyberPatriot.DiscordBot.Services
     /// </summary>
     public class SpreadsheetScoreRetrievalService : IScoreRetrievalService
     {
+        Models.IScoreRetrieverMetadata IScoreRetrievalService.Metadata => Metadata;
+        protected Models.ScoreRetrieverMetadata Metadata { get; set; } = new Models.ScoreRetrieverMetadata()
+        {
+            IsDynamic = false,
+            StaticSummaryLine = "Official Scores Released"
+        };
 
-        public bool IsDynamic => false;
-        public string StaticSummaryLine => Round == 0 ? "Official Scores Released" : "Official " + Round.ToStringCamelCaseToSpace() + " Scores";
-        public ScoreFormattingOptions FormattingOptions { get; private set; }
-        public CompetitionRound Round { get; set; } = 0;
+        private CompetitionRound _round;
+        public CompetitionRound Round
+        {
+            get => _round;
+            set
+            {
+                _round = value;
+                Metadata.StaticSummaryLine = Round == 0 ? "Official Scores Released" : "Official " + Round.ToStringCamelCaseToSpace() + " Scores";
+            }
+        }
 
 
         public SpreadsheetScoreRetrievalService()
@@ -29,12 +41,13 @@ namespace CyberPatriot.DiscordBot.Services
             // hacky implementation of a decent idea
             // add decimals at format level to embed creator
             // set format options to display decimals, overriding anything else that may have been set :(
-            FormattingOptions = new ScoreFormattingOptions();
-            FormattingOptions.FormatScore = rawScore => (rawScore / 100.0m).ToString();
-            FormattingOptions.FormatLabeledScoreDifference = rawScore => (rawScore / 100.0m) + " point" + (rawScore == 100 ? string.Empty : "s");
-            FormattingOptions.FormatScoreForLeaderboard = rawScore => (rawScore / 100.0m).ToString("0.00");
-            FormattingOptions.TimeDisplay = ScoreFormattingOptions.NumberDisplayCriteria.Never;
-            FormattingOptions.VulnerabilityDisplay = ScoreFormattingOptions.NumberDisplayCriteria.Never;
+            var formattingOptions = new ScoreFormattingOptions();
+            formattingOptions.FormatScore = rawScore => (rawScore / 100.0m).ToString();
+            formattingOptions.FormatLabeledScoreDifference = rawScore => (rawScore / 100.0m) + " point" + (rawScore == 100 ? string.Empty : "s");
+            formattingOptions.FormatScoreForLeaderboard = rawScore => (rawScore / 100.0m).ToString("0.00");
+            formattingOptions.TimeDisplay = ScoreFormattingOptions.NumberDisplayCriteria.Never;
+            formattingOptions.VulnerabilityDisplay = ScoreFormattingOptions.NumberDisplayCriteria.Never;
+            Metadata.FormattingOptions = formattingOptions;
         }
 
         protected Dictionary<ScoreboardFilterInfo, CompleteScoreboardSummary> summariesByFilter =
@@ -231,7 +244,7 @@ namespace CyberPatriot.DiscordBot.Services
                                 teamInfo.Summary.Division = defaultDiv;
                                 teamInfo.Summary.Category = data[catInd];
                             }
-                            else if(Utilities.TryParseEnumSpaceless(data[divInd], out Division division))
+                            else if (Utilities.TryParseEnumSpaceless(data[divInd], out Division division))
                             {
                                 teamInfo.Summary.Division = division;
 

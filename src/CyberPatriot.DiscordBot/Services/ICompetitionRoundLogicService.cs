@@ -16,6 +16,8 @@ namespace CyberPatriot.DiscordBot.Services
         IList<ScoreboardSummaryEntry> GetPeerTeams(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamInfo);
 
         string GetEffectiveDivisionDescriptor(ScoreboardSummaryEntry team);
+
+        TeamDetailRankingInformation GetRankingInformation(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamInfo);
     }
 
     public class CyberPatriotTenCompetitionRoundLogicService : ICompetitionRoundLogicService
@@ -93,9 +95,10 @@ namespace CyberPatriot.DiscordBot.Services
             }
 
             // all-service round where category matters ("R0" we default to factoring in category)
+            
+            // filter by tier, where available
             if (round > CompetitionRound.Round2)
             {
-                // filter by tier
                 divisionScoreboard.WithFilter(Division.AllService, teamDetails.Tier);
             }
 
@@ -109,6 +112,31 @@ namespace CyberPatriot.DiscordBot.Services
             // there might be some A.S. teams whose categories we don't know
             // they get treated as not-my-problem, that is, not part of my category
             return divisionScoreboard.TeamList.Where(t => t.Category == teamDetails.Category).ToIList();
+        }
+
+
+        private static Func<ScoreboardSummaryEntry, bool> BuildSummaryComparer(TeamId target) => sse => sse.TeamId == target;
+
+        public TeamDetailRankingInformation GetRankingInformation(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamInfo)
+        {
+            divisionScoreboard = divisionScoreboard.Clone().WithFilter(teamInfo.Division, null);
+
+            // may be equal to division scoreboard, that's fine
+            var tierScoreboard = divisionScoreboard.Clone().WithFilter(teamInfo.Division, teamInfo.Tier);
+            var peers = GetPeerTeams(round, divisionScoreboard, teamInfo);
+
+            var summaryComparer = BuildSummaryComparer(teamInfo.TeamId);
+            return new TeamDetailRankingInformation()
+            {
+                TeamId = teamInfo.TeamId,
+                Peers = peers,
+                PeerIndex = peers.IndexOfWhere(summaryComparer),
+                PeerCount = peers.Count,
+                DivisionIndex = divisionScoreboard.TeamList.IndexOfWhere(summaryComparer),
+                DivisionCount = divisionScoreboard.TeamList.Count,
+                TierIndex = tierScoreboard.TeamList.IndexOfWhere(summaryComparer),
+                TierCount = tierScoreboard.TeamList.Count
+            };
         }
     }
 }

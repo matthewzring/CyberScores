@@ -18,11 +18,8 @@ namespace CyberPatriot.DiscordBot.Services
         public TimeSpan MaxCompleteScoreboardLifespan { get; set; } = TimeSpan.FromSeconds(20);
         public int MaxCachedTeamDetails { get; set; } = 20;
 
-        public bool IsDynamic => Backend.IsDynamic;
-        public string StaticSummaryLine => Backend.StaticSummaryLine;
         public CompetitionRound Round => Backend.Round;
-        public ScoreFormattingOptions FormattingOptions => Backend.FormattingOptions;
-
+        public Models.IScoreRetrieverMetadata Metadata => Backend.Metadata;
 
         protected Timer PurgeTimer { get; private set; }
 

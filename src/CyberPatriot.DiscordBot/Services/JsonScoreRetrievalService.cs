@@ -18,11 +18,14 @@ namespace CyberPatriot.DiscordBot.Services
 
         public IReadOnlyDictionary<TeamId, ScoreboardDetails> StoredTeamDetails => teamDetails;
 
-
-        public bool IsDynamic => false;
-        public string StaticSummaryLine => "CCS Archive" + (Round == 0 ? string.Empty : (", " + Round.ToStringCamelCaseToSpace()));
         public CompetitionRound Round { get; protected set; }
-        public ScoreFormattingOptions FormattingOptions { get; } = new ScoreFormattingOptions();
+        Models.IScoreRetrieverMetadata IScoreRetrievalService.Metadata => Metadata;
+        protected Models.ScoreRetrieverMetadata Metadata { get; set; } = new Models.ScoreRetrieverMetadata()
+        {
+            IsDynamic = false,
+            StaticSummaryLine = "CCS Archive",
+            FormattingOptions = new ScoreFormattingOptions()
+        };
 
         public JsonScoreRetrievalService(string jsonContents)
         {
@@ -89,14 +92,14 @@ namespace CyberPatriot.DiscordBot.Services
                 JObject obj = JObject.Parse(rawJson);
                 summary = obj["summary"].ToObject<CompleteScoreboardSummary>();
                 teamDetails = obj["teams"].ToObject<Dictionary<TeamId, ScoreboardDetails>>();
-                
+
                 // workaround, see #18
                 summary.SnapshotTimestamp = summary.SnapshotTimestamp.ToUniversalTime();
                 foreach (var teamData in teamDetails.Values)
                 {
                     teamData.SnapshotTimestamp = teamData.SnapshotTimestamp.ToUniversalTime();
                 }
-                
+
                 try
                 {
                     Round = (CompetitionRound)obj["round"].Value<int>();
@@ -105,6 +108,7 @@ namespace CyberPatriot.DiscordBot.Services
                 {
                     Round = 0;
                 }
+                Metadata.StaticSummaryLine = "CCS Archive" + (Round == 0 ? string.Empty : (", " + Round.ToStringCamelCaseToSpace()));
             }
             finally
             {

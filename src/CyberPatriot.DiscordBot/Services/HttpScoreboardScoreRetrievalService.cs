@@ -20,11 +20,25 @@ namespace CyberPatriot.DiscordBot.Services
         public string Hostname { get; protected set; }
         protected HttpClient Client { get; }
 
-        public virtual bool IsDynamic => true;
-        public virtual string StaticSummaryLine => Hostname;
-        public ScoreFormattingOptions FormattingOptions { get; protected set; } = new ScoreFormattingOptions();
-        public CompetitionRound Round => _roundInferenceService == null ? 0 : _roundInferenceService.InferRound(DateTimeOffset.UtcNow);
+        public virtual CompetitionRound Round => _roundInferenceService == null ? 0 : _roundInferenceService.InferRound(DateTimeOffset.UtcNow);
 
+        protected class HttpPassthroughScoreRetrieverMetadata : Models.IScoreRetrieverMetadata
+        {
+            protected HttpScoreboardScoreRetrievalService ScoreRetriever { get; set; }
+
+            public HttpPassthroughScoreRetrieverMetadata(HttpScoreboardScoreRetrievalService scoreRetriever)
+            {
+                ScoreRetriever = scoreRetriever;
+            }
+
+            public virtual bool IsDynamic => true;
+
+            public virtual string StaticSummaryLine => ScoreRetriever.Hostname;
+
+            public virtual ScoreFormattingOptions FormattingOptions { get; protected set; } = new ScoreFormattingOptions();
+        }
+
+        public virtual Models.IScoreRetrieverMetadata Metadata { get; protected set; }
 
 
         // 1 request every 2 seconds
@@ -41,6 +55,7 @@ namespace CyberPatriot.DiscordBot.Services
         {
             Hostname = hostname;
             Client = new HttpClient();
+            Metadata = new HttpPassthroughScoreRetrieverMetadata(this);
         }
 
         public Task InitializeAsync(IServiceProvider provider)

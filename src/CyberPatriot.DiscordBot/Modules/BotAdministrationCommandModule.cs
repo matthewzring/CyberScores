@@ -52,7 +52,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 + "**Disclaimer:** This bot is not affiliated with the Air Force Association nor the CyberPatriot program. All scores displayed, even those marked \"official,\" are non-binding unofficial scores and should be treated as such. Official scores can only be found [on the CyberPatriot website](http://www.uscyberpatriot.org/competition/current-competition/scores). NO GUARANTEES OR WARRANTIES ARE MADE as to the accuracy of any information displayed by this bot. Refer to the GitHub README for more information.")
                 .WithFooter("Made by glen3b | Written in C# using Discord.Net", "https://avatars.githubusercontent.com/glen3b")
                 .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Prefix").WithValue((Context.Guild != null ? (await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id).ConfigureAwait(false))?.Prefix?.AppendPrepend("`") : null) ?? Context.Client.CurrentUser.Mention))
-                .AddField(fb => fb.WithIsInline(true).WithName("Score Provider").WithValue(ScoreService.StaticSummaryLine))
+                .AddField(fb => fb.WithIsInline(true).WithName("Score Provider").WithValue(ScoreService.Metadata.StaticSummaryLine))
                 .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Teams").WithValue((await ScoreService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false)).TeamList.Count))
                 .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Guilds").WithValue((await Context.Client.GetGuildsAsync().ConfigureAwait(false)).Count))
                 .AddField(fb => fb.WithIsInline(true).WithName("Uptime").WithValue(string.Join("\n",
@@ -217,7 +217,7 @@ namespace CyberPatriot.DiscordBot.Modules
                         await Context.Channel.SendFileAsync(ms, fileName,
                             $"JSON scoreboard snapshot for {timestamp:g} {tz.GetAbbreviations().Generic}\n" +
                             $"{Utilities.Pluralize("team", retState.TeamDetailCount)} total:\n" +
-                            $"{Utilities.Pluralize("team", retState.DownloadTasks.Length)} downloaded from \"{ScoreService.StaticSummaryLine}\"\n" +
+                            $"{Utilities.Pluralize("team", retState.DownloadTasks.Length)} downloaded from \"{ScoreService.Metadata.StaticSummaryLine}\"\n" +
                             $"{downloadPercentSuccess:F1}% of downloads successful").ConfigureAwait(false);
                     }
 

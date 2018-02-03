@@ -32,7 +32,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 {
                     throw new Exception("Error obtaining team score.");
                 }
-                await ReplyAsync(string.Empty, embed: ScoreEmbedBuilder.CreateTeamDetailsEmbed(teamScore, await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(teamScore.Summary.Division, null)).ConfigureAwait(false)).Build()).ConfigureAwait(false);
+                await ReplyAsync(string.Empty, embed: ScoreEmbedBuilder.CreateTeamDetailsEmbed(teamScore, CompetitionRoundLogicService.GetRankingInformation(ScoreRetrievalService.Round, await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(teamScore.Summary.Division, null)).ConfigureAwait(false), teamScore.Summary)).Build()).ConfigureAwait(false);
             }
         }
 
@@ -48,7 +48,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 CompleteScoreboardSummary scoreboard = await scoreboardTask.ConfigureAwait(false);
                 foreach (var team in scoreboard.TeamList)
                 {
-                    await targetWriter.WriteLineAsync($"{team.TeamId},{team.Division.ToStringCamelCaseToSpace()},{team.Category ?? string.Empty},{team.Location},{(team.Tier.HasValue ? team.Tier.Value.ToString() : string.Empty)},{team.ImageCount},{team.PlayTime:hh\\:mm},{ScoreRetrievalService.FormattingOptions.FormatScore(team.TotalScore)},{team.Warnings.ToConciseString()}").ConfigureAwait(false);
+                    await targetWriter.WriteLineAsync($"{team.TeamId},{team.Division.ToStringCamelCaseToSpace()},{team.Category ?? string.Empty},{team.Location},{(team.Tier.HasValue ? team.Tier.Value.ToString() : string.Empty)},{team.ImageCount},{team.PlayTime:hh\\:mm},{ScoreRetrievalService.Metadata.FormattingOptions.FormatScore(team.TotalScore)},{team.Warnings.ToConciseString()}").ConfigureAwait(false);
                 }
 
                 TimeZoneInfo tz = await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false);
@@ -88,7 +88,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 {
                     throw new Exception("Error obtaining team score.");
                 }
-                await ReplyAsync(string.Empty, embed: ScoreEmbedBuilder.CreateTeamDetailsEmbed(teamScore, await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(teamScore.Summary.Division, null)).ConfigureAwait(false)).Build()).ConfigureAwait(false);
+                await ReplyAsync(string.Empty, embed: ScoreEmbedBuilder.CreateTeamDetailsEmbed(teamScore, CompetitionRoundLogicService.GetRankingInformation(ScoreRetrievalService.Round, await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(teamScore.Summary.Division, null)).ConfigureAwait(false), teamScore.Summary)).Build()).ConfigureAwait(false);
             }
         }
 
@@ -121,7 +121,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 {
                     throw new Exception("Error obtaining team score.");
                 }
-                await ReplyAsync(string.Empty, embed: ScoreEmbedBuilder.CreateTeamDetailsEmbed(teamScore, await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(teamScore.Summary.Division, null)).ConfigureAwait(false)).Build()).ConfigureAwait(false);
+                await ReplyAsync(string.Empty, embed: ScoreEmbedBuilder.CreateTeamDetailsEmbed(teamScore, CompetitionRoundLogicService.GetRankingInformation(ScoreRetrievalService.Round, await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(teamScore.Summary.Division, null)).ConfigureAwait(false), teamScore.Summary)).Build()).ConfigureAwait(false);
             }
         }
 
@@ -183,7 +183,7 @@ namespace CyberPatriot.DiscordBot.Modules
 
                 CompleteScoreboardSummary scoreboard = await ScoreRetrievalService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false);
 
-                await ReplyAsync(ScoreEmbedBuilder.CreatePeerLeaderboardEmbed(scoreboard, teamDetails, await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false))).ConfigureAwait(false);
+                await ReplyAsync(ScoreEmbedBuilder.CreatePeerLeaderboardEmbed(teamDetails.TeamId, scoreboard, CompetitionRoundLogicService.GetPeerTeams(ScoreRetrievalService.Round, scoreboard, teamDetails.Summary), timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false))).ConfigureAwait(false);
             }
         }
 
@@ -347,7 +347,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 decimal[] data = scoreboard.TeamList
                     .Conditionally(locCode != null, tle => tle.Where(t => t.Location == locCode))
                     // nasty hack
-                    .Select(datum => decimal.TryParse(ScoreRetrievalService.FormattingOptions.FormatScore(datum.TotalScore), out decimal d) ? d : datum.TotalScore)
+                    .Select(datum => decimal.TryParse(ScoreRetrievalService.Metadata.FormattingOptions.FormatScore(datum.TotalScore), out decimal d) ? d : datum.TotalScore)
                     .OrderBy(d => d).ToArray();
                 using (var memStr = new System.IO.MemoryStream())
                 {
@@ -374,7 +374,7 @@ namespace CyberPatriot.DiscordBot.Modules
                                          .AddInlineField("Max Score", $"{data.Max()}")
                                          .WithImageUrl(await (await uploadUrlResponseTask.ConfigureAwait(false)).Content.ReadAsStringAsync().ConfigureAwait(false))
                                          .WithTimestamp(scoreboard.SnapshotTimestamp)
-                                         .WithFooter(ScoreRetrievalService.StaticSummaryLine);
+                                         .WithFooter(ScoreRetrievalService.Metadata.StaticSummaryLine);
 
                     await Context.Channel.SendMessageAsync("", embed: histogramEmbed).ConfigureAwait(false);
                 }

@@ -12,16 +12,27 @@ namespace CyberPatriot.DiscordBot.Services
 {
     public class ScoreboardMessageBuilderService
     {
-        public FlagProviderService FlagProvider { get; set; }
         // hack, needed for formatting
-        public IScoreRetrievalService ScoreRetriever { get; set; }
+        // the score retriever reference should NOT be used outside of metadata retrieval
+        // we need to keep the reference because the metadata instance (e.g. fallback provider) might change
+        // TODO proper separate service?
+        [Obsolete("The score retriever should not be directly referenced by the formatting class.")]
+        private IScoreRetrievalService _scoreRetriever;
+#pragma warning disable 0618 // metadata reference may change
+        public Models.IScoreRetrieverMetadata ScoreRetrieverMetadata => _scoreRetriever.Metadata;
+#pragma warning restore 0618
+
         public ICompetitionRoundLogicService CompetitionLogic { get; set; }
+        public FlagProviderService FlagProvider { get; set; }
 
         public ScoreboardMessageBuilderService(FlagProviderService flagProvider, IScoreRetrievalService scoreRetriever, ICompetitionRoundLogicService competitionLogic)
         {
             FlagProvider = flagProvider;
-            ScoreRetriever = scoreRetriever;
             CompetitionLogic = competitionLogic;
+
+#pragma warning disable 0618 // initial assignment, see comments near the property
+            _scoreRetriever = scoreRetriever;
+#pragma warning restore 0618
         }
 
         public class CustomFiltrationInfo
@@ -79,7 +90,7 @@ namespace CyberPatriot.DiscordBot.Services
 
             // FIXME time display logic according to FormattingOptions
             scoreboard.TeamList.Where(predicate).Skip(pageNumber * pageSize).Take(pageSize)
-                .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + 1 + (pageNumber * pageSize), team.TeamId, team.Location, ScoreRetriever.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
+                .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + 1 + (pageNumber * pageSize), team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
                 .Consume();
             stringBuilder.AppendLine("```");
             if (scoreboard.OriginUri != null)
@@ -89,39 +100,40 @@ namespace CyberPatriot.DiscordBot.Services
             return stringBuilder.ToString();
         }
 
-        public string CreatePeerLeaderboardEmbed(CompleteScoreboardSummary scoreboard, ScoreboardDetails teamDetails, TimeZoneInfo timeZone = null, int topTeams = 3, int nearbyTeams = 5)
+        public string CreatePeerLeaderboardEmbed(TeamId teamId, CompleteScoreboardSummary scoreboard, IList<ScoreboardSummaryEntry> peerTeams, TimeZoneInfo timeZone = null, int topTeams = 3, int nearbyTeams = 5)
         {
-            var peerTeams = CompetitionLogic.GetPeerTeams(ScoreRetriever.Round, scoreboard, teamDetails.Summary);
+            // var peerTeams = CompetitionLogic.GetPeerTeams(ScoreRetriever.Round, scoreboard, teamDetails.Summary);
             var stringBuilder = new StringBuilder();
             stringBuilder.AppendLine("**CyberPatriot Scoreboard**");
             DateTimeOffset timestamp = timeZone == null ? scoreboard.SnapshotTimestamp : TimeZoneInfo.ConvertTime(scoreboard.SnapshotTimestamp, timeZone);
-            stringBuilder.AppendFormat("*Competing against: {0} | As of: ", teamDetails.TeamId);
+            stringBuilder.AppendFormat("*Competing against: {0} | As of: ", teamId);
             stringBuilder.AppendFormat("{0:g}", timestamp);
             stringBuilder.Append(' ').Append(timeZone == null ? "UTC" : TimeZoneNames.TZNames.GetAbbreviationsForTimeZone(timeZone.Id, "en-US").Generic).AppendLine("*");
             stringBuilder.AppendLine("```bash");
             // zero-based rank of the given team
-            int pos = peerTeams.IndexOfWhere(team => team.TeamId == teamDetails.TeamId);
+            int pos = peerTeams.IndexOfWhere(team => team.TeamId == teamId);
             if (pos < nearbyTeams + topTeams + 1)
             {
                 peerTeams.Take(nearbyTeams + pos + 1)
-                          .Select((team, i) => stringBuilder.AppendFormat("{8}{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + 1, team.TeamId, team.Location, ScoreRetriever.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier, team.TeamId == teamDetails.TeamId ? ">" : "#").AppendLine())
+                          .Select((team, i) => stringBuilder.AppendFormat("{8}{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + 1, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier, team.TeamId == teamId ? ">" : "#").AppendLine())
                           .Consume();
             }
             else
             {
                 peerTeams.Take(topTeams)
-                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + 1, team.TeamId, team.Location, ScoreRetriever.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
+                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + 1, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
                           .Consume();
                 stringBuilder.AppendLine("...");
                 peerTeams.Skip(pos - nearbyTeams)
                           .Take(nearbyTeams)
-                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + pos - nearbyTeams + 1, team.TeamId, team.Location, ScoreRetriever.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
+                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + pos - nearbyTeams + 1, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
                           .Consume();
-                stringBuilder.AppendFormat(">{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", pos + 1, teamDetails.TeamId, teamDetails.Summary.Location, ScoreRetriever.FormattingOptions.FormatScoreForLeaderboard(teamDetails.Summary.TotalScore), teamDetails.Summary.PlayTime, teamDetails.Summary.Warnings.ToConciseString(), teamDetails.Summary.Division.ToConciseString(), teamDetails.Summary.Tier).AppendLine();
+                ScoreboardSummaryEntry thisTeamDetails = peerTeams.Single(t => t.TeamId == teamId);
+                stringBuilder.AppendFormat(">{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", pos + 1, thisTeamDetails.TeamId, thisTeamDetails.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(thisTeamDetails.TotalScore), thisTeamDetails.PlayTime, thisTeamDetails.Warnings.ToConciseString(), thisTeamDetails.Division.ToConciseString(), thisTeamDetails.Tier).AppendLine();
                 // since pos and i are both zero-based, i + pos + 2 returns correct team rank for teams after given team
                 peerTeams.Skip(pos + 1)
                           .Take(nearbyTeams)
-                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + pos + 2, team.TeamId, team.Location, ScoreRetriever.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
+                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + pos + 2, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
                           .Consume();
             }
 
@@ -133,7 +145,7 @@ namespace CyberPatriot.DiscordBot.Services
             return stringBuilder.ToString();
         }
 
-        public EmbedBuilder CreateTeamDetailsEmbed(ScoreboardDetails teamScore, CompleteScoreboardSummary peerScoreboard = null)
+        public EmbedBuilder CreateTeamDetailsEmbed(ScoreboardDetails teamScore, TeamDetailRankingInformation rankingData = null)
         {
             if (teamScore == null)
             {
@@ -144,7 +156,7 @@ namespace CyberPatriot.DiscordBot.Services
                           .WithTimestamp(teamScore.SnapshotTimestamp)
                           .WithTitle("Team " + teamScore.TeamId)
                           .WithDescription(Utilities.JoinNonNullNonEmpty(" | ", CompetitionLogic.GetEffectiveDivisionDescriptor(teamScore.Summary), teamScore.Summary.Tier, teamScore.Summary.Location))
-                          .WithFooter(ScoreRetriever.StaticSummaryLine);
+                          .WithFooter(ScoreRetrieverMetadata.StaticSummaryLine);
 
             // scoreboard link
             if (teamScore.OriginUri != null)
@@ -200,13 +212,13 @@ namespace CyberPatriot.DiscordBot.Services
                 {
                     warningAppendage += multiimage ? multiImageStr : overTimeStr;
                 }
-                string vulnsString = ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetriever.FormattingOptions.VulnerabilityDisplay, item.VulnerabilitiesFound, item.VulnerabilitiesRemaining + item.VulnerabilitiesFound) ? $" ({item.VulnerabilitiesFound}/{item.VulnerabilitiesFound + item.VulnerabilitiesRemaining} vulns{penaltyAppendage})" : string.Empty;
-                string playTimeStr = ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetriever.FormattingOptions.TimeDisplay, item.PlayTime) ? $" in {item.PlayTime:hh\\:mm}" : string.Empty;
-                builder.AddField('`' + item.ImageName + $": {ScoreRetriever.FormattingOptions.FormatScore(item.Score)}pts`", $"{ScoreRetriever.FormattingOptions.FormatScore(item.Score)} points{vulnsString}{playTimeStr}{warningAppendage}");
+                string vulnsString = ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.VulnerabilityDisplay, item.VulnerabilitiesFound, item.VulnerabilitiesRemaining + item.VulnerabilitiesFound) ? $" ({item.VulnerabilitiesFound}/{item.VulnerabilitiesFound + item.VulnerabilitiesRemaining} vulns{penaltyAppendage})" : string.Empty;
+                string playTimeStr = ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.TimeDisplay, item.PlayTime) ? $" in {item.PlayTime:hh\\:mm}" : string.Empty;
+                builder.AddField('`' + item.ImageName + $": {ScoreRetrieverMetadata.FormattingOptions.FormatScore(item.Score)}pts`", $"{ScoreRetrieverMetadata.FormattingOptions.FormatScore(item.Score)} points{vulnsString}{playTimeStr}{warningAppendage}");
             }
 
             string totalScoreTimeAppendage = string.Empty;
-            if (ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetriever.FormattingOptions.TimeDisplay, teamScore.Summary.PlayTime))
+            if (ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.TimeDisplay, teamScore.Summary.PlayTime))
             {
                 totalScoreTimeAppendage = $" in {teamScore.Summary.PlayTime:hh\\:mm}";
             }
@@ -215,67 +227,60 @@ namespace CyberPatriot.DiscordBot.Services
             if (teamScore.Images.All(i => i.PointsPossible != -1))
             {
                 totalPointsAppendage =
-                    "\n" + ScoreRetriever.FormattingOptions.FormatScore(teamScore.Images.Sum(i => i.PointsPossible)) +
+                    "\n" + ScoreRetrieverMetadata.FormattingOptions.FormatScore(teamScore.Images.Sum(i => i.PointsPossible)) +
                     " points possible";
             }
 
-            builder.AddInlineField("Total Score", $"{ScoreRetriever.FormattingOptions.FormatScore(teamScore.Summary.TotalScore)} points" + totalScoreTimeAppendage + totalPointsAppendage);
-            if (peerScoreboard != null)
+            builder.AddInlineField("Total Score", $"{ScoreRetrieverMetadata.FormattingOptions.FormatScore(teamScore.Summary.TotalScore)} points" + totalScoreTimeAppendage + totalPointsAppendage);
+            if (rankingData != null)
             {
-                // don't pollute upstream
-                CompleteScoreboardSummary totalDivisionScoreboard = peerScoreboard.Clone().WithFilter(teamScore.Summary.Division, null);
+                int myIndexInPeerList = rankingData.PeerIndex;
 
-                IList<ScoreboardSummaryEntry> myDivMyTierTeams = totalDivisionScoreboard.Clone().WithFilter(teamScore.Summary.Division, teamScore.Summary.Tier).TeamList;
-                IList<ScoreboardSummaryEntry> peerTeams = CompetitionLogic.GetPeerTeams(ScoreRetriever.Round, totalDivisionScoreboard, teamScore.Summary);
-                if (peerTeams.Count > 0)
+                double rawPercentile = 1.0 - (((double)myIndexInPeerList) / rankingData.PeerCount);
+                int multipliedPercentile = (int)Math.Round(rawPercentile * 1000);
+                int intPart = multipliedPercentile / 10;
+                int floatPart = multipliedPercentile % 10;
+
+                builder.AddInlineField("Rank", $"{Utilities.AppendOrdinalSuffix(myIndexInPeerList + 1)} place\n{(floatPart == 0 ? Utilities.AppendOrdinalSuffix(intPart) : $"{intPart}.{Utilities.AppendOrdinalSuffix(floatPart)}")} percentile");
+
+                StringBuilder marginBuilder = new StringBuilder();
+                if (myIndexInPeerList > 0)
                 {
-                    int myIndexInPeerList = peerTeams.IndexOfWhere(entr => entr.TeamId == teamScore.TeamId);
-
-                    double rawPercentile = 1.0 - (((double)peerTeams.Count(peer => peer.TotalScore >= teamScore.Summary.TotalScore)) / peerTeams.Count);
-                    int multipliedPercentile = (int)Math.Round(rawPercentile * 1000);
-                    int intPart = multipliedPercentile / 10;
-                    int floatPart = multipliedPercentile % 10;
-
-                    builder.AddInlineField("Rank", $"{Utilities.AppendOrdinalSuffix(myIndexInPeerList + 1)} place\n{(floatPart == 0 ? Utilities.AppendOrdinalSuffix(intPart) : $"{intPart}.{Utilities.AppendOrdinalSuffix(floatPart)}")} percentile");
-
-                    StringBuilder marginBuilder = new StringBuilder();
-                    if (myIndexInPeerList > 0)
-                    {
-                        int marginUnderFirst = peerTeams[0].TotalScore - teamScore.Summary.TotalScore;
-                        marginBuilder.AppendLine($"{ScoreRetriever.FormattingOptions.FormatLabeledScoreDifference(marginUnderFirst)} under 1st place");
-                    }
-                    if (myIndexInPeerList >= 2)
-                    {
-                        int marginUnderAbove = peerTeams[myIndexInPeerList - 1].TotalScore - teamScore.Summary.TotalScore;
-                        marginBuilder.AppendLine($"{ScoreRetriever.FormattingOptions.FormatLabeledScoreDifference(marginUnderAbove)} under {Utilities.AppendOrdinalSuffix(myIndexInPeerList)} place");
-                    }
-                    if (myIndexInPeerList < peerTeams.Count - 1)
-                    {
-                        int marginAboveUnder = teamScore.Summary.TotalScore - peerTeams[myIndexInPeerList + 1].TotalScore;
-                        marginBuilder.AppendLine($"{ScoreRetriever.FormattingOptions.FormatLabeledScoreDifference(marginAboveUnder)} above {Utilities.AppendOrdinalSuffix(myIndexInPeerList + 2)} place");
-                    }
-
-                    // TODO division- and round-specific margins
-                    builder.AddInlineField("Margin", marginBuilder.ToString());
-
-                    StringBuilder standingFieldBuilder = new StringBuilder();
-                    standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(myIndexInPeerList + 1) + " of " + Utilities.Pluralize("peer team", peerTeams.Count));
-
-                    // non-peer rankings use parentheticals - peer rankings are used for the rest of the logic
-                    // if peer teams != div+tier teams
-                    if (myDivMyTierTeams.Count != peerTeams.Count && !myDivMyTierTeams.Select(t => t.TeamId).OrderBy(t => t).SequenceEqual(peerTeams.Select(t => t.TeamId).OrderBy(t => t)))
-                    {
-                        // tier ranking, differing from peer ranking
-                        standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(myDivMyTierTeams.IndexOfWhere(cand => cand.TeamId == teamScore.TeamId) + 1) + " of " + Utilities.Pluralize("team", myDivMyTierTeams.Count) + " in tier");
-                    }
-                    if (totalDivisionScoreboard.TeamList.Count > peerTeams.Count)
-                    {
-                        // division ranking, differing from peer ranking
-                        standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(totalDivisionScoreboard.TeamList.IndexOfWhere(cand => cand.TeamId == teamScore.TeamId) + 1) + " of " + Utilities.Pluralize("team", totalDivisionScoreboard.TeamList.Count) + " in division");
-                    }
-                    builder.AddInlineField("Standing", standingFieldBuilder.ToString());
+                    int marginUnderFirst = rankingData.Peers[0].TotalScore - teamScore.Summary.TotalScore;
+                    marginBuilder.AppendLine($"{ScoreRetrieverMetadata.FormattingOptions.FormatLabeledScoreDifference(marginUnderFirst)} under 1st place");
                 }
+                if (myIndexInPeerList >= 2)
+                {
+                    int marginUnderAbove = rankingData.Peers[myIndexInPeerList - 1].TotalScore - teamScore.Summary.TotalScore;
+                    marginBuilder.AppendLine($"{ScoreRetrieverMetadata.FormattingOptions.FormatLabeledScoreDifference(marginUnderAbove)} under {Utilities.AppendOrdinalSuffix(myIndexInPeerList)} place");
+                }
+                if (myIndexInPeerList < rankingData.PeerCount)
+                {
+                    int marginAboveUnder = teamScore.Summary.TotalScore - rankingData.Peers[myIndexInPeerList + 1].TotalScore;
+                    marginBuilder.AppendLine($"{ScoreRetrieverMetadata.FormattingOptions.FormatLabeledScoreDifference(marginAboveUnder)} above {Utilities.AppendOrdinalSuffix(myIndexInPeerList + 2)} place");
+                }
+
+                // TODO division- and round-specific margins
+                builder.AddInlineField("Margin", marginBuilder.ToString());
+
+                StringBuilder standingFieldBuilder = new StringBuilder();
+                standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(myIndexInPeerList + 1) + " of " + Utilities.Pluralize("peer team", rankingData.PeerCount));
+
+                // non-peer rankings use parentheticals - peer rankings are used for the rest of the logic
+                // if peer teams != div+tier teams
+                if (rankingData.PeerCount != rankingData.TierCount)
+                {
+                    // tier ranking, differing from peer ranking
+                    standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(rankingData.TierIndex + 1) + " of " + Utilities.Pluralize("team", rankingData.TierCount) + " in tier");
+                }
+                if (rankingData.PeerCount != rankingData.DivisionCount)
+                {
+                    // division ranking, differing from peer ranking
+                    standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(rankingData.DivisionIndex + 1) + " of " + Utilities.Pluralize("team", rankingData.DivisionCount) + " in division");
+                }
+                builder.AddInlineField("Standing", standingFieldBuilder.ToString());
             }
+
 
             if (teamScore.ImageScoresOverTime != null)
             {

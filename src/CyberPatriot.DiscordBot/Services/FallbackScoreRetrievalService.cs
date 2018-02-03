@@ -23,10 +23,8 @@ namespace CyberPatriot.DiscordBot.Services
         IScoreRetrievalService IComposingService<IScoreRetrievalService>.Backend => Backend;
 
         // Deliberately, these change when the backend changes
-        public bool IsDynamic => Backend.IsDynamic;
-        public string StaticSummaryLine => Backend.StaticSummaryLine;
         public CompetitionRound Round => Backend.Round;
-        public ScoreFormattingOptions FormattingOptions => Backend.FormattingOptions;
+        public Models.IScoreRetrieverMetadata Metadata => Backend?.Metadata;
 
         /// <summary>
         /// Initializes the FallbackScoreRetrievalService with an array of possible backends.

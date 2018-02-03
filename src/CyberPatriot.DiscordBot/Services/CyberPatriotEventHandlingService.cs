@@ -90,11 +90,11 @@ namespace CyberPatriot.DiscordBot.Services
         {
             try
             {
-                string staticSummary = _scoreRetriever.StaticSummaryLine;
+                string staticSummary = _scoreRetriever.Metadata.StaticSummaryLine;
                 if (staticSummary != null)
                 {
                     var summaryLineBuilder = new StringBuilder(staticSummary);
-                    if (_scoreRetriever.IsDynamic)
+                    if (_scoreRetriever.Metadata.IsDynamic)
                     {
                         summaryLineBuilder.Append(" - ");
                         var topTeam = (await _scoreRetriever.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false)).TeamList.FirstOrDefault();
@@ -104,7 +104,7 @@ namespace CyberPatriot.DiscordBot.Services
                         }
                         else
                         {
-                            summaryLineBuilder.AppendFormat("Top: {0}, {1}pts", topTeam.TeamId, _scoreRetriever.FormattingOptions.FormatScore(topTeam.TotalScore));
+                            summaryLineBuilder.AppendFormat("Top: {0}, {1}pts", topTeam.TeamId, _scoreRetriever.Metadata.FormattingOptions.FormatScore(topTeam.TotalScore));
                         }
                     }
 
@@ -189,6 +189,8 @@ namespace CyberPatriot.DiscordBot.Services
                                             indexDifference *= -1;
                                         }
 
+                                        var teamDetails = await _scoreRetriever.GetDetailsAsync(monitored).ConfigureAwait(false);
+
                                         announceMessage.Append(Utilities.Pluralize("place", indexDifference));
                                         announceMessage.Append(" to **");
                                         announceMessage.Append(Utilities.AppendOrdinalSuffix(peerIndex + 1));
@@ -197,8 +199,8 @@ namespace CyberPatriot.DiscordBot.Services
                                         announceMessage.ToString(),
                                         embed: _messageBuilder
                                                .CreateTeamDetailsEmbed(
-                                               await _scoreRetriever.GetDetailsAsync(monitored).ConfigureAwait(false),
-                                               masterScoreboard)
+                                               teamDetails,
+                                               _competitionLogic.GetRankingInformation(_scoreRetriever.Round, masterScoreboard, teamDetails.Summary))
                                                .Build()).ConfigureAwait(false);
                                     }
                                 }

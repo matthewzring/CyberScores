@@ -10,10 +10,7 @@ namespace CyberPatriot.DiscordBot.Services
         Task<CompleteScoreboardSummary> GetScoreboardAsync(ScoreboardFilterInfo filter);
         Task<ScoreboardDetails> GetDetailsAsync(TeamId team);
         Task InitializeAsync(IServiceProvider provider);
-        bool IsDynamic { get; }
-        string StaticSummaryLine { get; }
         CompetitionRound Round { get; }
-        ScoreFormattingOptions FormattingOptions { get; }
-
+        Models.IScoreRetrieverMetadata Metadata { get; }
     }
 }
