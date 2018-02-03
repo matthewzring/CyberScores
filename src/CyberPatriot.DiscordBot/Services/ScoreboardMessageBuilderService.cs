@@ -287,6 +287,11 @@ namespace CyberPatriot.DiscordBot.Services
                 builder.ImageUrl = CreateChartUrl(teamScore);
             }
 
+            if (teamScore.Summary.Advancement.HasValue)
+            {
+                builder.AddInlineField("Advancement", teamScore.Summary.Advancement.Value.ToStringCamelCaseToSpace());
+            }
+
             return builder;
         }
 

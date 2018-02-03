@@ -98,6 +98,21 @@ namespace CyberPatriot.DiscordBot
             throw new ArgumentOutOfRangeException();
         }
 
+        public static string ToConciseString(this Advancement advancement)
+        {
+            switch (advancement)
+            {
+                case Advancement.Advances:
+                    return "ADVN";
+                case Advancement.Wildcard:
+                    return "WILD";
+                case Advancement.Eliminated:
+                    return "ELIM";
+            }
+
+            throw new ArgumentOutOfRangeException();
+        }
+
         public static IAsyncEnumerable<T> WhereAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, Task<bool>> predicate)
         {
             return AsyncEnumerable.CreateEnumerable(() =>

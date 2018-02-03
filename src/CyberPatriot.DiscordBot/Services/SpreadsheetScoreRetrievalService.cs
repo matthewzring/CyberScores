@@ -114,7 +114,7 @@ namespace CyberPatriot.DiscordBot.Services
 
                 string[] headers = null;
                 int[] maxImagePoints = null;
-                int teamIdInd = -1, divInd = -1, locInd = -1, tierInd = -1, catInd = -1;
+                int teamIdInd = -1, divInd = -1, locInd = -1, tierInd = -1, catInd = -1, advancementInd = -1;
                 Division defaultDiv = 0;
 
                 int lowerDataBound = 0, upperDataBound = 0;
@@ -167,7 +167,7 @@ namespace CyberPatriot.DiscordBot.Services
                         case 1:
                             // headers
                             headers = line.Split(',');
-                            teamIdInd = Array.IndexOf(headers, "Team #");
+                            teamIdInd = headers.IndexOfWhere(s => s == "Team #" || s == "Team");
                             if (teamIdInd == -1)
                             {
                                 teamIdInd = 0;
@@ -204,9 +204,13 @@ namespace CyberPatriot.DiscordBot.Services
                                 lowerDataBound++;
                             }
                             // exclusive index
-                            int cumuScoreInd = Array.IndexOf(headers, "Cumulative Score");
+                            int cumuScoreInd = headers.IndexOfWhere(s => s == "Cumulative" || s == "Cumulative Score");
+                            advancementInd = headers.IndexOfWhere(s => s == "Advancement" || s == "Advances");
+
+
                             upperDataBound = Utilities.Min(headers.Length,
-                                cumuScoreInd == -1 ? int.MaxValue : cumuScoreInd);
+                                cumuScoreInd == -1 ? int.MaxValue : cumuScoreInd,
+                                advancementInd == -1 ? int.MaxValue : advancementInd);
 
                             maxImagePoints = new int[headers.Length];
                             for (int j = 0; j < maxImagePoints.Length; j++)
@@ -248,6 +252,23 @@ namespace CyberPatriot.DiscordBot.Services
                             {
                                 teamInfo.Summary.Division = division;
 
+                            }
+                            if (advancementInd >= 0)
+                            {
+                                // squishy parse
+                                string advStr = data[advancementInd].ToLower().Trim();
+                                if (advStr == "does not advance")
+                                {
+                                    teamInfo.Summary.Advancement = Advancement.Eliminated;
+                                }
+                                else if (advStr.Contains("wildcard"))
+                                {
+                                    teamInfo.Summary.Advancement = Advancement.Wildcard;
+                                }
+                                else if (advStr.Contains("advances"))
+                                {
+                                    teamInfo.Summary.Advancement = Advancement.Advances;
+                                }
                             }
                             teamInfo.Summary.TeamId = TeamId.Parse(data[teamIdInd]);
                             teamInfo.ScoreTime = TimeSpan.Zero;
