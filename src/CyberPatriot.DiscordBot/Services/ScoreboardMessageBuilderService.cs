@@ -90,7 +90,7 @@ namespace CyberPatriot.DiscordBot.Services
 
             // FIXME time display logic according to FormattingOptions
             scoreboard.TeamList.Where(predicate).Skip(pageNumber * pageSize).Take(pageSize)
-                .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + 1 + (pageNumber * pageSize), team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
+                .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7}{5,4}", i + 1 + (pageNumber * pageSize), team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : string.Format("{0:hh\\:mm}", team.PlayTime), team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
                 .Consume();
             stringBuilder.AppendLine("```");
             if (scoreboard.OriginUri != null)
@@ -115,25 +115,25 @@ namespace CyberPatriot.DiscordBot.Services
             if (pos < nearbyTeams + topTeams + 1)
             {
                 peerTeams.Take(nearbyTeams + pos + 1)
-                          .Select((team, i) => stringBuilder.AppendFormat("{8}{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + 1, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier, team.TeamId == teamId ? ">" : "#").AppendLine())
+                          .Select((team, i) => stringBuilder.AppendFormat("{8}{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7}{5,4}", i + 1, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : string.Format("{0:hh\\:mm}", team.PlayTime), team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier, team.TeamId == teamId ? ">" : "#").AppendLine())
                           .Consume();
             }
             else
             {
                 peerTeams.Take(topTeams)
-                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + 1, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
+                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7}{5,4}", i + 1, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : string.Format("{0:hh\\:mm}", team.PlayTime), team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
                           .Consume();
                 stringBuilder.AppendLine("...");
                 peerTeams.Skip(pos - nearbyTeams)
                           .Take(nearbyTeams)
-                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + pos - nearbyTeams + 1, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
+                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7}{5,4}", i + pos - nearbyTeams + 1, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : string.Format("{0:hh\\:mm}", team.PlayTime), team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
                           .Consume();
                 ScoreboardSummaryEntry thisTeamDetails = peerTeams.Single(t => t.TeamId == teamId);
-                stringBuilder.AppendFormat(">{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", pos + 1, thisTeamDetails.TeamId, thisTeamDetails.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(thisTeamDetails.TotalScore), thisTeamDetails.PlayTime, thisTeamDetails.Warnings.ToConciseString(), thisTeamDetails.Division.ToConciseString(), thisTeamDetails.Tier).AppendLine();
+                stringBuilder.AppendFormat(">{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7}{5,4}", pos + 1, thisTeamDetails.TeamId, thisTeamDetails.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(thisTeamDetails.TotalScore), thisTeamDetails.Advancement.HasValue ? thisTeamDetails.Advancement.Value.ToConciseString() : string.Format("{0:hh\\:mm}", thisTeamDetails.PlayTime), thisTeamDetails.Warnings.ToConciseString(), thisTeamDetails.Division.ToConciseString(), thisTeamDetails.Tier).AppendLine();
                 // since pos and i are both zero-based, i + pos + 2 returns correct team rank for teams after given team
                 peerTeams.Skip(pos + 1)
                           .Take(nearbyTeams)
-                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7:hh\\:mm}{5,4}", i + pos + 2, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.PlayTime, team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
+                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1}{2,4}{6,6}{7,10}{3,16}{4,7}{5,4}", i + pos + 2, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : string.Format("{0:hh\\:mm}", team.PlayTime), team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
                           .Consume();
             }
 
