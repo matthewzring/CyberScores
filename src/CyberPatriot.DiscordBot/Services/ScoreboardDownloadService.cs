@@ -50,17 +50,19 @@ namespace CyberPatriot.DiscordBot.Services
         {
             public StateWrapper()
             {
-                state = new State(ListLock);
+                state = new State(ListLock, DateTimeOffset.UtcNow);
             }
 
             public struct State
             {
-                public SemaphoreSlim ListLock;
-                internal State(SemaphoreSlim listLock)
+                public readonly SemaphoreSlim ListLock;
+                public readonly DateTimeOffset StartTime;
+                internal State(SemaphoreSlim listLock, DateTimeOffset startTime)
                 {
                     ListLock = listLock;
                     DetailsTaskList = null;
                     OriginalTaskList = null;
+                    StartTime = startTime;
                 }
 
                 public List<Task<ScoreboardDetails>> DetailsTaskList;

@@ -145,10 +145,14 @@ namespace CyberPatriot.DiscordBot.Modules
                 int completedCount = state.OriginalTaskList.Count(t => t.IsCompleted);
                 int faultedCount = state.OriginalTaskList.Count(t => t.IsFaulted);
 
+                TimeZoneInfo userTz = await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false);
+                TimeSpan elapsed = DateTimeOffset.UtcNow - state.StartTime;
 
                 await ReplyAsync("__Status:__\n" +
+                $"Started: {TimeZoneInfo.ConvertTime(state.StartTime, userTz):g} {userTz.GetAbbreviations().Generic} ({elapsed.ToLongString()} ago)\n" +
                 $"Team downloads completed: {completedCount} / {state.OriginalTaskList.Length} ({(100.0 * completedCount) / state.OriginalTaskList.Length:F1}%)\n" +
-                $"Team downloads errored: {faultedCount}").ConfigureAwait(false);
+                $"Team downloads errored: {faultedCount}\n" +
+                $"About {(elapsed * Math.Min(state.OriginalTaskList.Length / (1.0*(completedCount + faultedCount)), 100000000) - elapsed).ToLongString(showSeconds: false)} remaining").ConfigureAwait(false);
             }
 
             [Command("redownload")]
@@ -174,7 +178,8 @@ namespace CyberPatriot.DiscordBot.Modules
             // the user will NOT see errors
             [Command(RunMode = RunMode.Async)]
             [Summary("Exports a GZip-compressed JSON scoreboard from the current backend to the current channel.")]
-            public async Task DownloadScoreboardAsync()
+            [Priority(-1)]
+            public async Task DownloadScoreboardAsync([Summary("A URL pointing to an existing GZip-compressed JSON backup.")] string existingDataUrl = null)
             {
                 await ReplyAsync("Downloading scoreboard...").ConfigureAwait(false);
 
@@ -186,7 +191,7 @@ namespace CyberPatriot.DiscordBot.Modules
 
                     try
                     {
-                        string attachmentUrl = Context.Message?.Attachments?.FirstOrDefault()?.Url;
+                        string attachmentUrl = Context.Message?.Attachments?.FirstOrDefault()?.Url ?? existingDataUrl;
                         if (attachmentUrl != null)
                         {
                             using (var downloader = new HttpClient())
