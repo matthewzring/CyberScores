@@ -293,7 +293,7 @@ namespace CyberPatriot.DiscordBot
                 response.Append(difference.Days != 0 ? $"{Pluralize("day", difference.Days)} " : "");
                 response.Append(difference.Hours != 0 ? $"{Pluralize("hour", difference.Hours)} " : "");
                 response.Append(difference.Minutes != 0 ? $"{Pluralize("minute", difference.Minutes)} " : "");
-                response.Append(showSeconds && difference.Seconds != 0 ? $"{Pluralize("second", difference.Seconds)}" : "");
+                response.Append((showSeconds || difference.TotalMinutes < 1) && difference.Seconds != 0 ? $"{Pluralize("second", difference.Seconds)}" : "");
             }
             return response.ToString().Trim();
         }
