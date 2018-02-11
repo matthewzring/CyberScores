@@ -35,7 +35,8 @@ namespace CyberPatriot.DiscordBot
                 services.GetRequiredService<IDataPersistenceService>().InitializeAsync(services),
                 services.GetRequiredService<CyberPatriotEventHandlingService>().InitializeAsync(services),
                 services.GetRequiredService<IScoreRetrievalService>().InitializeAsync(services),
-                services.GetService<IExternalCategoryProviderService>()?.InitializeAsync(services) ?? Task.CompletedTask
+                services.GetService<IExternalCategoryProviderService>()?.InitializeAsync(services) ?? Task.CompletedTask,
+                services.GetService<ScoreboardDownloadService>()?.InitializeAsync(services) ?? Task.CompletedTask
             );
 
             string enableUpNotificationConfSetting = _config["enableUpNotification"] ?? "false";
@@ -82,6 +83,7 @@ namespace CyberPatriot.DiscordBot
                 .AddSingleton<IDataPersistenceService, LiteDbDataPersistenceService>(prov => new LiteDbDataPersistenceService(new LiteDatabase(_config["databaseFilename"])))
                 .AddSingleton<PreferenceProviderService>()
                 .AddSingleton<IGraphProviderService, BitmapProvider.ImageSharp.ImageSharpGraphProviderService>()
+                .AddSingleton<IRateLimitProvider, TimerRateLimitProvider>(prov => new PriorityTimerRateLimitProvider(2000, 1))
                 // CyPat
                 // Scoreboard trial order: live, JSON archive, CSV released archive
                 .AddSingleton<IScoreRetrievalService, FallbackScoreRetrievalService>(prov => new FallbackScoreRetrievalService(

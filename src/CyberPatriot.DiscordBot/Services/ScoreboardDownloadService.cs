@@ -14,11 +14,18 @@ namespace CyberPatriot.DiscordBot.Services
     {
         public IScoreRetrievalService ScoreService { get; protected set; }
         public LogService Logger { get; protected set; }
+        protected IServiceProvider Provider { get; set; }
 
         public ScoreboardDownloadService(IScoreRetrievalService scoreRetriever, LogService logger)
         {
             ScoreService = scoreRetriever;
             Logger = logger;
+        }
+
+        public Task InitializeAsync(IServiceProvider provider)
+        {
+            Provider = provider;
+            return Task.CompletedTask;
         }
 
         public StateWrapper.State GetState()
@@ -217,8 +224,22 @@ namespace CyberPatriot.DiscordBot.Services
                     teamDetailRetrieveTasksBuilder = teamDetailRetrieveTasksBuilder.Where(tId => !teamDetails.ContainsKey(tId));
                 }
 
+                // for downloading from CCS, we can make some optimizations
+                IScoreRetrievalService scoreRetriever = ScoreService;
+                HttpScoreboardScoreRetrievalService underlyingHttp = scoreRetriever.GetFirstFromChain(t => t is HttpScoreboardScoreRetrievalService) as HttpScoreboardScoreRetrievalService;
+                if (underlyingHttp != null)
+                {
+                    var newHttp = new HttpScoreboardScoreRetrievalService(underlyingHttp.Hostname);
+                    // optimization: our service only makes low-priority requests
+                    var newRateLimit = underlyingHttp.RateLimiter is PriorityTimerRateLimitProvider ? (underlyingHttp.RateLimiter as PriorityTimerRateLimitProvider).LowPriorityRateLimiter : underlyingHttp.RateLimiter;
+                    // TODO cases when this might differ from the original service set outside our intent?
+                    await newHttp.InitializeAsync(Provider.Overlay<IRateLimitProvider>(newRateLimit)).ConfigureAwait(false);
+                    scoreRetriever = newHttp;
+                }
+
+                // use the optimized score retriever
                 List<Task<ScoreboardDetails>> teamDetailRetrieveTasks =
-                    teamDetailRetrieveTasksBuilder.Select(tId => ScoreService.GetDetailsAsync(tId)).ToList();
+                    teamDetailRetrieveTasksBuilder.Select(tId => scoreRetriever.GetDetailsAsync(tId)).ToList();
                 Task<ScoreboardDetails>[] originalTaskList = teamDetailRetrieveTasks.ToArray();
 
                 lock (currentDownload.StateLock)

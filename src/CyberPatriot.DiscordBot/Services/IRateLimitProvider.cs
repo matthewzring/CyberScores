@@ -27,19 +27,24 @@ namespace CyberPatriot.DiscordBot.Services
     public class TimerRateLimitProvider : IRateLimitProvider, IDisposable
     {
         // based on https://stackoverflow.com/questions/34792699/async-version-of-monitor-pulse-wait
-        internal sealed class TimedTokenProvider<T>
+        protected sealed class TimedTokenProvider<T>
         {
-            private readonly ConcurrentQueue<TaskCompletionSource<T>> _waiting = new ConcurrentQueue<TaskCompletionSource<T>>();
+            private readonly IProducerConsumerCollection<TaskCompletionSource<T>> _waiting;
             private readonly ConcurrentQueue<T> _pushedAuthorizationTokens = new ConcurrentQueue<T>();
             private readonly object _syncContext = new object();
             private volatile ConcurrentBag<Task> _pulsePrereqs = new ConcurrentBag<Task>();
             private readonly int _maxQueuedAuthTokens;
             private readonly T _authorizationConstant;
 
-            public TimedTokenProvider(T authConstant, int maxQueuedAuthTokens)
+            public TimedTokenProvider(T authConstant, int maxQueuedAuthTokens, IProducerConsumerCollection<TaskCompletionSource<T>> waitingCollection)
             {
                 _authorizationConstant = authConstant;
                 _maxQueuedAuthTokens = maxQueuedAuthTokens;
+                _waiting = waitingCollection;
+            }
+
+            public TimedTokenProvider(T authConstant, int maxQueuedAuthTokens) : this(authConstant, maxQueuedAuthTokens, new ConcurrentQueue<TaskCompletionSource<T>>())
+            {
             }
 
             public void Pulse()
@@ -72,7 +77,7 @@ namespace CyberPatriot.DiscordBot.Services
 
                         // finally complete a waiting task
                         TaskCompletionSource<T> tcs;
-                        if (_waiting.TryDequeue(out tcs))
+                        if (_waiting.TryTake(out tcs))
                         {
                             // SetResult - we're the only thread (as enforced by the lock) that's completing these tasks
                             // if something goes wrong with this call (it shouldn't) it should except and I should learn about it
@@ -113,7 +118,10 @@ namespace CyberPatriot.DiscordBot.Services
                 }
 
                 var tcs = new TaskCompletionSource<T>();
-                _waiting.Enqueue(tcs);
+                if (!_waiting.TryAdd(tcs))
+                {
+                    throw new InvalidOperationException("Too many requests are enqueued, please wait before making another ratelimited request.");
+                }
                 return tcs.Task;
             }
 
@@ -152,14 +160,22 @@ namespace CyberPatriot.DiscordBot.Services
         }
 
 
-        private TimedTokenProvider<byte> Awaiter { get; }
+        protected TimedTokenProvider<byte> Awaiter { get; }
         private Timer Timer { get; }
 
-        public TimerRateLimitProvider(TimeSpan interval, int maxQueuedAuth)
+        protected virtual IProducerConsumerCollection<TaskCompletionSource<byte>> GenerateDefaultQueue() => null;
+
+        protected TimerRateLimitProvider(TimeSpan interval, int maxQueuedAuth, IProducerConsumerCollection<TaskCompletionSource<byte>> internalQueue)
         {
-            Awaiter = new TimedTokenProvider<byte>(1, maxQueuedAuth);
+            Awaiter = (internalQueue = internalQueue ?? GenerateDefaultQueue()) == null ?
+                new TimedTokenProvider<byte>(1, maxQueuedAuth) :
+                new TimedTokenProvider<byte>(1, maxQueuedAuth, internalQueue);
             Awaiter.AddReadiedAuthTokens(maxQueuedAuth);
             Timer = new Timer(TriggerAwaiter, null, TimeSpan.Zero, interval);
+        }
+
+        public TimerRateLimitProvider(TimeSpan interval, int maxQueuedAuth) : this(interval, maxQueuedAuth, null)
+        {
         }
 
         public TimerRateLimitProvider(int millis, int maxQueuedAuth) : this(TimeSpan.FromMilliseconds(millis), maxQueuedAuth)
@@ -168,9 +184,9 @@ namespace CyberPatriot.DiscordBot.Services
 
         private void TriggerAwaiter(object state = null) => Awaiter.Pulse();
 
-        public Task GetWorkAuthorizationAsync() => Awaiter.Wait();
+        public virtual Task GetWorkAuthorizationAsync() => Awaiter.Wait();
 
-        public void AddPrerequisite(Task prerequisite) => Awaiter.RegisterPrerequisite(prerequisite);
+        public virtual void AddPrerequisite(Task prerequisite) => Awaiter.RegisterPrerequisite(prerequisite);
 
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
@@ -206,5 +222,47 @@ namespace CyberPatriot.DiscordBot.Services
             // GC.SuppressFinalize(this);
         }
         #endregion
+    }
+
+    public class PriorityTimerRateLimitProvider : TimerRateLimitProvider
+    {
+        public PriorityTimerRateLimitProvider(TimeSpan interval, int maxQueuedAuth) : base(interval, maxQueuedAuth)
+        {
+            LowPriorityRateLimiter = new LowPriorityWrapperRateLimitProvider(this);
+        }
+
+        public PriorityTimerRateLimitProvider(int millis, int maxQueuedAuth) : this(TimeSpan.FromMilliseconds(millis), maxQueuedAuth)
+        {
+        }
+
+        protected ConcurrentPriorityQueue<TaskCompletionSource<byte>> Queue { get; } = new ConcurrentPriorityQueue<TaskCompletionSource<byte>>();
+
+        protected override IProducerConsumerCollection<TaskCompletionSource<byte>> GenerateDefaultQueue() => Queue;
+
+        public virtual Task GetLowPriorityWorkAuthorizationAsync()
+        {
+            // Low priority work differs in a few ways:
+            // 1) high priority work is always completed first
+            // 2) low priority work does not use queued-up auth tokens
+            TaskCompletionSource<byte> tcs = new TaskCompletionSource<byte>();
+            // this queue is used internally by our timer
+            Queue.AddLow(tcs);
+            return tcs.Task;
+        }
+
+        public IRateLimitProvider LowPriorityRateLimiter { get; }
+
+        protected class LowPriorityWrapperRateLimitProvider : IRateLimitProvider
+        {
+            protected readonly PriorityTimerRateLimitProvider Parent;
+            public LowPriorityWrapperRateLimitProvider(PriorityTimerRateLimitProvider parent)
+            {
+                Parent = parent;
+            }
+
+            public void AddPrerequisite(Task prereq) => Parent.AddPrerequisite(prereq);
+
+            public Task GetWorkAuthorizationAsync() => Parent.GetLowPriorityWorkAuthorizationAsync();
+        }
     }
 }

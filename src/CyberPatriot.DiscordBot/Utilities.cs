@@ -507,6 +507,39 @@ namespace CyberPatriot.DiscordBot
             return defVal;
         }
 
+        public static IServiceProvider Overlay<TService>(this IServiceProvider provider, TService newService)
+        {
+            // default to adding to existing overlay, otherwise create the overlay
+            var overlay = provider as OverlayServiceProvider;
+            if (overlay == null)
+            {
+                overlay = new OverlayServiceProvider()
+                {
+                    Parent = provider
+                };
+            }
+
+            overlay.OverlayedServices[typeof(TService)] = newService;
+            return overlay;
+        }
+
+
+        private class OverlayServiceProvider : IServiceProvider
+        {
+            public Dictionary<Type, object> OverlayedServices { get; } = new Dictionary<Type, object>();
+            public IServiceProvider Parent { get; set; }
+
+            public object GetService(Type serviceType)
+            {
+                if (OverlayedServices.TryGetValue(serviceType, out object service))
+                {
+                    return service;
+                }
+
+                return Parent.GetService(serviceType);
+            }
+        }
+
         public static string JoinNonNullNonEmpty(string joinString, params object[] objects) => JoinNonNullNonEmpty(joinString, objects?.Select(o => o?.ToString()));
 
         public static string JoinNonNullNonEmpty(string joinString, IEnumerable<string> objects) => string.Join(joinString, objects?.Where(s => !string.IsNullOrWhiteSpace(s)));

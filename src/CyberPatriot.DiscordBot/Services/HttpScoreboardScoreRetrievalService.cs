@@ -41,8 +41,8 @@ namespace CyberPatriot.DiscordBot.Services
         public virtual Models.IScoreRetrieverMetadata Metadata { get; protected set; }
 
 
-        // 1 request every 2 seconds
-        public IRateLimitProvider RateLimiter { get; protected set; } = new TimerRateLimitProvider(2000, 1);
+        // a service
+        public IRateLimitProvider RateLimiter { get; protected set; } = new NoneRateLimitProvider();
         private ICompetitionRoundLogicService _roundInferenceService = null;
         private IExternalCategoryProviderService _categoryProvider = null;
 
@@ -84,6 +84,8 @@ namespace CyberPatriot.DiscordBot.Services
 
             // optionally, attempt to deduce categories
             _categoryProvider = provider.GetService<IExternalCategoryProviderService>();
+
+            RateLimiter = provider.GetService<IRateLimitProvider>() ?? new NoneRateLimitProvider();
 
             return Task.CompletedTask;
         }
