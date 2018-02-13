@@ -254,7 +254,7 @@ namespace CyberPatriot.DiscordBot.Services
                     int marginUnderAbove = rankingData.Peers[myIndexInPeerList - 1].TotalScore - teamScore.Summary.TotalScore;
                     marginBuilder.AppendLine($"{ScoreRetrieverMetadata.FormattingOptions.FormatLabeledScoreDifference(marginUnderAbove)} under {Utilities.AppendOrdinalSuffix(myIndexInPeerList)} place");
                 }
-                if (myIndexInPeerList < rankingData.PeerCount)
+                if (myIndexInPeerList < rankingData.PeerCount - 1)
                 {
                     int marginAboveUnder = teamScore.Summary.TotalScore - rankingData.Peers[myIndexInPeerList + 1].TotalScore;
                     marginBuilder.AppendLine($"{ScoreRetrieverMetadata.FormattingOptions.FormatLabeledScoreDifference(marginAboveUnder)} above {Utilities.AppendOrdinalSuffix(myIndexInPeerList + 2)} place");
