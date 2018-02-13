@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CyberPatriot.BitmapProvider
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CsvToJsonShim", "src\CsvToJsonShim\CsvToJsonShim.csproj", "{B67B95C2-BB71-4005-9854-4749DC018E15}"
 EndProject
+Project("{F4B7E20C-BE5E-4F5C-8720-F5F1B6C1C2C5}") = "JsonCategoryBackfill", "src\JsonCategoryBackfill\JsonCategoryBackfill.csproj", "{0CDFB68E-5F07-4A50-AB7C-68F7713E8512}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{B67B95C2-BB71-4005-9854-4749DC018E15}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B67B95C2-BB71-4005-9854-4749DC018E15}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B67B95C2-BB71-4005-9854-4749DC018E15}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0CDFB68E-5F07-4A50-AB7C-68F7713E8512}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0CDFB68E-5F07-4A50-AB7C-68F7713E8512}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0CDFB68E-5F07-4A50-AB7C-68F7713E8512}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0CDFB68E-5F07-4A50-AB7C-68F7713E8512}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
