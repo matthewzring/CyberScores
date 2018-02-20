@@ -161,6 +161,9 @@ namespace CyberPatriot.DiscordBot.Services
                                 case "uri":
                                     originUri = new Uri(kvp[1].Trim());
                                     break;
+                                case "providerName":
+                                    this.Metadata.StaticSummaryLine = kvp[1].Trim();
+                                    break;
                             }
 
                             break;
@@ -173,17 +176,17 @@ namespace CyberPatriot.DiscordBot.Services
                                 teamIdInd = 0;
                             }
                             catInd = Array.IndexOf(headers, "Category");
-                            if (catInd == -1)
+                            divInd = Array.IndexOf(headers, "Division");
+                            if (divInd == -1)
                             {
-                                divInd = Array.IndexOf(headers, "Division");
-                                if (divInd == -1)
+                                if (catInd == -1)
                                 {
                                     divInd = 1;
                                 }
-                            }
-                            else
-                            {
-                                defaultDiv = Division.AllService;
+                                else
+                                {
+                                    defaultDiv = Division.AllService;
+                                }
                             }
                             locInd = Array.IndexOf(headers, "Location");
                             if (locInd == -1)
@@ -196,7 +199,7 @@ namespace CyberPatriot.DiscordBot.Services
                             // figure out bounds for data entries
                             // assume data are consecutive, tier is at the end
                             // +1 for an inclusive index
-                            lowerDataBound = Utilities.Max(-1, teamIdInd, divInd, locInd) + 1;
+                            lowerDataBound = Utilities.Max(-1, teamIdInd, divInd, catInd, locInd) + 1;
                             // hack to deal with R2/R(3/4) spreadsheet discreptancies
                             // tiers at the end on R2 (that's the tier calculation round), but beginning on the rest
                             if (lowerDataBound == tierInd)
@@ -243,15 +246,17 @@ namespace CyberPatriot.DiscordBot.Services
                             teamInfo.Summary.Location = data[locInd];
                             teamInfo.Summary.PlayTime = TimeSpan.Zero;
                             teamInfo.Summary.Tier = tierInd == -1 || !Enum.TryParse<Tier>(data[tierInd], true, out Tier tier) ? null : (Tier?)tier;
-                            if (catInd >= 0)
+                            if (catInd >= 0 && !string.IsNullOrWhiteSpace(data[catInd]))
                             {
-                                teamInfo.Summary.Division = defaultDiv;
                                 teamInfo.Summary.Category = data[catInd];
                             }
-                            else if (Utilities.TryParseEnumSpaceless(data[divInd], out Division division))
+                            if (divInd >= 0 && Utilities.TryParseEnumSpaceless(data[divInd], out Division division))
                             {
                                 teamInfo.Summary.Division = division;
-
+                            }
+                            else if (catInd >= 0)
+                            {
+                                teamInfo.Summary.Division = defaultDiv;
                             }
                             if (advancementInd >= 0)
                             {
