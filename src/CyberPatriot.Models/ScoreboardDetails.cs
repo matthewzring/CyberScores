@@ -18,5 +18,6 @@ namespace CyberPatriot.Models
         public Uri OriginUri { get; set; }
         public DateTimeOffset SnapshotTimestamp { get; set; }
         public Dictionary<string, SortedDictionary<DateTimeOffset, int?>> ImageScoresOverTime { get; set; } = null;
+        public string Comment { get; set; } = null;
     }
 }

@@ -158,6 +158,12 @@ namespace CyberPatriot.DiscordBot.Services
                           .WithDescription(Utilities.JoinNonNullNonEmpty(" | ", CompetitionLogic.GetEffectiveDivisionDescriptor(teamScore.Summary), teamScore.Summary.Tier, teamScore.Summary.Location))
                           .WithFooter(ScoreRetrieverMetadata.StaticSummaryLine);
 
+            if (!string.IsNullOrWhiteSpace(teamScore.Comment))
+            {
+                builder.Description += "\n";
+                builder.Description += teamScore.Comment;
+            }
+
             // scoreboard link
             if (teamScore.OriginUri != null)
             {

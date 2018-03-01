@@ -114,7 +114,7 @@ namespace CyberPatriot.DiscordBot.Services
 
                 string[] headers = null;
                 int[] maxImagePoints = null;
-                int teamIdInd = -1, divInd = -1, locInd = -1, tierInd = -1, catInd = -1, advancementInd = -1;
+                int teamIdInd = -1, divInd = -1, locInd = -1, tierInd = -1, catInd = -1, advancementInd = -1, commentInd = -1;
                 Division defaultDiv = 0;
 
                 int lowerDataBound = 0, upperDataBound = 0;
@@ -196,6 +196,10 @@ namespace CyberPatriot.DiscordBot.Services
                             // may be -1
                             tierInd = Array.IndexOf(headers, "Tier");
 
+                            // only optional field (not on every row)
+                            // is at end
+                            commentInd = Array.IndexOf(headers, "Comment");
+
                             // figure out bounds for data entries
                             // assume data are consecutive, tier is at the end
                             // +1 for an inclusive index
@@ -213,7 +217,8 @@ namespace CyberPatriot.DiscordBot.Services
 
                             upperDataBound = Utilities.Min(headers.Length,
                                 cumuScoreInd == -1 ? int.MaxValue : cumuScoreInd,
-                                advancementInd == -1 ? int.MaxValue : advancementInd);
+                                advancementInd == -1 ? int.MaxValue : advancementInd,
+                                commentInd == -1 ? int.MaxValue : commentInd);
 
                             maxImagePoints = new int[headers.Length];
                             for (int j = 0; j < maxImagePoints.Length; j++)
@@ -280,6 +285,11 @@ namespace CyberPatriot.DiscordBot.Services
                             teamInfo.SnapshotTimestamp = snapshotTimestamp;
                             teamInfo.Images = new List<ScoreboardImageDetails>();
                             teamInfo.OriginUri = originUri;
+
+                            if (commentInd >= 0 && commentInd < data.Length)
+                            {
+                                teamInfo.Comment = data[commentInd];
+                            }
 
                             int totalScore = 0;
 
