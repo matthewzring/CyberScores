@@ -20,13 +20,43 @@ namespace CyberPatriot.DiscordBot.Services
         TeamDetailRankingInformation GetRankingInformation(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamInfo);
     }
 
-    public class CyberPatriotTenCompetitionRoundLogicService : ICompetitionRoundLogicService
+    public abstract class CyberPatriotCompetitionRoundLogicService : ICompetitionRoundLogicService
     {
-        public string GetEffectiveDivisionDescriptor(ScoreboardSummaryEntry team) => team.Category ?? team.Division.ToStringCamelCaseToSpace();
+        public virtual string GetEffectiveDivisionDescriptor(ScoreboardSummaryEntry team) => team.Category ?? team.Division.ToStringCamelCaseToSpace();
 
-        public CompetitionRound InferRound(DateTimeOffset date)
+        public abstract CompetitionRound InferRound(DateTimeOffset date);
+
+        public abstract IList<ScoreboardSummaryEntry> GetPeerTeams(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamInfo);
+
+        private static Func<ScoreboardSummaryEntry, bool> BuildSummaryComparer(TeamId target) => sse => sse.TeamId == target;
+
+        public virtual TeamDetailRankingInformation GetRankingInformation(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamInfo)
         {
+            divisionScoreboard = divisionScoreboard.Clone().WithFilter(teamInfo.Division, null);
 
+            // may be equal to division scoreboard, that's fine
+            var tierScoreboard = divisionScoreboard.Clone().WithFilter(teamInfo.Division, teamInfo.Tier);
+            var peers = GetPeerTeams(round, divisionScoreboard, teamInfo);
+
+            var summaryComparer = BuildSummaryComparer(teamInfo.TeamId);
+            return new TeamDetailRankingInformation()
+            {
+                TeamId = teamInfo.TeamId,
+                Peers = peers,
+                PeerIndex = peers.IndexOfWhere(summaryComparer),
+                PeerCount = peers.Count,
+                DivisionIndex = divisionScoreboard.TeamList.IndexOfWhere(summaryComparer),
+                DivisionCount = divisionScoreboard.TeamList.Count,
+                TierIndex = tierScoreboard.TeamList.IndexOfWhere(summaryComparer),
+                TierCount = tierScoreboard.TeamList.Count
+            };
+        }
+    }
+
+    public class CyberPatriotTenCompetitionRoundLogicService : CyberPatriotCompetitionRoundLogicService
+    {
+        public override CompetitionRound InferRound(DateTimeOffset date)
+        {
             // approximation of eastern time
             // the precision on this estimation is limited anyway
             DateTimeOffset easternDate = date.ToOffset(TimeSpan.FromHours(-5));
@@ -60,7 +90,7 @@ namespace CyberPatriot.DiscordBot.Services
             return 0;
         }
 
-        public IList<ScoreboardSummaryEntry> GetPeerTeams(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamDetails)
+        public override IList<ScoreboardSummaryEntry> GetPeerTeams(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamDetails)
         {
             // make a clone because we'll mutate this later
             divisionScoreboard = divisionScoreboard.Clone().WithFilter(teamDetails.Division, null);
@@ -95,7 +125,7 @@ namespace CyberPatriot.DiscordBot.Services
             }
 
             // all-service round where category matters ("R0" we default to factoring in category)
-            
+
             // filter by tier, where available
             if (round > CompetitionRound.Round2)
             {
@@ -113,30 +143,44 @@ namespace CyberPatriot.DiscordBot.Services
             // they get treated as not-my-problem, that is, not part of my category
             return divisionScoreboard.TeamList.Where(t => t.Category == teamDetails.Category).ToIList();
         }
+    }
 
-
-        private static Func<ScoreboardSummaryEntry, bool> BuildSummaryComparer(TeamId target) => sse => sse.TeamId == target;
-
-        public TeamDetailRankingInformation GetRankingInformation(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamInfo)
+    // extend CP-X because advancement rules are supposed to be similar; also at time of authorship round dates were not released
+    public class CyberPatriotElevenCompetitionRoundLogicService : CyberPatriotTenCompetitionRoundLogicService
+    {
+        public override CompetitionRound InferRound(DateTimeOffset date)
         {
-            divisionScoreboard = divisionScoreboard.Clone().WithFilter(teamInfo.Division, null);
+            // approximation of eastern time
+            // the precision on this estimation is limited anyway
+            DateTimeOffset easternDate = date.ToOffset(TimeSpan.FromHours(-5));
 
-            // may be equal to division scoreboard, that's fine
-            var tierScoreboard = divisionScoreboard.Clone().WithFilter(teamInfo.Division, teamInfo.Tier);
-            var peers = GetPeerTeams(round, divisionScoreboard, teamInfo);
-
-            var summaryComparer = BuildSummaryComparer(teamInfo.TeamId);
-            return new TeamDetailRankingInformation()
+            // CP-XI only
+            if (!((easternDate.Year == 2018 && easternDate.Month > 6) || (easternDate.Year == 2019 && easternDate.Month < 6)))
             {
-                TeamId = teamInfo.TeamId,
-                Peers = peers,
-                PeerIndex = peers.IndexOfWhere(summaryComparer),
-                PeerCount = peers.Count,
-                DivisionIndex = divisionScoreboard.TeamList.IndexOfWhere(summaryComparer),
-                DivisionCount = divisionScoreboard.TeamList.Count,
-                TierIndex = tierScoreboard.TeamList.IndexOfWhere(summaryComparer),
-                TierCount = tierScoreboard.TeamList.Count
-            };
+                // cannot estimate for non-CPXI
+                return 0;
+            }
+
+            int day = easternDate.Day;
+            // 1-12
+            switch (easternDate.Month)
+            {
+                case 11:
+                    // November, round 1
+                    return day == 2 || day == 3 || day == 4 || day == 10 ? CompetitionRound.Round1 : 0;
+                case 12:
+                    // December, round 2
+                    return day == 7 || day == 8 || day == 9 || day == 15 ? CompetitionRound.Round2 : 0;
+                case 1:
+                    // January, states round
+                    return day == 11 || day == 12 || day == 13 || day == 19 ? CompetitionRound.Round3 : 0;
+                case 2:
+                    // February, semifinals
+                    return day == 1 || day == 2 || day == 3 || day == 9 ? CompetitionRound.Semifinals : 0;
+            }
+
+            // no round predicted on the given date
+            return 0;
         }
     }
 }

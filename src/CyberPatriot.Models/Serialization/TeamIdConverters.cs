@@ -26,7 +26,7 @@ namespace CyberPatriot.Models.Serialization
 
     public class TeamIdTypeConverter : TypeConverter
     {
-        public const int DefaultSeason = 10;
+        public const int DefaultSeason = 11;
 
         public override bool CanConvertFrom(ITypeDescriptorContext context, Type source)
         {

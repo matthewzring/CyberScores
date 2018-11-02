@@ -43,8 +43,8 @@ namespace CyberPatriot.DiscordBot.Services
 
         // a service
         public IRateLimitProvider RateLimiter { get; protected set; } = new NoneRateLimitProvider();
-        private ICompetitionRoundLogicService _roundInferenceService = null;
-        private IExternalCategoryProviderService _categoryProvider = null;
+        protected ICompetitionRoundLogicService _roundInferenceService = null;
+        protected IExternalCategoryProviderService _categoryProvider = null;
 
         public HttpScoreboardScoreRetrievalService() : this(null)
         {
@@ -130,9 +130,9 @@ namespace CyberPatriot.DiscordBot.Services
             {
                 scoreboardPage = await Client.GetStringAsync(scoreboardUri).ConfigureAwait(false);
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException e)
             {
-                throw new InvalidOperationException("Error getting scoreboard page, perhaps the scoreboard is offline?");
+                throw new InvalidOperationException("Error getting scoreboard page, perhaps the scoreboard is offline?", e);
             }
 
             return scoreboardPage;
@@ -146,41 +146,72 @@ namespace CyberPatriot.DiscordBot.Services
                 return doc;
             });
 
+        protected virtual ScoreboardSummaryEntry ParseSummaryEntry(string[] dataEntries)
+        {
+            ScoreboardSummaryEntry summary = new ScoreboardSummaryEntry();
+            summary.TeamId = TeamId.Parse(dataEntries[0]);
+            summary.Category = _categoryProvider?.GetCategory(summary.TeamId);
+            summary.Location = dataEntries[1];
+            if (Utilities.TryParseEnumSpaceless<Division>(dataEntries[2], out Division division))
+            {
+                summary.Division = division;
+            }
+            if (Enum.TryParse<Tier>(dataEntries[3]?.Trim(), true, out Tier tier))
+            {
+                summary.Tier = tier;
+            }
+            summary.ImageCount = int.Parse(dataEntries[4]);
+            summary.PlayTime = Utilities.ParseHourMinuteTimespan(dataEntries[5]);
+            summary.TotalScore = int.Parse(dataEntries[7]);
+            summary.Warnings |= dataEntries[6].Contains("T") ? ScoreWarnings.TimeOver : 0;
+            summary.Warnings |= dataEntries[6].Contains("M") ? ScoreWarnings.MultiImage : 0;
+            return summary;
+        }
+
+        /// <summary>
+        /// Parses a detailed summary entry into a scoreboard details object.
+        /// </summary>
+        /// <param name="dataEntries">The data.</param>
+        protected virtual void ParseDetailedSummaryEntry(ScoreboardDetails details, string[] dataEntries)
+        {
+            var summary = new ScoreboardSummaryEntry();
+            details.Summary = summary;
+            // ID, Division (labeled location, their bug), Location (labeled division, their bug), tier, scored image count, play time, score time, warnings, current score
+            summary.TeamId = TeamId.Parse(dataEntries[0]);
+            // [not in data, matched from categoryProvider] all service category
+            summary.Category = _categoryProvider?.GetCategory(summary.TeamId);
+            // tier and division
+            if (Utilities.TryParseEnumSpaceless<Division>(dataEntries[1], out Division division))
+            {
+                summary.Division = division;
+            }
+            summary.Location = dataEntries[2];
+            if (Enum.TryParse<Tier>(dataEntries[3], true, out Tier tier))
+            {
+                summary.Tier = tier;
+            }
+            // number of images
+            summary.ImageCount = int.Parse(dataEntries[4].Trim());
+            // times
+            summary.PlayTime = Utilities.ParseHourMinuteTimespan(dataEntries[5]);
+            details.ScoreTime = Utilities.ParseHourMinuteTimespan(dataEntries[6]);
+            // warnings and total score
+            string warnStr = dataEntries[7];
+            summary.Warnings |= warnStr.Contains("T") ? ScoreWarnings.TimeOver : 0;
+            summary.Warnings |= warnStr.Contains("M") ? ScoreWarnings.MultiImage : 0;
+            summary.TotalScore = int.Parse(dataEntries[8].Trim());
+        }
+
         protected virtual IEnumerable<ScoreboardSummaryEntry> ProcessSummaries(HtmlDocument doc, out DateTimeOffset processTimestamp)
         {
             var timestampHeader = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/h2[2]")?.InnerText;
             processTimestamp = timestampHeader == null ? DateTimeOffset.UtcNow : DateTimeOffset.Parse(timestampHeader.Replace("Generated At: ", string.Empty).Replace("UTC", "+0:00"));
 
-            var teamsTable = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/table").ChildNodes.Where(n => n.Name != "#text").ToArray();
-
-            IEnumerable<ScoreboardSummaryEntry> SummaryProcess()
-            {
-
-                for (int i = 1; i < teamsTable.Length; i++)
-                {
-                    string[] dataEntries = teamsTable[i].ChildNodes.Select(n => n.InnerText.Trim()).ToArray();
-                    ScoreboardSummaryEntry summary = new ScoreboardSummaryEntry();
-                    summary.TeamId = TeamId.Parse(dataEntries[0]);
-                    summary.Category = _categoryProvider?.GetCategory(summary.TeamId);
-                    summary.Location = dataEntries[1];
-                    if (Utilities.TryParseEnumSpaceless<Division>(dataEntries[2], out Division division))
-                    {
-                        summary.Division = division;
-                    }
-                    if (Enum.TryParse<Tier>(dataEntries[3]?.Trim(), true, out Tier tier))
-                    {
-                        summary.Tier = tier;
-                    }
-                    summary.ImageCount = int.Parse(dataEntries[4]);
-                    summary.PlayTime = Utilities.ParseHourMinuteTimespan(dataEntries[5]);
-                    summary.TotalScore = int.Parse(dataEntries[6]);
-                    summary.Warnings |= dataEntries[7].Contains("T") ? ScoreWarnings.TimeOver : 0;
-                    summary.Warnings |= dataEntries[7].Contains("M") ? ScoreWarnings.MultiImage : 0;
-                    yield return summary;
-                }
-            }
-
-            return SummaryProcess();
+            return doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/table").ChildNodes
+                .Where(n => n.Name != "#text")
+                .Skip(1) // header
+                .Select(n => n.ChildNodes.Select(c => c.InnerText.Trim()).ToArray())
+                .Select(ParseSummaryEntry);
         }
 
         public async Task<ScoreboardDetails> GetDetailsAsync(TeamId team)
@@ -206,13 +237,12 @@ namespace CyberPatriot.DiscordBot.Services
                     throw new ArgumentException("The given team does not exist.");
                 }
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException e)
             {
-                throw new InvalidOperationException("Error getting team details page, perhaps the scoreboard is offline?");
+                throw new InvalidOperationException("Error getting team details page, perhaps the scoreboard is offline?", e);
             }
 
             ScoreboardDetails retVal = new ScoreboardDetails();
-            retVal.Summary = new ScoreboardSummaryEntry();
             retVal.OriginUri = detailsUri;
 
             HtmlDocument doc = new HtmlDocument();
@@ -220,36 +250,8 @@ namespace CyberPatriot.DiscordBot.Services
             var timestampHeader = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/h2[2]")?.InnerText;
             retVal.SnapshotTimestamp = timestampHeader == null ? DateTimeOffset.UtcNow : DateTimeOffset.Parse(timestampHeader.Replace("Generated At: ", string.Empty).Replace("UTC", "+0:00"));
             var summaryRow = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/table[1]/tr[2]");
-            // ID, Division (labeled location, their bug), Location (labeled division, their bug), tier, scored img, play time, score time, current score, warn
-            retVal.Summary.TeamId = TeamId.Parse(summaryRow.ChildNodes[0].InnerText);
-            retVal.Summary.Category = _categoryProvider?.GetCategory(retVal.TeamId);
-            if (Utilities.TryParseEnumSpaceless<Division>(summaryRow.ChildNodes[1].InnerText, out Division division))
-            {
-                retVal.Summary.Division = division;
-            }
-            retVal.Summary.Location = summaryRow.ChildNodes[2].InnerText;
-            if (Enum.TryParse<Tier>(summaryRow.ChildNodes[3].InnerText, true, out Tier tier))
-            {
-                retVal.Summary.Tier = tier;
-            }
-            retVal.Summary.ImageCount = int.Parse(summaryRow.ChildNodes[4].InnerText.Trim());
-            retVal.Summary.PlayTime = Utilities.ParseHourMinuteTimespan(summaryRow.ChildNodes[5].InnerText);
-            string scoreTimeText = summaryRow.ChildNodes[6].InnerText;
-            // to deal with legacy scoreboards
-            int scoreTimeIndOffset = 0;
-            if (scoreTimeText.Contains(":"))
-            {
-                retVal.ScoreTime = Utilities.ParseHourMinuteTimespan(summaryRow.ChildNodes[6].InnerText);
-            }
-            else
-            {
-                retVal.ScoreTime = retVal.Summary.PlayTime;
-                scoreTimeIndOffset = -1;
-            }
-            retVal.Summary.TotalScore = int.Parse(summaryRow.ChildNodes[7 + scoreTimeIndOffset].InnerText);
-            string warnStr = summaryRow.ChildNodes[8 + scoreTimeIndOffset].InnerText;
-            retVal.Summary.Warnings |= warnStr.Contains("T") ? ScoreWarnings.TimeOver : 0;
-            retVal.Summary.Warnings |= warnStr.Contains("M") ? ScoreWarnings.MultiImage : 0;
+            var summaryRowData = summaryRow.ChildNodes.Select(x => x.InnerText).ToArray();
+            ParseDetailedSummaryEntry(retVal, summaryRowData);
 
             // summary parsed
             var imagesTable = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/table[2]").ChildNodes.Where(n => n.Name != "#text").ToArray();

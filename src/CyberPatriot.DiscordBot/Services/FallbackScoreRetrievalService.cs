@@ -80,6 +80,9 @@ namespace CyberPatriot.DiscordBot.Services
         public async Task ResolveBackendAsync(IServiceProvider provider = null, int upperSearchBound = -1)
         {
             await _backendResolutionLock.WaitAsync().ConfigureAwait(false);
+
+            var errors = new List<Exception>();
+
             try
             {
                 provider = provider ?? _provider;
@@ -93,6 +96,7 @@ namespace CyberPatriot.DiscordBot.Services
                         var candidateBackend = await candidateBackendTaskFactory(provider).ConfigureAwait(false);
                         if (candidateBackend == null)
                         {
+                            errors.Add(new NullReferenceException("Candidate backend task factory returned null."));
                             continue;
                         }
                         // try getting a summary to "test" the backend
@@ -100,6 +104,7 @@ namespace CyberPatriot.DiscordBot.Services
                         if (!IsSummaryValid(returnedSummary))
                         {
                             // invalid summary
+                            errors.Add(new Exception("Invalid summary."));
                             continue;
                         }
                         else
@@ -112,9 +117,10 @@ namespace CyberPatriot.DiscordBot.Services
                             break;
                         }
                     }
-                    catch
+                    catch (Exception e)
                     {
                         // invalid summary, or failed constructor
+                        errors.Add(e);
                         continue;
                     }
                 }
@@ -125,7 +131,7 @@ namespace CyberPatriot.DiscordBot.Services
                     {
                         // we searched all possible backends
                         await _log.LogApplicationMessageAsync(Discord.LogSeverity.Error, "Could not find an IScoreRetrievalService for fallback, continuing with invalid service.", source: nameof(FallbackScoreRetrievalService)).ConfigureAwait(false);
-                        throw new InvalidOperationException("No valid IScoreRetrievalService found.");
+                        throw new AggregateException("No valid IScoreRetrievalService found.", errors);
                     }
                     else
                     {

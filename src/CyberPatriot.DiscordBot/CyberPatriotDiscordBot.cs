@@ -99,7 +99,7 @@ namespace CyberPatriot.DiscordBot
                         new JsonScoreRetrievalService(await System.IO.File.ReadAllTextAsync(innerProv.GetRequiredService<IConfiguration>()["jsonSource"]).ConfigureAwait(false)),
                     async innerProv => await new SpreadsheetScoreRetrievalService().InitializeFromConfiguredCsvAsync(innerProv).ConfigureAwait(false)
                 ))
-                .AddSingleton<ICompetitionRoundLogicService, CyberPatriotTenCompetitionRoundLogicService>()
+                .AddSingleton<ICompetitionRoundLogicService, CyberPatriotElevenCompetitionRoundLogicService>()
                 .AddSingleton<IExternalCategoryProviderService, FileBackedCategoryProviderService>()
                 .AddSingleton<ScoreboardDownloadService>()
                 .AddSingleton<FlagProviderService>()
