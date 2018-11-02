@@ -62,6 +62,12 @@ namespace CyberPatriot.DiscordBot
                 return Task.CompletedTask;
             };
 
+            _client.Disconnected += (e) =>
+            {
+                Environment.Exit(e == null ? 0 : 1);
+                return Task.CompletedTask;
+            };
+
             await _client.LoginAsync(Discord.TokenType.Bot, _config["token"]);
             await _client.StartAsync();
 
