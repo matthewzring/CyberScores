@@ -64,6 +64,11 @@ namespace CyberPatriot.DiscordBot
 
             _client.Disconnected += (e) =>
             {
+                if (e != null)
+                {
+                    Console.Error.Write("{Disconnecting due to following error:} ");
+                    Console.Error.WriteLine(e.ToString());
+                }
                 Environment.Exit(e == null ? 0 : 1);
                 return Task.CompletedTask;
             };
