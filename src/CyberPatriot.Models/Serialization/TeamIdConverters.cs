@@ -27,6 +27,12 @@ namespace CyberPatriot.Models.Serialization
     public class TeamIdTypeConverter : TypeConverter
     {
         public const string DefaultCompetition = "11";
+        private static readonly int DefaultCompetitionNumericIdLength;
+
+        static TeamIdTypeConverter()
+        {
+            CompetitionIdentificationValidator.TryGetTeamIdNumberLength(DefaultCompetition, out DefaultCompetitionNumericIdLength);
+        }
 
         public override bool CanConvertFrom(ITypeDescriptorContext context, Type source)
         {
@@ -56,8 +62,9 @@ namespace CyberPatriot.Models.Serialization
                     {
                         return val;
                     }
-                    else if (s.Length == 4 && int.TryParse(s, out int teamNumber) && teamNumber >= 0)
+                    else if (s.Length == DefaultCompetitionNumericIdLength && int.TryParse(s, out int teamNumber))
                     {
+                        // ctor does bounds checking
                         return new TeamId(DefaultCompetition, teamNumber);
                     }
                     break;
