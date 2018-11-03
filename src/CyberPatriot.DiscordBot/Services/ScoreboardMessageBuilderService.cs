@@ -242,7 +242,7 @@ namespace CyberPatriot.DiscordBot.Services
             {
                 int myIndexInPeerList = rankingData.PeerIndex;
 
-                double rawPercentile = 1.0 - (((double)myIndexInPeerList) / rankingData.PeerCount);
+                double rawPercentile = 1.0 - ((myIndexInPeerList + 1.0) / rankingData.PeerCount);
                 int multipliedPercentile = (int)Math.Round(rawPercentile * 1000);
                 int intPart = multipliedPercentile / 10;
                 int floatPart = multipliedPercentile % 10;
