@@ -180,7 +180,7 @@ namespace CyberPatriot.DiscordBot.Services
             summary.TeamId = TeamId.Parse(dataEntries[0]);
             // [not in data, matched from categoryProvider] all service category
             summary.Category = _categoryProvider?.GetCategory(summary.TeamId);
-            // tier and division
+            // tier and division (headers are wrong on CCS)
             if (Utilities.TryParseEnumSpaceless<Division>(dataEntries[1], out Division division))
             {
                 summary.Division = division;
@@ -192,9 +192,9 @@ namespace CyberPatriot.DiscordBot.Services
             }
             // number of images
             summary.ImageCount = int.Parse(dataEntries[4].Trim());
-            // times
-            summary.PlayTime = Utilities.ParseHourMinuteTimespan(dataEntries[5]);
-            details.ScoreTime = Utilities.ParseHourMinuteTimespan(dataEntries[6]);
+            // times (headers are wrong on CCS)
+            summary.PlayTime = Utilities.ParseHourMinuteTimespan(dataEntries[6]);
+            details.ScoreTime = Utilities.ParseHourMinuteTimespan(dataEntries[5]);
             // warnings and total score
             string warnStr = dataEntries[7];
             summary.Warnings |= warnStr.Contains("T") ? ScoreWarnings.TimeOver : 0;
