@@ -16,6 +16,15 @@ namespace CyberPatriot.DiscordBot.Services
         public LogService Logger { get; protected set; }
         protected IServiceProvider Provider { get; set; }
 
+        /// <summary>
+        /// The minimum difference in time between two team downloads to consider the older one eligible to be considered as cacheably identical to the newer one.
+        /// </summary>
+        /// <remarks>
+        /// The CCS details pages only update every few minutes. If [this field] amount of time has not passed, 
+        /// it is not likely enough that an old download and a new download are identical due to lack of upstream updates; it is too likely that it is merely due to CCS's update interval.
+        /// </remarks>
+        private static readonly TimeSpan MinimumCacheableInterval = TimeSpan.FromMinutes(15);
+
         public ScoreboardDownloadService(IScoreRetrievalService scoreRetriever, LogService logger)
         {
             ScoreService = scoreRetriever;
@@ -177,7 +186,6 @@ namespace CyberPatriot.DiscordBot.Services
                     // be lazy, don't redownload if we don't have to
 
                     // populate the details dictionary with existing teams that haven't been updated in a while
-                    var minCacheableInterval = TimeSpan.FromMinutes(30);
                     foreach (var teamDetail in previousScoreStatus.Values)
                     {
                         if (teamDetail == null)
@@ -192,7 +200,7 @@ namespace CyberPatriot.DiscordBot.Services
                             teamDetails[teamDetail.TeamId] = teamDetail;
                             continue;
                         }
-                        else if (scoreSummary.SnapshotTimestamp - teamDetail.SnapshotTimestamp < minCacheableInterval)
+                        else if (scoreSummary.SnapshotTimestamp - teamDetail.SnapshotTimestamp < MinimumCacheableInterval)
                         {
                             // if we're below minCacheableInterval, then we don't trust the CCS scoreboard to update in time
                             // we'll use a new download to be sure
