@@ -26,7 +26,7 @@ namespace CyberPatriot.Models.Serialization
 
     public class TeamIdTypeConverter : TypeConverter
     {
-        public const int DefaultSeason = 11;
+        public const string DefaultCompetition = "11";
 
         public override bool CanConvertFrom(ITypeDescriptorContext context, Type source)
         {
@@ -58,15 +58,15 @@ namespace CyberPatriot.Models.Serialization
                     }
                     else if (s.Length == 4 && int.TryParse(s, out int teamNumber) && teamNumber >= 0)
                     {
-                        return new TeamId(DefaultSeason, teamNumber);
+                        return new TeamId(DefaultCompetition, teamNumber);
                     }
                     break;
                 case short tempShort:
                     // ctor does bounds checking
-                    return new TeamId(DefaultSeason, tempShort);
+                    return new TeamId(DefaultCompetition, tempShort);
                 case int i:
                     // ctor does bounds checking
-                    return new TeamId(DefaultSeason, i);
+                    return new TeamId(DefaultCompetition, i);
                 case TeamId t:
                     return t.ToString();
             }
@@ -83,14 +83,14 @@ namespace CyberPatriot.Models.Serialization
                     if (destinationType == typeof(TeamId))
                     {
                         // ctor does bounds checking
-                        return new TeamId(DefaultSeason, tempShort);
+                        return new TeamId(DefaultCompetition, tempShort);
                     }
                     break;
                 case int i:
                     if (destinationType == typeof(TeamId))
                     {
                         // ctor does bounds checking
-                        return new TeamId(DefaultSeason, i);
+                        return new TeamId(DefaultCompetition, i);
                     }
                     break;
                 case string s:

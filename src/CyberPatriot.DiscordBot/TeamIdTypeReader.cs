@@ -19,7 +19,7 @@ namespace CyberPatriot.DiscordBot
             }
             else if (input != null && input.Length == 4 && int.TryParse(input, out int teamNumber) && teamNumber >= 0)
             {
-                return Task.FromResult(TypeReaderResult.FromSuccess(new TeamId(TeamIdTypeConverter.DefaultSeason, teamNumber)));
+                return Task.FromResult(TypeReaderResult.FromSuccess(new TeamId(TeamIdTypeConverter.DefaultCompetition, teamNumber)));
             }
 
             return Task.FromResult(TypeReaderResult.FromError(CommandError.ParseFailed, "Input could not be parsed as a team ID."));
