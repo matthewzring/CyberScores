@@ -55,6 +55,22 @@ namespace CyberPatriot.DiscordBot
                            int.Parse(hhmmSplit[1]),         // minutes
                            0);                              // seconds
         }
+
+        /// <summary>
+        /// Converts this <see cref="TimeSpan"/> into a string with its total hours and total minutes.
+        /// Even if it is greater than 24 hours in duration, hours and minutes will still be displayed which total to the entire timespan.
+        /// </summary>
+        /// <param name="timespan"></param>
+        /// <param name="minDigits">The minimum number of hours digits to display.</param>
+        /// <returns></returns>
+        public static string ToHoursMinutesString(this TimeSpan timespan, int minDigits = 2)
+        {
+            long hourTicks = timespan.Ticks - (timespan.Minutes * TimeSpan.TicksPerMinute + timespan.Seconds * TimeSpan.TicksPerSecond + timespan.Milliseconds * TimeSpan.TicksPerMillisecond);
+            int hours = (int)(hourTicks / TimeSpan.TicksPerHour);
+
+            return $"{hours.ToString(new string('0', minDigits))}:{timespan.Minutes:00}";
+        }
+
         public static int Clamp(this int i, int lowerInclusive, int upperExclusive)
         {
             if (i < lowerInclusive)

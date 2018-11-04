@@ -90,7 +90,7 @@ namespace CyberPatriot.DiscordBot.Services
 
             // FIXME time display logic according to FormattingOptions
             scoreboard.TeamList.Where(predicate).Skip(pageNumber * pageSize).Take(pageSize)
-                .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1,-7}{2,4}{6,6}{7,10}{3,16}{4,7}{5,4}", i + 1 + (pageNumber * pageSize), team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : string.Format("{0:hh\\:mm}", team.PlayTime), team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
+                .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1,-7}{2,4}{6,6}{7,10}{3,16}{4,7}{5,4}", i + 1 + (pageNumber * pageSize), team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : team.PlayTime.ToHoursMinutesString(), team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
                 .Last().AppendLine("```");
             if (scoreboard.OriginUri != null)
             {
@@ -114,25 +114,25 @@ namespace CyberPatriot.DiscordBot.Services
             if (pos < nearbyTeams + topTeams + 1)
             {
                 peerTeams.Take(nearbyTeams + pos + 1)
-                          .Select((team, i) => stringBuilder.AppendFormat("{8}{0,-5}{1,-7}{2,4}{6,6}{7,10}{3,16}{4,7}{5,4}", i + 1, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : string.Format("{0:hh\\:mm}", team.PlayTime), team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier, team.TeamId == teamId ? ">" : "#").AppendLine())
+                          .Select((team, i) => stringBuilder.AppendFormat("{8}{0,-5}{1,-7}{2,4}{6,6}{7,10}{3,16}{4,7}{5,4}", i + 1, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : team.PlayTime.ToHoursMinutesString(), team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier, team.TeamId == teamId ? ">" : "#").AppendLine())
                           .Consume();
             }
             else
             {
                 peerTeams.Take(topTeams)
-                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1,-7}{2,4}{6,6}{7,10}{3,16}{4,7}{5,4}", i + 1, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : string.Format("{0:hh\\:mm}", team.PlayTime), team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
+                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1,-7}{2,4}{6,6}{7,10}{3,16}{4,7}{5,4}", i + 1, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : team.PlayTime.ToHoursMinutesString(), team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
                           .Consume();
                 stringBuilder.AppendLine("...");
                 peerTeams.Skip(pos - nearbyTeams)
                           .Take(nearbyTeams)
-                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1,-7}{2,4}{6,6}{7,10}{3,16}{4,7}{5,4}", i + pos - nearbyTeams + 1, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : string.Format("{0:hh\\:mm}", team.PlayTime), team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
+                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1,-7}{2,4}{6,6}{7,10}{3,16}{4,7}{5,4}", i + pos - nearbyTeams + 1, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : team.PlayTime.ToHoursMinutesString(), team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
                           .Consume();
                 ScoreboardSummaryEntry thisTeamDetails = peerTeams.Single(t => t.TeamId == teamId);
-                stringBuilder.AppendFormat(">{0,-5}{1,-7}{2,4}{6,6}{7,10}{3,16}{4,7}{5,4}", pos + 1, thisTeamDetails.TeamId, thisTeamDetails.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(thisTeamDetails.TotalScore), thisTeamDetails.Advancement.HasValue ? thisTeamDetails.Advancement.Value.ToConciseString() : string.Format("{0:hh\\:mm}", thisTeamDetails.PlayTime), thisTeamDetails.Warnings.ToConciseString(), thisTeamDetails.Division.ToConciseString(), thisTeamDetails.Tier).AppendLine();
+                stringBuilder.AppendFormat(">{0,-5}{1,-7}{2,4}{6,6}{7,10}{3,16}{4,7}{5,4}", pos + 1, thisTeamDetails.TeamId, thisTeamDetails.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(thisTeamDetails.TotalScore), thisTeamDetails.Advancement.HasValue ? thisTeamDetails.Advancement.Value.ToConciseString() : thisTeamDetails.PlayTime.ToHoursMinutesString(), thisTeamDetails.Warnings.ToConciseString(), thisTeamDetails.Division.ToConciseString(), thisTeamDetails.Tier).AppendLine();
                 // since pos and i are both zero-based, i + pos + 2 returns correct team rank for teams after given team
                 peerTeams.Skip(pos + 1)
                           .Take(nearbyTeams)
-                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1,-7}{2,4}{6,6}{7,10}{3,16}{4,7}{5,4}", i + pos + 2, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : string.Format("{0:hh\\:mm}", team.PlayTime), team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
+                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1,-7}{2,4}{6,6}{7,10}{3,16}{4,7}{5,4}", i + pos + 2, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : team.PlayTime.ToHoursMinutesString(), team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
                           .Consume();
             }
 
@@ -218,14 +218,14 @@ namespace CyberPatriot.DiscordBot.Services
                     warningAppendage += multiimage ? multiImageStr : overTimeStr;
                 }
                 string vulnsString = ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.VulnerabilityDisplay, item.VulnerabilitiesFound, item.VulnerabilitiesRemaining + item.VulnerabilitiesFound) ? $" ({item.VulnerabilitiesFound}/{item.VulnerabilitiesFound + item.VulnerabilitiesRemaining} vulns{penaltyAppendage})" : string.Empty;
-                string playTimeStr = ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.TimeDisplay, item.PlayTime) ? $" in {item.PlayTime:hh\\:mm}" : string.Empty;
+                string playTimeStr = ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.TimeDisplay, item.PlayTime) ? $" in {item.PlayTime.ToHoursMinutesString()}" : string.Empty;
                 builder.AddField('`' + item.ImageName + $": {ScoreRetrieverMetadata.FormattingOptions.FormatScore(item.Score)}pts`", $"{ScoreRetrieverMetadata.FormattingOptions.FormatScore(item.Score)} points{vulnsString}{playTimeStr}{warningAppendage}");
             }
 
             string totalScoreTimeAppendage = string.Empty;
             if (ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.TimeDisplay, teamScore.Summary.PlayTime))
             {
-                totalScoreTimeAppendage = $" in {teamScore.Summary.PlayTime:hh\\:mm}";
+                totalScoreTimeAppendage = $" in {teamScore.Summary.PlayTime.ToHoursMinutesString()}";
             }
 
             string totalPointsAppendage = string.Empty;
@@ -314,7 +314,7 @@ namespace CyberPatriot.DiscordBot.Services
             TimeSpan graphPlayTime = teamScore.ImageScoresOverTime.Values.Select(x => x.Keys.Last()).Max() - teamScore.ImageScoresOverTime.Values.Select(x => x.Keys.First()).Min();
             long graphPlayTimeTicks = graphPlayTime.Ticks;
 
-            string axisLabels = $"|0:00|{new TimeSpan(graphPlayTimeTicks / 6):h\\:mm}|{new TimeSpan(graphPlayTimeTicks / 3):h\\:mm}|{new TimeSpan(graphPlayTimeTicks / 2):h\\:mm}|{new TimeSpan(graphPlayTimeTicks / 3 * 2):h\\:mm}|{new TimeSpan(graphPlayTimeTicks / 6 * 5):h\\:mm}|{graphPlayTime:h\\:mm}";
+            string axisLabels = $"|0:00|{new TimeSpan(graphPlayTimeTicks / 6).ToHoursMinutesString(1)}|{new TimeSpan(graphPlayTimeTicks / 3).ToHoursMinutesString(1)}|{new TimeSpan(graphPlayTimeTicks / 2).ToHoursMinutesString(1)}|{new TimeSpan(graphPlayTimeTicks / 3 * 2).ToHoursMinutesString(1)}|{new TimeSpan(graphPlayTimeTicks / 6 * 5).ToHoursMinutesString(1)}|{graphPlayTime.ToHoursMinutesString(1)}";
 
             string queryString = $"cht=lc&chco=F44336,03A9F4,4CAF50,FFEB3B&chf=bg,s,32363B&chdls=FFFFFF,16&chxs=1,FFFFFF&chs=900x325&chd=t:{WebUtility.UrlEncode(data)}&chxt=x,y&chxl=0:{WebUtility.UrlEncode(axisLabels)}&chdl={WebUtility.UrlEncode(images)}&chxs=1,FFFFFF,12,1,lt,FFFFFF%7C0,FFFFFF,12,0,lt,FFFFFF&chtt=Team+{WebUtility.UrlEncode(teamScore.TeamId.ToString())}&chts=FFFFFF,20&chls=3%7C3%7C3%7C3&chg=16.66666,10&chds={min},{max}&chxr=1,{min},{max}";
 
