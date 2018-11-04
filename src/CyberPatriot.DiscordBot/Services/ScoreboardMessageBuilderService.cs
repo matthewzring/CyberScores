@@ -203,11 +203,11 @@ namespace CyberPatriot.DiscordBot.Services
                 bool overtime = (item.Warnings & ScoreWarnings.TimeOver) == ScoreWarnings.TimeOver;
                 bool multiimage = (item.Warnings & ScoreWarnings.MultiImage) == ScoreWarnings.MultiImage;
                 string warningAppendage = string.Empty;
-                const string multiImageStr = "**M**ulti-image";
+                const string multiImageStr = "**M**ulti-instance";
                 const string overTimeStr = "**T**ime";
                 if (overtime || multiimage)
                 {
-                    warningAppendage = "     Penalties: ";
+                    warningAppendage = "\nWarnings: ";
                 }
                 if (overtime && multiimage)
                 {
@@ -237,6 +237,32 @@ namespace CyberPatriot.DiscordBot.Services
             }
 
             builder.AddInlineField("Total Score", $"{ScoreRetrieverMetadata.FormattingOptions.FormatScore(teamScore.Summary.TotalScore)} points" + totalScoreTimeAppendage + totalPointsAppendage);
+
+            if (teamScore.Summary.Warnings != 0)
+            {
+                string warningsOverview = null;
+                if ((teamScore.Summary.Warnings & ScoreWarnings.MultiImage) == ScoreWarnings.MultiImage)
+                {
+                    warningsOverview = "Multiple Instances";
+                }
+
+                if ((teamScore.Summary.Warnings & ScoreWarnings.TimeOver) == ScoreWarnings.TimeOver)
+                {
+                    if (warningsOverview == null)
+                    {
+                        warningsOverview = "";
+                    }
+                    else
+                    {
+                        warningsOverview += "\n";
+                    }
+
+                    warningsOverview += "Time Limit Exceeded";
+                }
+
+                builder.AddInlineField("Warnings", warningsOverview);
+            }
+
             if (rankingData != null)
             {
                 int myIndexInPeerList = rankingData.PeerIndex;
