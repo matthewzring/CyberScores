@@ -310,7 +310,11 @@ namespace CyberPatriot.DiscordBot.Services
             var data = string.Join("|", imageScoreStrings.Values);
             var images = string.Join("|", imageScoreStrings.Keys);
 
-            string axisLabels = $"|0:00|{new TimeSpan(teamScore.Summary.PlayTime.Ticks / 6):h\\:mm}|{new TimeSpan(teamScore.Summary.PlayTime.Ticks / 3):h\\:mm}|{new TimeSpan(teamScore.Summary.PlayTime.Ticks / 2):h\\:mm}|{new TimeSpan(teamScore.Summary.PlayTime.Ticks / 3 * 2):h\\:mm}|{new TimeSpan(teamScore.Summary.PlayTime.Ticks / 6 * 5):h\\:mm}|{teamScore.Summary.PlayTime:h\\:mm}";
+            // last scoring tick timestamp - first scoring tick timestamp
+            TimeSpan graphPlayTime = teamScore.ImageScoresOverTime.Values.Select(x => x.Keys.Last()).Max() - teamScore.ImageScoresOverTime.Values.Select(x => x.Keys.First()).Min();
+            long graphPlayTimeTicks = graphPlayTime.Ticks;
+
+            string axisLabels = $"|0:00|{new TimeSpan(graphPlayTimeTicks / 6):h\\:mm}|{new TimeSpan(graphPlayTimeTicks / 3):h\\:mm}|{new TimeSpan(graphPlayTimeTicks / 2):h\\:mm}|{new TimeSpan(graphPlayTimeTicks / 3 * 2):h\\:mm}|{new TimeSpan(graphPlayTimeTicks / 6 * 5):h\\:mm}|{graphPlayTime:h\\:mm}";
 
             string queryString = $"cht=lc&chco=F44336,03A9F4,4CAF50,FFEB3B&chf=bg,s,32363B&chdls=FFFFFF,16&chxs=1,FFFFFF&chs=900x325&chd=t:{WebUtility.UrlEncode(data)}&chxt=x,y&chxl=0:{WebUtility.UrlEncode(axisLabels)}&chdl={WebUtility.UrlEncode(images)}&chxs=1,FFFFFF,12,1,lt,FFFFFF%7C0,FFFFFF,12,0,lt,FFFFFF&chtt=Team+{WebUtility.UrlEncode(teamScore.TeamId.ToString())}&chts=FFFFFF,20&chls=3%7C3%7C3%7C3&chg=16.66666,10&chds={min},{max}&chxr=1,{min},{max}";
 
