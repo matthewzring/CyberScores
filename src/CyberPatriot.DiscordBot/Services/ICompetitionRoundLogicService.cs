@@ -18,11 +18,15 @@ namespace CyberPatriot.DiscordBot.Services
         string GetEffectiveDivisionDescriptor(ScoreboardSummaryEntry team);
 
         TeamDetailRankingInformation GetRankingInformation(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamInfo);
+
+        int? GetCiscoPointsPossible(CompetitionRound round);
     }
 
     public abstract class CyberPatriotCompetitionRoundLogicService : ICompetitionRoundLogicService
     {
         public virtual string GetEffectiveDivisionDescriptor(ScoreboardSummaryEntry team) => team.Category ?? team.Division.ToStringCamelCaseToSpace();
+
+        public virtual int? GetCiscoPointsPossible(CompetitionRound round) => null;
 
         public abstract CompetitionRound InferRound(DateTimeOffset date);
 

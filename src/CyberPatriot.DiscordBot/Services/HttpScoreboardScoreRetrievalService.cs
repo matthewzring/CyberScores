@@ -146,6 +146,8 @@ namespace CyberPatriot.DiscordBot.Services
                 return doc;
             });
 
+        private const int DefaultSummaryEntryColumnCount = 8;
+
         protected virtual ScoreboardSummaryEntry ParseSummaryEntry(string[] dataEntries)
         {
             ScoreboardSummaryEntry summary = new ScoreboardSummaryEntry();
@@ -165,6 +167,17 @@ namespace CyberPatriot.DiscordBot.Services
             summary.TotalScore = int.Parse(dataEntries[7]);
             summary.Warnings |= dataEntries[6].Contains("T") ? ScoreWarnings.TimeOver : 0;
             summary.Warnings |= dataEntries[6].Contains("M") ? ScoreWarnings.MultiImage : 0;
+
+            // CCS+Cisco
+            if (dataEntries.Length > DefaultSummaryEntryColumnCount)
+            {
+                int penalty = int.Parse(dataEntries[8]);
+                int cisco = int.Parse(dataEntries[9]);
+                int total = int.Parse(dataEntries[10]);
+
+                summary.TotalScore = total;
+            }
+
             return summary;
         }
 
@@ -172,6 +185,7 @@ namespace CyberPatriot.DiscordBot.Services
         /// Parses a detailed summary entry into a scoreboard details object.
         /// </summary>
         /// <param name="dataEntries">The data.</param>
+        // FIXME doesn't handle CCS+Cisco case well (or at all)
         protected virtual void ParseDetailedSummaryEntry(ScoreboardDetails details, string[] dataEntries)
         {
             var summary = new ScoreboardSummaryEntry();
@@ -207,11 +221,17 @@ namespace CyberPatriot.DiscordBot.Services
             var timestampHeader = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/h2[2]")?.InnerText;
             processTimestamp = timestampHeader == null ? DateTimeOffset.UtcNow : DateTimeOffset.Parse(timestampHeader.Replace("Generated At: ", string.Empty).Replace("UTC", "+0:00"));
 
-            return doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/table").ChildNodes
-                .Where(n => n.Name != "#text")
+            var children = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/table").ChildNodes
+                .Where(n => n.Name != "#text");
+
+            int rowLen = children.First().ChildNodes.Count;
+
+            return children
                 .Skip(1) // header
                 .Select(n => n.ChildNodes.Select(c => c.InnerText.Trim()).ToArray())
-                .Select(ParseSummaryEntry);
+                .Select(ParseSummaryEntry)
+                .Conditionally(rowLen > DefaultSummaryEntryColumnCount, // proxy for "CCS+Cisco, which is sorted wrong"
+                    seq => seq.OrderByDescending(x => x.TotalScore).ThenBy(x => x.PlayTime)); // playTime as a loose proxy for scoretime
         }
 
         public async Task<ScoreboardDetails> GetDetailsAsync(TeamId team)
@@ -249,6 +269,8 @@ namespace CyberPatriot.DiscordBot.Services
             doc.LoadHtml(detailsPage);
             var timestampHeader = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/h2[2]")?.InnerText;
             retVal.SnapshotTimestamp = timestampHeader == null ? DateTimeOffset.UtcNow : DateTimeOffset.Parse(timestampHeader.Replace("Generated At: ", string.Empty).Replace("UTC", "+0:00"));
+            var summaryHeaderRow = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/table[1]/tr[1]");
+            var summaryHeaderRowData = summaryHeaderRow.ChildNodes.Select(x => x.InnerText).ToArray();
             var summaryRow = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/table[1]/tr[2]");
             var summaryRowData = summaryRow.ChildNodes.Select(x => x.InnerText).ToArray();
             ParseDetailedSummaryEntry(retVal, summaryRowData);
@@ -270,6 +292,45 @@ namespace CyberPatriot.DiscordBot.Services
                 image.Warnings |= dataEntries[6].Contains("T") ? ScoreWarnings.TimeOver : 0;
                 image.Warnings |= dataEntries[6].Contains("M") ? ScoreWarnings.MultiImage : 0;
                 retVal.Images.Add(image);
+            }
+
+            // reparse summary table (CCS+Cisco case)
+            // pseudoimages: Cisco, penalty
+            int ciscoIndex = summaryHeaderRowData.IndexOfWhere(x => x.ToLower().Contains("cisco"));
+            int penaltyIndex = summaryHeaderRowData.IndexOfWhere(x => x.ToLower().Contains("penalty"));
+            int totalIndex = summaryHeaderRowData.IndexOfWhere(x => x.ToLower().Contains("total"));
+
+            if (totalIndex != -1)
+            {
+                retVal.Summary.TotalScore = int.Parse(summaryRowData[totalIndex]);
+            }
+
+            ScoreboardImageDetails CreatePseudoImage(string name, int score, int possible)
+            {
+                var image = new ScoreboardImageDetails();
+                image.PointsPossible = possible;
+                image.ImageName = name;
+                image.Score = score;
+
+                image.VulnerabilitiesFound = 0;
+                image.VulnerabilitiesRemaining = 0;
+                image.Penalties = 0;
+                image.Warnings = 0;
+                image.PlayTime = TimeSpan.Zero;
+
+                return image;
+            }
+
+            if (ciscoIndex != -1)
+            {
+                // pseudoimage
+                // FIXME shouldn't display vulns and penalties and time
+                retVal.Images.Add(CreatePseudoImage("Cisco", int.Parse(summaryRowData[ciscoIndex]), Round == 0 ? -1 : (_roundInferenceService.GetCiscoPointsPossible(Round) ?? -1)));
+            }
+
+            if (penaltyIndex != -1)
+            {
+                retVal.Images.Add(CreatePseudoImage("Penalties", int.Parse(summaryRowData[penaltyIndex]), 0));
             }
 
             // score graph
