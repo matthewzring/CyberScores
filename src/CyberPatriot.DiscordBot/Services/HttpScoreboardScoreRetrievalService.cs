@@ -108,11 +108,7 @@ namespace CyberPatriot.DiscordBot.Services
 
                 queryList.Add("tier=" + WebUtility.UrlEncode(tierFilter.Value.ToString()));
             }
-
-            // TODO only add this on CCS+Cisco case
-            // that said it appears this parameter keeps the tiebreaker sorting in place, and has no consequence if it is jibberish
-            queryList.Add("sort=Total");
-
+            
             builder.Query = string.Join("&", queryList);
             return builder.Uri;
         }
