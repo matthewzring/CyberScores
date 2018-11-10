@@ -11,8 +11,17 @@ namespace CyberPatriot.Models
         public readonly ImmutableArray<string> ComponentNames;
         public readonly ImmutableArray<int> ComponentScores;
 
-        public int Count => ComponentNames.Length;
+        public int Count => ComponentNames.IsDefaultOrEmpty ? 0 : ComponentNames.Length;
 
+        public static readonly AuxiliaryScoreComponents Empty = new AuxiliaryScoreComponents(ImmutableArray<string>.Empty, ImmutableArray<int>.Empty);
+
+        private AuxiliaryScoreComponents(ImmutableArray<string> componentNames, ImmutableArray<int> componentScores)
+        {
+            ComponentNames = componentNames;
+            ComponentScores = componentScores;
+        }
+
+        [Newtonsoft.Json.JsonConstructor]
         public AuxiliaryScoreComponents(string[] componentNames, int[] componentScores)
         {
             if ((componentNames ?? throw new ArgumentNullException(nameof(componentNames))).Length != (componentScores ?? throw new ArgumentNullException(nameof(componentScores))).Length)

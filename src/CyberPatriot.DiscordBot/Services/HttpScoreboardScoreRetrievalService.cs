@@ -171,10 +171,13 @@ namespace CyberPatriot.DiscordBot.Services
             // CCS+Cisco
             if (dataEntries.Length > DefaultSummaryEntryColumnCount)
             {
+                int ccs = int.Parse(dataEntries[7]);
                 int penalty = int.Parse(dataEntries[8]);
                 int cisco = int.Parse(dataEntries[9]);
-                int total = int.Parse(dataEntries[10]);
 
+                summary.AuxiliaryScoreComponents = new AuxiliaryScoreComponents(new string[] { "CCS", "Penalties", "Cisco" }, new int[] { ccs, penalty, cisco });
+
+                int total = int.Parse(dataEntries[10]);
                 summary.TotalScore = total;
             }
 
@@ -231,7 +234,7 @@ namespace CyberPatriot.DiscordBot.Services
                 .Select(n => n.ChildNodes.Select(c => c.InnerText.Trim()).ToArray())
                 .Select(ParseSummaryEntry)
                 .Conditionally(rowLen > DefaultSummaryEntryColumnCount, // proxy for "CCS+Cisco, which is sorted wrong"
-                    seq => seq.OrderByDescending(x => x.TotalScore)); // playTime as a loose proxy for scoretime
+                    seq => seq.OrderByDescending(x => x.TotalScore).ThenByDescending(x => x.AuxiliaryScoreComponents.Count > 0 ? 0 : x.AuxiliaryScoreComponents.ComponentScores[0]));
         }
 
         public async Task<ScoreboardDetails> GetDetailsAsync(TeamId team)
