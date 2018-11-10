@@ -19,14 +19,23 @@ namespace CyberPatriot.DiscordBot.Services
 
         TeamDetailRankingInformation GetRankingInformation(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamInfo);
 
-        int? GetCiscoPointsPossible(CompetitionRound round);
+        /// <summary>
+        /// Gets the number of points possible for the Cisco component of competition in the given round.
+        /// The points returned should be in the same scale as CCS points.
+        /// </summary>
+        /// <param name="round">The round whose competition structure is being queried.</param>
+        /// <param name="division">The division of competition.</param>
+        /// <param name="tier">The tier of competition.</param>
+        /// <exception cref="ArgumentException">Thrown if the Cisco worth for the given round is unknown.</exception>
+        /// <returns>The number of Cisco points possible in the given round for the given division and tier.</returns>
+        int GetCiscoPointsPossible(CompetitionRound round, Division division, Tier? tier);
     }
 
     public abstract class CyberPatriotCompetitionRoundLogicService : ICompetitionRoundLogicService
     {
         public virtual string GetEffectiveDivisionDescriptor(ScoreboardSummaryEntry team) => team.Category ?? team.Division.ToStringCamelCaseToSpace();
 
-        public virtual int? GetCiscoPointsPossible(CompetitionRound round) => null;
+        public abstract int GetCiscoPointsPossible(CompetitionRound round, Division division, Tier? tier);
 
         public abstract CompetitionRound InferRound(DateTimeOffset date);
 
@@ -147,6 +156,11 @@ namespace CyberPatriot.DiscordBot.Services
             // they get treated as not-my-problem, that is, not part of my category
             return divisionScoreboard.TeamList.Where(t => t.Category == teamDetails.Category).ToIList();
         }
+
+        public override int GetCiscoPointsPossible(CompetitionRound round, Division division, Tier? tier)
+        {
+            throw new NotImplementedException("CP-X Cisco totals are not implemented.");
+        }
     }
 
     // extend CP-X because advancement rules are supposed to be similar; also at time of authorship round dates were not released
@@ -185,6 +199,24 @@ namespace CyberPatriot.DiscordBot.Services
 
             // no round predicted on the given date
             return 0;
+        }
+
+        public override int GetCiscoPointsPossible(CompetitionRound round, Division division, Tier? tier)
+        {
+            // http://www.uscyberpatriot.org/competition/competition-challenges-by-round
+            switch (round)
+            {
+                case CompetitionRound.Round1:
+                    return division == Division.MiddleSchool ? 0 : 20;
+                case CompetitionRound.Round2:
+                    return division == Division.MiddleSchool ? 0 : 30;
+                case CompetitionRound.Round3:
+                    return division == Division.MiddleSchool ? 30 : 100;
+                case CompetitionRound.Semifinals:
+                    return division == Division.MiddleSchool ? 30 : 100;
+            }
+
+            throw new ArgumentException("Unknown round.");
         }
     }
 }

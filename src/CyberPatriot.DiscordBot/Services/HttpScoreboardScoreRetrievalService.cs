@@ -171,7 +171,7 @@ namespace CyberPatriot.DiscordBot.Services
             summary.TotalScore = int.Parse(dataEntries.Last());
             summary.Warnings |= dataEntries[6].Contains("T") ? ScoreWarnings.TimeOver : 0;
             summary.Warnings |= dataEntries[6].Contains("M") ? ScoreWarnings.MultiImage : 0;
-            
+
             return summary;
         }
 
@@ -285,7 +285,7 @@ namespace CyberPatriot.DiscordBot.Services
             // pseudoimages: Cisco, penalty
             int ciscoIndex = summaryHeaderRowData.IndexOfWhere(x => x.ToLower().Contains("cisco"));
             int penaltyIndex = summaryHeaderRowData.IndexOfWhere(x => x.ToLower().Contains("penalty"));
-            
+
             ScoreboardImageDetails CreatePseudoImage(string name, int score, int possible)
             {
                 var image = new ScoreboardImageDetails();
@@ -306,7 +306,18 @@ namespace CyberPatriot.DiscordBot.Services
             {
                 // pseudoimage
                 // FIXME shouldn't display vulns and penalties and time
-                retVal.Images.Add(CreatePseudoImage("Cisco", int.Parse(summaryRowData[ciscoIndex]), Round == 0 ? -1 : (_roundInferenceService.GetCiscoPointsPossible(Round) ?? -1)));
+
+                int ciscoDenom = -1;
+                try
+                {
+                    ciscoDenom = _roundInferenceService.GetCiscoPointsPossible(Round, retVal.Summary.Division, retVal.Summary.Tier);
+                }
+                catch
+                {
+                    // probably because round 0; unknown total
+                }
+
+                retVal.Images.Add(CreatePseudoImage("Cisco", int.Parse(summaryRowData[ciscoIndex]), ciscoDenom));
             }
 
             if (penaltyIndex != -1)
