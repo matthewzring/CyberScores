@@ -317,12 +317,12 @@ namespace CyberPatriot.DiscordBot.Services
                     // probably because round 0; unknown total
                 }
 
-                retVal.Images.Add(CreatePseudoImage("Cisco", int.Parse(summaryRowData[ciscoIndex]), ciscoDenom));
+                retVal.Images.Add(CreatePseudoImage("Cisco (Total)", int.Parse(summaryRowData[ciscoIndex]), ciscoDenom));
             }
 
             if (penaltyIndex != -1)
             {
-                retVal.Images.Add(CreatePseudoImage("Penalties", int.Parse(summaryRowData[penaltyIndex]), 0));
+                retVal.Images.Add(CreatePseudoImage("Administrative Penalties", int.Parse(summaryRowData[penaltyIndex]), 0));
             }
 
             // score graph
