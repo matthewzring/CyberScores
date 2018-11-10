@@ -151,22 +151,22 @@ namespace CyberPatriot.DiscordBot.Services
         protected virtual ScoreboardSummaryEntry ParseSummaryEntry(string[] dataEntries)
         {
             ScoreboardSummaryEntry summary = new ScoreboardSummaryEntry();
-            summary.TeamId = TeamId.Parse(dataEntries[0]);
+            summary.TeamId = TeamId.Parse(dataEntries[1]);
             summary.Category = _categoryProvider?.GetCategory(summary.TeamId);
-            summary.Location = dataEntries[1];
-            if (Utilities.TryParseEnumSpaceless<Division>(dataEntries[2], out Division division))
+            summary.Location = dataEntries[2];
+            if (Utilities.TryParseEnumSpaceless<Division>(dataEntries[3], out Division division))
             {
                 summary.Division = division;
             }
-            if (Enum.TryParse<Tier>(dataEntries[3]?.Trim(), true, out Tier tier))
+            if (Enum.TryParse<Tier>(dataEntries[4]?.Trim(), true, out Tier tier))
             {
                 summary.Tier = tier;
             }
-            summary.ImageCount = int.Parse(dataEntries[4]);
-            summary.PlayTime = Utilities.ParseHourMinuteTimespan(dataEntries[5]);
+            summary.ImageCount = int.Parse(dataEntries[5]);
+            summary.PlayTime = Utilities.ParseHourMinuteTimespan(dataEntries[6]);
             summary.TotalScore = int.Parse(dataEntries.Last());
-            summary.Warnings |= dataEntries[6].Contains("T") ? ScoreWarnings.TimeOver : 0;
-            summary.Warnings |= dataEntries[6].Contains("M") ? ScoreWarnings.MultiImage : 0;
+            summary.Warnings |= dataEntries[7].Contains("T") ? ScoreWarnings.TimeOver : 0;
+            summary.Warnings |= dataEntries[7].Contains("M") ? ScoreWarnings.MultiImage : 0;
 
             return summary;
         }
@@ -183,21 +183,21 @@ namespace CyberPatriot.DiscordBot.Services
             summary.TeamId = TeamId.Parse(dataEntries[0]);
             // [not in data, matched from categoryProvider] all service category
             summary.Category = _categoryProvider?.GetCategory(summary.TeamId);
-            // tier and division (headers are wrong on CCS)
-            if (Utilities.TryParseEnumSpaceless<Division>(dataEntries[1], out Division division))
+            // tier and division
+            if (Utilities.TryParseEnumSpaceless<Division>(dataEntries[2], out Division division))
             {
                 summary.Division = division;
             }
-            summary.Location = dataEntries[2];
+            summary.Location = dataEntries[1];
             if (Enum.TryParse<Tier>(dataEntries[3], true, out Tier tier))
             {
                 summary.Tier = tier;
             }
             // number of images
             summary.ImageCount = int.Parse(dataEntries[4].Trim());
-            // times (headers are wrong on CCS)
-            summary.PlayTime = Utilities.ParseHourMinuteTimespan(dataEntries[6]);
-            details.ScoreTime = Utilities.ParseHourMinuteTimespan(dataEntries[5]);
+            // times
+            summary.PlayTime = Utilities.ParseHourMinuteTimespan(dataEntries[5]);
+            details.ScoreTime = Utilities.ParseHourMinuteTimespan(dataEntries[6]);
             // warnings and total score
             string warnStr = dataEntries[7];
             summary.Warnings |= warnStr.Contains("T") ? ScoreWarnings.TimeOver : 0;
