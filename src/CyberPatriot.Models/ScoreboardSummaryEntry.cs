@@ -14,6 +14,7 @@ namespace CyberPatriot.Models
         public int TotalScore { get; set; }
         public ScoreWarnings Warnings { get; set; }
         public Advancement? Advancement { get; set; }
+        public AuxiliaryScoreComponents AuxiliaryScoreComponents { get; set; }
 
         public override int GetHashCode()
         {
@@ -29,13 +30,14 @@ namespace CyberPatriot.Models
                 hashCode = (hashCode * 397) ^ TotalScore;
                 hashCode = (hashCode * 397) ^ (int)Warnings;
                 hashCode = (hashCode * 397) ^ (Advancement != null ? Advancement.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ AuxiliaryScoreComponents.GetHashCode();
                 return hashCode;
             }
         }
 
         protected bool Equals(ScoreboardSummaryEntry other)
         {
-            return TeamId == other.TeamId && string.Equals(Location, other.Location) && string.Equals(Category, other.Category) && Division == other.Division && Tier == other.Tier && ImageCount == other.ImageCount && PlayTime.Equals(other.PlayTime) && TotalScore == other.TotalScore && Warnings == other.Warnings && Advancement == other.Advancement;
+            return TeamId == other.TeamId && string.Equals(Location, other.Location) && string.Equals(Category, other.Category) && Division == other.Division && Tier == other.Tier && ImageCount == other.ImageCount && PlayTime.Equals(other.PlayTime) && TotalScore == other.TotalScore && Warnings == other.Warnings && Advancement == other.Advancement && AuxiliaryScoreComponents.Equals(other.AuxiliaryScoreComponents);
         }
 
         public override bool Equals(object obj)

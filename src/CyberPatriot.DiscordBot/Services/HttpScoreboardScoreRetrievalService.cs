@@ -231,7 +231,7 @@ namespace CyberPatriot.DiscordBot.Services
                 .Select(n => n.ChildNodes.Select(c => c.InnerText.Trim()).ToArray())
                 .Select(ParseSummaryEntry)
                 .Conditionally(rowLen > DefaultSummaryEntryColumnCount, // proxy for "CCS+Cisco, which is sorted wrong"
-                    seq => seq.OrderByDescending(x => x.TotalScore).ThenBy(x => x.PlayTime)); // playTime as a loose proxy for scoretime
+                    seq => seq.OrderByDescending(x => x.TotalScore)); // playTime as a loose proxy for scoretime
         }
 
         public async Task<ScoreboardDetails> GetDetailsAsync(TeamId team)
