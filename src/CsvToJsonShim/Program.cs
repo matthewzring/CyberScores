@@ -49,7 +49,7 @@ namespace CsvToJsonShim
                     Tier = Enum.TryParse<Tier>(data[4],true,out Tier t) ? t : (Tier?)null,
                     ImageCount = int.Parse(data[5]),
                     PlayTime = ParseTimeSpan(data[6]),
-                    TotalScore = int.Parse(data[7]),
+                    TotalScore = double.Parse(data[7]),
                     Warnings = (data[8].Contains("M") ? ScoreWarnings.MultiImage : 0) | (data[8].Contains("T") ? ScoreWarnings.TimeOver : 0)
                 };
                 summary.TeamList.Add(entry);

@@ -12,9 +12,9 @@ namespace CyberPatriot.DiscordBot
             Never
         }
 
-        public Func<int, string> FormatScore { get; set; } = i => i.ToString();
-        public Func<int, string> FormatLabeledScoreDifference { get; set; } = i => Utilities.Pluralize("point", i);
-        public Func<int, string> FormatScoreForLeaderboard { get; set; } = i => i.ToString();
+        public Func<double, string> FormatScore { get; set; } = i => i.ToString(i % 1 == 0 ? "" : "0.00");
+        public Func<double, string> FormatLabeledScoreDifference { get; set; } = i => i.ToString(i % 1 == 0 ? "" : "0.00") + " point" + (i == 1 ? "" : "s");
+        public Func<double, string> FormatScoreForLeaderboard { get; set; } = i => i.ToString(i % 1 == 0 ? "" : "0.00");
         public NumberDisplayCriteria TimeDisplay { get; set; } = NumberDisplayCriteria.Always;
         public NumberDisplayCriteria VulnerabilityDisplay { get; set; } = NumberDisplayCriteria.WhenNonZero;
 

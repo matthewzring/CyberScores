@@ -28,14 +28,14 @@ namespace CyberPatriot.DiscordBot.Services
         /// <param name="tier">The tier of competition.</param>
         /// <exception cref="ArgumentException">Thrown if the Cisco worth for the given round is unknown.</exception>
         /// <returns>The number of Cisco points possible in the given round for the given division and tier.</returns>
-        int GetCiscoPointsPossible(CompetitionRound round, Division division, Tier? tier);
+        double GetCiscoPointsPossible(CompetitionRound round, Division division, Tier? tier);
     }
 
     public abstract class CyberPatriotCompetitionRoundLogicService : ICompetitionRoundLogicService
     {
         public virtual string GetEffectiveDivisionDescriptor(ScoreboardSummaryEntry team) => team.Category ?? team.Division.ToStringCamelCaseToSpace();
 
-        public abstract int GetCiscoPointsPossible(CompetitionRound round, Division division, Tier? tier);
+        public abstract double GetCiscoPointsPossible(CompetitionRound round, Division division, Tier? tier);
 
         public abstract CompetitionRound InferRound(DateTimeOffset date);
 
@@ -157,7 +157,7 @@ namespace CyberPatriot.DiscordBot.Services
             return divisionScoreboard.TeamList.Where(t => t.Category == teamDetails.Category).ToIList();
         }
 
-        public override int GetCiscoPointsPossible(CompetitionRound round, Division division, Tier? tier)
+        public override double GetCiscoPointsPossible(CompetitionRound round, Division division, Tier? tier)
         {
             throw new NotImplementedException("CP-X Cisco totals are not implemented.");
         }
@@ -201,7 +201,7 @@ namespace CyberPatriot.DiscordBot.Services
             return 0;
         }
 
-        public override int GetCiscoPointsPossible(CompetitionRound round, Division division, Tier? tier)
+        public override double GetCiscoPointsPossible(CompetitionRound round, Division division, Tier? tier)
         {
             // http://www.uscyberpatriot.org/competition/competition-challenges-by-round
             switch (round)

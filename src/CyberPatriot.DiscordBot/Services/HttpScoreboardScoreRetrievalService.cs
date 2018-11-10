@@ -38,7 +38,9 @@ namespace CyberPatriot.DiscordBot.Services
             public virtual ScoreFormattingOptions FormattingOptions { get; protected set; } = new ScoreFormattingOptions();
         }
 
-        public virtual Models.IScoreRetrieverMetadata Metadata { get; protected set; }
+        Models.IScoreRetrieverMetadata IScoreRetrievalService.Metadata => Metadata;
+
+        protected virtual HttpPassthroughScoreRetrieverMetadata Metadata { get; set; }
 
 
         // a service
@@ -164,7 +166,7 @@ namespace CyberPatriot.DiscordBot.Services
             }
             summary.ImageCount = int.Parse(dataEntries[5]);
             summary.PlayTime = Utilities.ParseHourMinuteTimespan(dataEntries[6]);
-            summary.TotalScore = int.Parse(dataEntries.Last());
+            summary.TotalScore = double.Parse(dataEntries.Last());
             summary.Warnings |= dataEntries[7].Contains("T") ? ScoreWarnings.TimeOver : 0;
             summary.Warnings |= dataEntries[7].Contains("M") ? ScoreWarnings.MultiImage : 0;
 
@@ -202,7 +204,7 @@ namespace CyberPatriot.DiscordBot.Services
             string warnStr = dataEntries[7];
             summary.Warnings |= warnStr.Contains("T") ? ScoreWarnings.TimeOver : 0;
             summary.Warnings |= warnStr.Contains("M") ? ScoreWarnings.MultiImage : 0;
-            summary.TotalScore = int.Parse(dataEntries.Last().Trim());
+            summary.TotalScore = double.Parse(dataEntries.Last().Trim());
         }
 
         protected virtual IEnumerable<ScoreboardSummaryEntry> ProcessSummaries(HtmlDocument doc, out DateTimeOffset processTimestamp)
@@ -271,18 +273,18 @@ namespace CyberPatriot.DiscordBot.Services
                 image.VulnerabilitiesFound = int.Parse(dataEntries[2]);
                 image.VulnerabilitiesRemaining = int.Parse(dataEntries[3]);
                 image.Penalties = int.Parse(dataEntries[4]);
-                image.Score = int.Parse(dataEntries[5]);
+                image.Score = double.Parse(dataEntries[5]);
                 image.Warnings |= dataEntries[6].Contains("T") ? ScoreWarnings.TimeOver : 0;
                 image.Warnings |= dataEntries[6].Contains("M") ? ScoreWarnings.MultiImage : 0;
                 retVal.Images.Add(image);
             }
 
             // reparse summary table (CCS+Cisco case)
-            // pseudoimages: Cisco, penalty
+            // pseudoimages: Cisco, administrative adjustment (usually penalty)
             int ciscoIndex = summaryHeaderRowData.IndexOfWhere(x => x.ToLower().Contains("cisco"));
-            int penaltyIndex = summaryHeaderRowData.IndexOfWhere(x => x.ToLower().Contains("penalty"));
+            int penaltyIndex = summaryHeaderRowData.IndexOfWhere(x => x.ToLower().Contains("adjust"));
 
-            ScoreboardImageDetails CreatePseudoImage(string name, int score, int possible)
+            ScoreboardImageDetails CreatePseudoImage(string name, double score, double possible)
             {
                 var image = new ScoreboardImageDetails();
                 image.PointsPossible = possible;
@@ -303,7 +305,7 @@ namespace CyberPatriot.DiscordBot.Services
                 // pseudoimage
                 // FIXME shouldn't display vulns and penalties and time
 
-                int ciscoDenom = -1;
+                double ciscoDenom = -1;
                 try
                 {
                     ciscoDenom = _roundInferenceService.GetCiscoPointsPossible(Round, retVal.Summary.Division, retVal.Summary.Tier);
@@ -313,12 +315,12 @@ namespace CyberPatriot.DiscordBot.Services
                     // probably because round 0; unknown total
                 }
 
-                retVal.Images.Add(CreatePseudoImage("Cisco (Total)", int.Parse(summaryRowData[ciscoIndex]), ciscoDenom));
+                retVal.Images.Add(CreatePseudoImage("Cisco (Total)", double.Parse(summaryRowData[ciscoIndex]), ciscoDenom));
             }
 
             if (penaltyIndex != -1)
             {
-                retVal.Images.Add(CreatePseudoImage("Administrative Penalties", int.Parse(summaryRowData[penaltyIndex]), 0));
+                retVal.Images.Add(CreatePseudoImage("Administrative Adjustment", double.Parse(summaryRowData[penaltyIndex]), 0));
             }
 
             // score graph

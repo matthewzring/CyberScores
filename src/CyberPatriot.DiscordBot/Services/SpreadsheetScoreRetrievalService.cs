@@ -12,8 +12,6 @@ namespace CyberPatriot.DiscordBot.Services
 {
     /// <summary>
     /// Retrieves scores from a released score spreadsheet.
-    /// Note: multiplies scores by 100, TODO render this hack unnecessary.
-    /// This class is a nasty hack bolted on top of existing score models.
     /// </summary>
     public class SpreadsheetScoreRetrievalService : IScoreRetrievalService
     {
@@ -42,9 +40,9 @@ namespace CyberPatriot.DiscordBot.Services
             // add decimals at format level to embed creator
             // set format options to display decimals, overriding anything else that may have been set :(
             var formattingOptions = new ScoreFormattingOptions();
-            formattingOptions.FormatScore = rawScore => (rawScore / 100.0m).ToString();
-            formattingOptions.FormatLabeledScoreDifference = rawScore => (rawScore / 100.0m) + " point" + (rawScore == 100 ? string.Empty : "s");
-            formattingOptions.FormatScoreForLeaderboard = rawScore => (rawScore / 100.0m).ToString("0.00");
+            formattingOptions.FormatScore = rawScore => rawScore.ToString();
+            formattingOptions.FormatLabeledScoreDifference = rawScore => rawScore.ToString() + " points";
+            formattingOptions.FormatScoreForLeaderboard = rawScore => rawScore.ToString("0.00");
             formattingOptions.TimeDisplay = ScoreFormattingOptions.NumberDisplayCriteria.Never;
             formattingOptions.VulnerabilityDisplay = ScoreFormattingOptions.NumberDisplayCriteria.Never;
             Metadata.FormattingOptions = formattingOptions;
@@ -113,7 +111,7 @@ namespace CyberPatriot.DiscordBot.Services
                 int state = 0;
 
                 string[] headers = null;
-                int[] maxImagePoints = null;
+                double[] maxImagePoints = null;
                 int teamIdInd = -1, divInd = -1, locInd = -1, tierInd = -1, catInd = -1, advancementInd = -1, commentInd = -1;
                 Division defaultDiv = 0;
 
@@ -220,7 +218,7 @@ namespace CyberPatriot.DiscordBot.Services
                                 advancementInd == -1 ? int.MaxValue : advancementInd,
                                 commentInd == -1 ? int.MaxValue : commentInd);
 
-                            maxImagePoints = new int[headers.Length];
+                            maxImagePoints = new double[headers.Length];
                             for (int j = 0; j < maxImagePoints.Length; j++)
                             {
                                 maxImagePoints[j] = -1;
@@ -231,9 +229,9 @@ namespace CyberPatriot.DiscordBot.Services
                                 if (imageHeaderComponents.Length > 1)
                                 {
                                     headers[j] = imageHeaderComponents[0];
-                                    if (decimal.TryParse(imageHeaderComponents[1], out decimal maxScore))
+                                    if (double.TryParse(imageHeaderComponents[1], out double maxScore))
                                     {
-                                        maxImagePoints[j] = (int)(maxScore * 100m);
+                                        maxImagePoints[j] = maxScore;
                                     }
                                 }
                             }
@@ -291,11 +289,10 @@ namespace CyberPatriot.DiscordBot.Services
                                 teamInfo.Comment = data[commentInd];
                             }
 
-                            int totalScore = 0;
+                            double totalScore = 0;
 
                             for (int j = lowerDataBound; j < upperDataBound; j++)
                             {
-                                // we hack this into our system by multiplying everything by 100 so they're integers
                                 ScoreboardImageDetails image = new ScoreboardImageDetails
                                 {
                                     ImageName = headers[j],
@@ -304,7 +301,7 @@ namespace CyberPatriot.DiscordBot.Services
                                     PlayTime = TimeSpan.Zero,
                                     VulnerabilitiesFound = 0,
                                     VulnerabilitiesRemaining = 0,
-                                    Score = (int)(data[j].Trim().Length > 0 ? decimal.Parse(data[j]) * 100m : 0m)
+                                    Score = data[j].Trim().Length > 0 ? double.Parse(data[j]) : 0.0
                                 };
                                 totalScore += image.Score;
                                 teamInfo.Images.Add(image);

@@ -346,8 +346,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 CompleteScoreboardSummary scoreboard = await ScoreRetrievalService.GetScoreboardAsync(filter).ConfigureAwait(false);
                 decimal[] data = scoreboard.TeamList
                     .Conditionally(locCode != null, tle => tle.Where(t => t.Location == locCode))
-                    // nasty hack
-                    .Select(datum => decimal.TryParse(ScoreRetrievalService.Metadata.FormattingOptions.FormatScore(datum.TotalScore), out decimal d) ? d : datum.TotalScore)
+                    .Select(datum => (decimal)datum.TotalScore)
                     .OrderBy(d => d).ToArray();
                 using (var memStr = new System.IO.MemoryStream())
                 {

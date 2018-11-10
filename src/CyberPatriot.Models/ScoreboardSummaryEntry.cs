@@ -11,7 +11,7 @@ namespace CyberPatriot.Models
         public Tier? Tier { get; set; }
         public int ImageCount { get; set; }
         public TimeSpan PlayTime { get; set; }
-        public int TotalScore { get; set; }
+        public double TotalScore { get; set; }
         public ScoreWarnings Warnings { get; set; }
         public Advancement? Advancement { get; set; }
 
@@ -26,7 +26,7 @@ namespace CyberPatriot.Models
                 hashCode = (hashCode * 397) ^ (Tier != null ? Tier.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ ImageCount;
                 hashCode = (hashCode * 397) ^ PlayTime.GetHashCode();
-                hashCode = (hashCode * 397) ^ TotalScore;
+                hashCode = (hashCode * 397) ^ TotalScore.GetHashCode();
                 hashCode = (hashCode * 397) ^ (int)Warnings;
                 hashCode = (hashCode * 397) ^ (Advancement != null ? Advancement.GetHashCode() : 0);
                 return hashCode;

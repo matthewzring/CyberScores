@@ -258,6 +258,37 @@ namespace CyberPatriot.DiscordBot
             return enumerable;
         }
 
+        /// <summary>
+        /// Skips a given number of elements, which are processed specially, and wraps the remainder of the enumerable.
+        /// </summary>
+        /// <typeparam name="T">The type of elements of the sequence.</typeparam>
+        /// <param name=""></param>
+        /// <returns></returns>
+        public static IEnumerable<T> SkipProcess<T>(this IEnumerable<T> enumerable, int num, Action<T> process)
+        {
+            if (process == null)
+            {
+                throw new ArgumentNullException(nameof(process));
+            }
+            if (num < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(num));
+            }
+
+            int i = 0;
+            foreach (var elem in enumerable)
+            {
+                if (i++ < num)
+                {
+                    process(elem);
+                }
+                else
+                {
+                    yield return elem;
+                }
+            }
+        }
+
 
         public static Discord.EmbedBuilder Conditionally(this Discord.EmbedBuilder builder, bool condition, Func<Discord.EmbedBuilder, Discord.EmbedBuilder> action) => condition ? action(builder) : builder;
 
