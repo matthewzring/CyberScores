@@ -41,20 +41,6 @@ namespace CyberPatriot.DiscordBot.Services
             public string FilterDescription { get; set; }
         }
 
-        private string FormatAuxiliaryScores(AuxiliaryScoreComponents components, int auxScoreComponentCount)
-        {
-            var result = new StringBuilder();
-            for (int i = 0; i < components.Count; i++)
-            {
-                result.AppendFormat("{0,5}", ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(components.ComponentScores[i]));
-            }
-            for (int i = components.Count; i < auxScoreComponentCount; i++)
-            {
-                result.Append("     ");
-            }
-            return result.ToString();
-        }
-
         public string CreateTopLeaderboardEmbed(CompleteScoreboardSummary scoreboard, CustomFiltrationInfo customFilter = null, TimeZoneInfo timeZone = null, int pageNumber = 1, int pageSize = 15)
         {
             if (pageSize <= 0)
@@ -102,11 +88,9 @@ namespace CyberPatriot.DiscordBot.Services
             stringBuilder.Append(' ').Append(timeZone == null ? "UTC" : TimeZoneNames.TZNames.GetAbbreviationsForTimeZone(timeZone.Id, "en-US").Generic).AppendLine("*");
             stringBuilder.AppendLine("```");
 
-            int auxScoreComponentCount = scoreboard.TeamList.Where(predicate).Skip(pageNumber * pageSize).Take(pageSize).Max(x => x.AuxiliaryScoreComponents.Count);
-            
             // FIXME time display logic according to FormattingOptions
             scoreboard.TeamList.Where(predicate).Skip(pageNumber * pageSize).Take(pageSize)
-                .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1,-7}{2,4}{6,6}{7,10}   {8}{3,5}{4,8}{5,4}", i + 1 + (pageNumber * pageSize), team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : team.PlayTime.ToHoursMinutesString(), team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier, FormatAuxiliaryScores(team.AuxiliaryScoreComponents, auxScoreComponentCount)).AppendLine())
+                .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1,-7}{2,4}{6,6}{7,10}{3,16}{4,7}{5,4}", i + 1 + (pageNumber * pageSize), team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : team.PlayTime.ToHoursMinutesString(), team.Warnings.ToConciseString(), team.Division.ToConciseString(), team.Tier).AppendLine())
                 .Last().AppendLine("```");
             if (scoreboard.OriginUri != null)
             {

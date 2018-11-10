@@ -14,7 +14,7 @@ namespace CyberPatriot.Models
         public int TotalScore { get; set; }
         public ScoreWarnings Warnings { get; set; }
         public Advancement? Advancement { get; set; }
-        public AuxiliaryScoreComponents AuxiliaryScoreComponents { get; set; } = AuxiliaryScoreComponents.Empty;
+        public AuxiliaryScoreComponents AuxiliaryScoreComponents { get; set; }
 
         public override int GetHashCode()
         {
