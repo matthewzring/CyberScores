@@ -40,9 +40,6 @@ namespace CyberPatriot.DiscordBot.Services
             // add decimals at format level to embed creator
             // set format options to display decimals, overriding anything else that may have been set :(
             var formattingOptions = new ScoreFormattingOptions();
-            formattingOptions.FormatScore = rawScore => rawScore.ToString();
-            formattingOptions.FormatLabeledScoreDifference = rawScore => rawScore.ToString() + " points";
-            formattingOptions.FormatScoreForLeaderboard = rawScore => rawScore.ToString("0.00");
             formattingOptions.TimeDisplay = ScoreFormattingOptions.NumberDisplayCriteria.Never;
             formattingOptions.VulnerabilityDisplay = ScoreFormattingOptions.NumberDisplayCriteria.Never;
             Metadata.FormattingOptions = formattingOptions;
