@@ -659,36 +659,70 @@ namespace CyberPatriot.DiscordBot
 
         public static class PeriodicTask
         {
-            public static async Task Run<TState>(Func<TState, Task> action, TimeSpan period, TState state, System.Threading.CancellationToken cancellationToken)
+            public static void Run<TState>(Func<TState, Task> action, TimeSpan period, TState state, System.Threading.CancellationToken cancellationToken)
             {
-                while (!cancellationToken.IsCancellationRequested)
+                const int threadSleepChunks = 5;
+                TimeSpan chunk = period / threadSleepChunks;
+
+                var t = new Thread(() =>
                 {
-                    await Task.Delay(period, cancellationToken).ConfigureAwait(false);
+                    while (!cancellationToken.IsCancellationRequested)
+                    {
+                        for (int i = 0; i < threadSleepChunks; i++)
+                        {
+                            Thread.Sleep(chunk);
+                            if (cancellationToken.IsCancellationRequested)
+                            {
+                                return;
+                            }
+                        }
 
-                    if (!cancellationToken.IsCancellationRequested)
-                        await action(state).ConfigureAwait(false);
-                }
+                        if (!cancellationToken.IsCancellationRequested)
+                        {
+                            action(state).Wait();
+                        }
+                    }
+                });
+
+                t.Start();
             }
 
-            public static Task Run<TState>(Func<TState, Task> action, TimeSpan period, TState state)
+            public static void Run<TState>(Func<TState, Task> action, TimeSpan period, TState state)
             {
-                return Run(action, period, state, System.Threading.CancellationToken.None);
+                Run(action, period, state, CancellationToken.None);
             }
 
-            public static async Task Run(Func<Task> action, TimeSpan period, System.Threading.CancellationToken cancellationToken)
+            public static void Run(Func<Task> action, TimeSpan period, System.Threading.CancellationToken cancellationToken)
             {
-                while (!cancellationToken.IsCancellationRequested)
+                const int threadSleepChunks = 5;
+                TimeSpan chunk = period / threadSleepChunks;
+
+                var t = new Thread(() =>
                 {
-                    await Task.Delay(period, cancellationToken).ConfigureAwait(false);
+                    while (!cancellationToken.IsCancellationRequested)
+                    {
+                        for (int i = 0; i < threadSleepChunks; i++)
+                        {
+                            Thread.Sleep(chunk);
+                            if (cancellationToken.IsCancellationRequested)
+                            {
+                                return;
+                            }
+                        }
 
-                    if (!cancellationToken.IsCancellationRequested)
-                        await action().ConfigureAwait(false);
-                }
+                        if (!cancellationToken.IsCancellationRequested)
+                        {
+                            action().Wait();
+                        }
+                    }
+                });
+
+                t.Start();
             }
 
-            public static Task Run(Func<Task> action, TimeSpan period)
+            public static void Run(Func<Task> action, TimeSpan period)
             {
-                return Run(action, period, System.Threading.CancellationToken.None);
+                Run(action, period, System.Threading.CancellationToken.None);
             }
         }
 
