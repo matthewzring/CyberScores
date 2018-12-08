@@ -356,9 +356,20 @@ namespace CyberPatriot.DiscordBot.Modules
                     // This shouldn't be necessary, Discord's API supports embedding attached images
                     // BUT discord.net does not, see #796
                     var httpClient = new System.Net.Http.HttpClient();
-                    var imagePostMessage = new System.Net.Http.StreamContent(memStr);
-                    imagePostMessage.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
-                    Task<System.Net.Http.HttpResponseMessage> uploadUrlResponseTask = httpClient.PutAsync("https://transfer.sh/histogram.png", imagePostMessage);
+                    var imagePostMessage = new System.Net.Http.MultipartFormDataContent();
+                    var innerStream = new System.Net.Http.StreamContent(memStr);
+                    innerStream.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("form-data")
+                    {
+                        Name = "\"file\"",
+                        FileName = "\"histogram.png\"",
+                        FileNameStar = null
+                    };
+                    innerStream.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+                    imagePostMessage.Add(innerStream);
+                    var reqMesg = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Post, "https://pasteboard.co/upload");
+                    reqMesg.Content = imagePostMessage;
+                    reqMesg.Headers.Referrer = new Uri("https://pasteboard.co/");
+                    Task<System.Net.Http.HttpResponseMessage> uploadUrlResponseTask = httpClient.SendAsync(reqMesg);
 
                     var histogramEmbed = new EmbedBuilder()
                                          .WithTitle("CyberPatriot Score Analysis")
@@ -370,8 +381,12 @@ namespace CyberPatriot.DiscordBot.Modules
                                          .AddInlineField("Median", $"{data.Median():0.##}")
                                          .AddInlineField("Third Quartile", $"{data.Skip(data.Length / 2).ToArray().Median():0.##}")
                                          .AddInlineField("Min Score", $"{data.Min()}")
-                                         .AddInlineField("Max Score", $"{data.Max()}")
-                                         .WithImageUrl(await (await uploadUrlResponseTask.ConfigureAwait(false)).Content.ReadAsStringAsync().ConfigureAwait(false))
+                                         .AddInlineField("Max Score", $"{data.Max()}");
+                    var uploadResponse = await (await uploadUrlResponseTask.ConfigureAwait(false)).Content.ReadAsStringAsync().ConfigureAwait(false);
+                    histogramEmbed = histogramEmbed
+                                        .WithImageUrl(
+                                            "https://cdn.pbrd.co/images/" + Newtonsoft.Json.JsonConvert.DeserializeAnonymousType(uploadResponse, new { url = "", fileName = "" }).fileName
+                                         )
                                          .WithTimestamp(scoreboard.SnapshotTimestamp)
                                          .WithFooter(ScoreRetrievalService.Metadata.StaticSummaryLine);
 
