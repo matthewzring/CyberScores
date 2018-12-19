@@ -224,6 +224,11 @@ namespace CyberPatriot.DiscordBot.Modules
                 return true;
             }
 
+            if (category.EndsWith('s') && !category.EndsWith("corps") && CategoryEquals(team, category.Substring(0, category.Length - 1) + "corps"))
+            {
+                return true;
+            }
+
             return false;
         }
 
