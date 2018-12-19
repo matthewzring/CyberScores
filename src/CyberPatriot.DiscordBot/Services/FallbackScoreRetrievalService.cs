@@ -41,7 +41,12 @@ namespace CyberPatriot.DiscordBot.Services
         {
         }
 
-        public FallbackScoreRetrievalService(IServiceProvider provider, Action<CachingScoreRetrievalService> cacheConfigurator, params Func<IServiceProvider, Task<IScoreRetrievalService>>[] backends)
+        public FallbackScoreRetrievalService(IServiceProvider provider, Action<CachingScoreRetrievalService> cacheConfigurator, params Func<IServiceProvider, Task<IScoreRetrievalService>>[] backends) : this(provider, cacheConfigurator, (IEnumerable<Func<IServiceProvider, Task<IScoreRetrievalService>>>)backends)
+        {
+
+        }
+
+        public FallbackScoreRetrievalService(IServiceProvider provider, Action<CachingScoreRetrievalService> cacheConfigurator, IEnumerable<Func<IServiceProvider, Task<IScoreRetrievalService>>> backends)
         {
             _provider = provider;
             _backendOptions = backends.Where(t => t != null).ToList();
