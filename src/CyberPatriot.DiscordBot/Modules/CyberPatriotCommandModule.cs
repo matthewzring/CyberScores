@@ -253,7 +253,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 {
                     Predicate = t => t.Category == realCategory,
                     FilterDescription = realCategory
-                }, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false))).ConfigureAwait(false);
+                }, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false), showDivision: false)).ConfigureAwait(false);
             }
         }
 

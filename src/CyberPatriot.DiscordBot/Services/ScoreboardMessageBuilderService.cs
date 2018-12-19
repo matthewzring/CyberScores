@@ -78,7 +78,7 @@ namespace CyberPatriot.DiscordBot.Services
             return "AS:" + abbreviatedCategory;
         }
 
-        public string CreateTopLeaderboardEmbed(CompleteScoreboardSummary scoreboard, CustomFiltrationInfo customFilter = null, TimeZoneInfo timeZone = null, int pageNumber = 1, int pageSize = 15)
+        public string CreateTopLeaderboardEmbed(CompleteScoreboardSummary scoreboard, CustomFiltrationInfo customFilter = null, TimeZoneInfo timeZone = null, int pageNumber = 1, int pageSize = 15, bool showDivision = true)
         {
             if (pageSize <= 0)
             {
@@ -125,15 +125,20 @@ namespace CyberPatriot.DiscordBot.Services
             stringBuilder.Append(' ').Append(timeZone == null ? "UTC" : TimeZoneNames.TZNames.GetAbbreviationsForTimeZone(timeZone.Id, "en-US").Generic).AppendLine("*");
             stringBuilder.AppendLine("```");
 
-            int divisionFormattedLength = 11;
-            if (scoreboard.Filter.Division.HasValue && scoreboard.Filter.Division.Value != Division.AllService)
+            string divisionFormatString = " {6,-10}";
+
+            if (!showDivision)
             {
-                divisionFormattedLength = 6;
+                divisionFormatString = "";
+            }
+            else if (scoreboard.Filter.Division.HasValue && scoreboard.Filter.Division.Value != Division.AllService)
+            {
+                divisionFormatString = "{6,6}";
             }
 
             // FIXME time display logic according to FormattingOptions
             scoreboard.TeamList.Where(predicate).Skip(pageNumber * pageSize).Take(pageSize)
-                .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1,-7}{2,4}{6," + divisionFormattedLength + "}{7,10}{3,16}{4,7}{5,4}", i + 1 + (pageNumber * pageSize), team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : team.PlayTime.ToHoursMinutesString(), team.Warnings.ToConciseString(), AbbreviateDivision(team), team.Tier).AppendLine())
+                .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1,-7}{2,4}" + divisionFormatString + "{7,10}{3,16}{4,7}{5,4}", i + 1 + (pageNumber * pageSize), team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : team.PlayTime.ToHoursMinutesString(), team.Warnings.ToConciseString(), AbbreviateDivision(team), team.Tier).AppendLine())
                 .Last().AppendLine("```");
             if (scoreboard.OriginUri != null)
             {
@@ -249,7 +254,7 @@ namespace CyberPatriot.DiscordBot.Services
                     case Tier.Silver:
                         // tweaked from AFA spreadsheet to be more distinct from platinum, and to look less white
                         // AFA original is #F2F2F2
-                        builder.WithColor(0xC0, 0xC0, 0xC0);
+                        builder.WithColor(0x90, 0x90, 0x90);
                         break;
                 }
             }
