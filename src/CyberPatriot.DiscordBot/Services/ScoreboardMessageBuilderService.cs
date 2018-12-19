@@ -191,7 +191,9 @@ namespace CyberPatriot.DiscordBot.Services
                         builder.WithColor(0xFF, 0xE6, 0x99);
                         break;
                     case Tier.Silver:
-                        builder.WithColor(0xF2, 0xF2, 0xF2);
+                        // tweaked from AFA spreadsheet to be more distinct from platinum, and to look less white
+                        // AFA original is #F2F2F2
+                        builder.WithColor(0xC0, 0xC0, 0xC0);
                         break;
                 }
             }
