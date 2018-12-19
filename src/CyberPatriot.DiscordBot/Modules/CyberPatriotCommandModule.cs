@@ -211,8 +211,18 @@ namespace CyberPatriot.DiscordBot.Modules
             {
                 return true;
             }
-            // last check /shrug
-            return teamCategory.Replace(" ", "").Contains(category.Replace(" ", ""));
+
+            if (teamCategory.Replace(" ", "").Contains(category.Replace(" ", "")))
+            {
+                return true;
+            }
+
+            string[] teamCategoryWords = teamCategory.Split(' ');
+            if (category.Length > 1 && category == string.Join("", teamCategoryWords.Where(w => w != "jrotc").Select(w => w[0])))
+            {
+                // abbreviation, e.g. CAP or AF
+                return true;
+            }
         }
 
         public async Task GetServiceLeaderboardImplementationAsync(string category, Tier? tier, int pageNumber)
