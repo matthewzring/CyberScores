@@ -131,7 +131,7 @@ namespace CyberPatriot.DiscordBot.Services
             {
                 divisionFormatString = "";
             }
-            else if (scoreboard.Filter.Division.HasValue && scoreboard.Filter.Division.Value != Division.AllService)
+            else if ((scoreboard.Filter.Division.HasValue && scoreboard.Filter.Division.Value != Division.AllService) || !scoreboard.TeamList.Where(predicate).Any(x => x.Category != null))
             {
                 divisionFormatString = "{6,6}";
             }
