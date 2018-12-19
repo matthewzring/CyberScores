@@ -223,6 +223,8 @@ namespace CyberPatriot.DiscordBot.Modules
                 // abbreviation, e.g. CAP or AF
                 return true;
             }
+
+            return false;
         }
 
         public async Task GetServiceLeaderboardImplementationAsync(string category, Tier? tier, int pageNumber)
