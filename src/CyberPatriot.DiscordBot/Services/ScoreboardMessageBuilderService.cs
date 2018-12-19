@@ -125,7 +125,7 @@ namespace CyberPatriot.DiscordBot.Services
             stringBuilder.Append(' ').Append(timeZone == null ? "UTC" : TimeZoneNames.TZNames.GetAbbreviationsForTimeZone(timeZone.Id, "en-US").Generic).AppendLine("*");
             stringBuilder.AppendLine("```");
 
-            string divisionFormatString = " {6,-10}";
+            string divisionFormatString = "  {6,-10}";
 
             if (!showDivision)
             {
