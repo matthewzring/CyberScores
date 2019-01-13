@@ -25,7 +25,7 @@ namespace CyberPatriot.DiscordBot
             upperBound = upper;
         }
 
-        public override Task<PreconditionResult> CheckPermissions(ICommandContext context, ParameterInfo parameter, object value, IServiceProvider services)
+        public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, ParameterInfo parameter, object value, IServiceProvider services)
         {
             double compareVal;
             if (value is double d)

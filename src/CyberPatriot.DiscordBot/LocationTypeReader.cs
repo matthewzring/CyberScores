@@ -10,7 +10,7 @@ namespace CyberPatriot.DiscordBot
     {
         protected string ParseError { get; set; } = "Could not parse the input as a location code. Must be two or three capital letters.";
 
-        public override Task<TypeReaderResult> Read(ICommandContext context, string input, IServiceProvider services)
+        public override Task<TypeReaderResult> ReadAsync(ICommandContext context, string input, IServiceProvider services)
             => Task.FromResult(ReadSync(context, input, services));
 
         public TypeReaderResult ReadSync(ICommandContext context, string input, IServiceProvider services)

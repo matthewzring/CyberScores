@@ -23,6 +23,6 @@ namespace CyberPatriot.DiscordBot
         public bool DisplayAsMandatory { get; set; }
         
         private static readonly Task<PreconditionResult> Result = Task.FromResult(PreconditionResult.FromSuccess());
-        public override Task<PreconditionResult> CheckPermissions(ICommandContext context, ParameterInfo parameter, object value, IServiceProvider services) => Result;
+        public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, ParameterInfo parameter, object value, IServiceProvider services) => Result;
     }
 }

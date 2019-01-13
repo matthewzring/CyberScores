@@ -411,7 +411,7 @@ namespace CyberPatriot.DiscordBot.Modules
                                          .WithTimestamp(scoreboard.SnapshotTimestamp)
                                          .WithFooter(ScoreRetrievalService.Metadata.StaticSummaryLine);
 
-                    await Context.Channel.SendMessageAsync("", embed: histogramEmbed).ConfigureAwait(false);
+                    await Context.Channel.SendMessageAsync("", embed: histogramEmbed.Build()).ConfigureAwait(false);
                 }
             }
         }

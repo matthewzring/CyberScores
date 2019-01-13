@@ -10,7 +10,7 @@ namespace CyberPatriot.DiscordBot
     {
         protected virtual TypeReaderResult GenerateError() => TypeReaderResult.FromError(CommandError.ParseFailed, "Input could not be parsed as a tier. Valid tiers are 'Platinum,' 'Gold,' 'Silver,' and some supported shorthands.");
 
-        public override Task<TypeReaderResult> Read(ICommandContext context, string input, IServiceProvider services)
+        public override Task<TypeReaderResult> ReadAsync(ICommandContext context, string input, IServiceProvider services)
         {
             // prevent tiers being equated to numbers
             if (int.TryParse(input, out int _))

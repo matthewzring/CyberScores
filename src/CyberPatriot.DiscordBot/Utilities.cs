@@ -306,6 +306,11 @@ namespace CyberPatriot.DiscordBot
             return (await builderTask.ConfigureAwait(false)).AddField(fb);
         }
 
+        public static Discord.EmbedBuilder AddInlineField(this Discord.EmbedBuilder builder, string name, object value)
+        {
+            return builder.AddField(name, value, inline: true);
+        }
+
         public static async Task<Discord.EmbedBuilder> AddFieldAsync(this Discord.EmbedBuilder builder, Func<Discord.EmbedFieldBuilder, Task> fieldBuilder)
         {
             var field = new Discord.EmbedFieldBuilder();

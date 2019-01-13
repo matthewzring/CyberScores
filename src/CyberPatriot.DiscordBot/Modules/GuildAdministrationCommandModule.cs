@@ -121,7 +121,7 @@ namespace CyberPatriot.DiscordBot.Modules
             }
 
             [Command("remove"), Alias("delete", "unwatch")]
-            [RequireUserPermission(ChannelPermission.ManageChannel, Group = "RolePermission")]
+            [RequireUserPermission(ChannelPermission.ManageChannels, Group = "RolePermission")]
             [RequireOwner(Group = "RolePermission")]
             [Summary("Unwatches a team from placement change notifications in this channel.")]
             public async Task RemoveTeamAsync([Summary("The team to unwatch.")] TeamId team)
@@ -151,7 +151,7 @@ namespace CyberPatriot.DiscordBot.Modules
             }
 
             [Command("add"), Alias("watch")]
-            [RequireUserPermission(ChannelPermission.ManageChannel, Group = "RolePermission")]
+            [RequireUserPermission(ChannelPermission.ManageChannels, Group = "RolePermission")]
             [RequireOwner(Group = "RolePermission")]
             [Summary("Add a team for placement change monitoring. When this team changes placement (either rises or falls) on the scoreboard, an announcement will be made in this channel.")]
             public async Task WatchTeamAsync([Summary("The team to monitor.")] TeamId team)

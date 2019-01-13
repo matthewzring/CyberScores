@@ -12,6 +12,6 @@ namespace CyberPatriot.DiscordBot
     public class HideCommandHelpAttribute : PreconditionAttribute
     {
         private static readonly Task<PreconditionResult> Result = Task.FromResult(PreconditionResult.FromSuccess());
-        public override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IServiceProvider services) => Result;
+        public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services) => Result;
     }
 }

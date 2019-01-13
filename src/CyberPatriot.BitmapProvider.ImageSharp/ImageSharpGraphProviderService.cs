@@ -5,8 +5,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Drawing;
-using SixLabors.ImageSharp.Drawing.Brushes;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 using SixLabors.Primitives;
 
 namespace CyberPatriot.BitmapProvider.ImageSharp
@@ -125,12 +125,12 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
                     void RenderSlantedXAxisText(string relevantText, PointF bottomLeft)
                     {
                         RectangleF textBounds = TextMeasurer.MeasureBounds(relevantText, new RendererOptions(font));
-                        int higherDimension = (int)Math.Ceiling(Math.Max(textBounds.Width, textBounds.Height));
+                        int higherDimension = (int)Math.Ceiling(1.1 * Math.Max(textBounds.Width, textBounds.Height));
                         using (Image<Rgba32> textRenderImage = new Image<Rgba32>(higherDimension, higherDimension))
                         {
                             textRenderImage.Mutate(tempContext =>
                                 tempContext
-                                    .DrawText(relevantText, font, labelColor.ToRgba32(), PointF.Empty)
+                                    .DrawText(relevantText, font, Pens.Solid(labelColor.ToRgba32(), 1), PointF.Empty)
                                     .Rotate(-45));
                             textRenderImage.MutateCropToColored();
 
@@ -156,7 +156,7 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
                             // the top right hand corner of our generated image is the edge of text, which we want to line up with the bar's edge
                             // we also give a few Y pixel margin so it's not right up against the axis
                             PointF renderPosition = bottomLeft + new PointF(-tipX, 5);
-                            context.DrawImage(textRenderImage, 100, textRenderImage.Size(), (Point)renderPosition);
+                            context.DrawImage(textRenderImage, (Point)renderPosition, 1f);
 
                             if (textRenderImage.Height + renderPosition.Y > highestRenderedY)
                             {
@@ -217,10 +217,10 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
 
                     // render X-axis label centered in the horizontal space below the X-axis draw region
                     // comfortable margin under existing labels
-                    context.DrawText(horizontalAxisLabel, labelFont, labelColor.ToRgba32(), new PointF((drawRegionLeftOffset + imageWidth - drawRegionRightOffset) / 2, highestRenderedY + labelAxisOffset), new TextGraphicsOptions(true)
+                    context.DrawText(new TextGraphicsOptions(true)
                     {
                         HorizontalAlignment = HorizontalAlignment.Center
-                    });
+                    }, horizontalAxisLabel, labelFont, labelColor.ToRgba32(), new PointF((drawRegionLeftOffset + imageWidth - drawRegionRightOffset) / 2, highestRenderedY + labelAxisOffset));
 
                     // Y-axis label, this one's rotated though
                     RectangleF vLabelTextBounds = TextMeasurer.MeasureBounds(verticalAxisLabel, new RendererOptions(labelFont));
@@ -234,7 +234,7 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
                         textRenderImage.MutateCropToColored();
 
                         PointF renderPosition = new PointF(lowestRenderedX - textRenderImage.Width - labelAxisOffset, (imageHeight - drawRegionTopOffset - drawRegionBottomOffset) / 2 + drawRegionTopOffset - (textRenderImage.Height / 2));
-                        context.DrawImage(textRenderImage, 100, textRenderImage.Size(), (Point)renderPosition);
+                        context.DrawImage(textRenderImage, (Point)renderPosition, 1f);
                     }
                 });
                 image.SaveAsPng(target);

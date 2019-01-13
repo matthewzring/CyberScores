@@ -5,8 +5,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Drawing;
-using SixLabors.ImageSharp.Drawing.Brushes;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 using SixLabors.Primitives;
 
 namespace CyberPatriot.BitmapProvider.ImageSharp
@@ -19,7 +19,7 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
             return new PointF(rect.X, rect.Y);
         }
 
-        public static Size Size<TPixel>(this Image<TPixel> img) where TPixel : struct, SixLabors.ImageSharp.PixelFormats.IPixel<TPixel> => new Size(img.Width, img.Height);
+        public static Size Size<TPixel>(this Image<TPixel> img) where TPixel : struct, IPixel<TPixel> => new Size(img.Width, img.Height);
 
         /// <summary>
         /// Computes the center of the given "rectangle," assuming a top left corner of 0,0.

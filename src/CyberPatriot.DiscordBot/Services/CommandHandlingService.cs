@@ -37,7 +37,7 @@ namespace CyberPatriot.DiscordBot.Services
             _commands.AddTypeReader<CyberPatriot.Models.Tier>(new TierTypeReader());
             // the nasty hack type
             _commands.AddTypeReader<LocationCode>(new LocationTypeReader());
-            await _commands.AddModulesAsync(Assembly.GetEntryAssembly()).ConfigureAwait(false);
+            await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), provider).ConfigureAwait(false);
             await _commands.CreateModuleAsync("help", mb =>
             {
                 Dictionary<string, Action<Discord.Commands.Builders.ModuleBuilder>> buildersBySubmoduleName = new Dictionary<string, Action<Discord.Commands.Builders.ModuleBuilder>>();
@@ -351,6 +351,8 @@ namespace CyberPatriot.DiscordBot.Services
 
             var context = new SocketCommandContext(_discord, message);
             // don't block the gateway with command executions
+            // since we're using continuewith we don't care to await this call
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
             _commands.ExecuteAsync(context, argPos, _provider)
                 .ContinueWith(async x =>
                 {
@@ -372,9 +374,10 @@ namespace CyberPatriot.DiscordBot.Services
                                 .WithColor(Color.Red)
                                 .WithTitle("Error Executing Command" + (result?.Error != null ? ": " + ((result.Error.Value == CommandError.Exception && result is ExecuteResult ? new ExecuteResult?((ExecuteResult)result) : null)?.Exception?.GetType()?.Name ?? (result?.Error.Value.ToString() ?? "Internal Command Execution Error")).ToStringCamelCaseToSpace() : string.Empty))
                                 .WithDescription(result?.ErrorReason ?? "An unknown error occurred.")
-                                .WithTimestamp(message.CreatedAt)).ConfigureAwait(false);
+                                .WithTimestamp(message.CreatedAt).Build()).ConfigureAwait(false);
                     }
                 });
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         }
 
     }

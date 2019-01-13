@@ -10,7 +10,7 @@ namespace CyberPatriot.DiscordBot
     public class TeamIdTypeReader : TypeReader
     {
 
-        public override Task<TypeReaderResult> Read(ICommandContext context, string input, IServiceProvider services)
+        public override Task<TypeReaderResult> ReadAsync(ICommandContext context, string input, IServiceProvider services)
         {
             TeamId result;
             if (TeamId.TryParse(input, out result))
