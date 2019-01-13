@@ -350,22 +350,31 @@ namespace CyberPatriot.DiscordBot.Services
             }
 
             var context = new SocketCommandContext(_discord, message);
-            var result = await _commands.ExecuteAsync(context, argPos, _provider).ConfigureAwait(false);
+            // don't block the gateway with command executions
+            _commands.ExecuteAsync(context, argPos, _provider)
+                .ContinueWith(async x =>
+                {
+                    IResult result = null;
+                    if (x.IsCompletedSuccessfully)
+                    {
+                        result = x.Result;
+                    }
 
-            if (result.Error.HasValue &&
-                result.Error.Value == CommandError.UnknownCommand)
-            {
-                return;
-            }
-            else if (!result.IsSuccess)
-            {
-                await context.Channel.SendMessageAsync(string.Empty,
-                    embed: new EmbedBuilder()
-                        .WithColor(Color.Red)
-                        .WithTitle("Error Executing Command" + (result.Error.HasValue ? ": " + ((result.Error.Value == CommandError.Exception && result is ExecuteResult ? new Nullable<ExecuteResult>((ExecuteResult)result) : null)?.Exception?.GetType()?.Name ?? result.Error.Value.ToString()).ToStringCamelCaseToSpace() : string.Empty))
-                        .WithDescription(result.ErrorReason ?? "An unknown error occurred.")
-                        .WithTimestamp(message.CreatedAt)).ConfigureAwait(false);
-            }
+                    if (result != null && result.Error.HasValue &&
+                        result.Error.Value == CommandError.UnknownCommand)
+                    {
+                        return;
+                    }
+                    else if (result == null || !result.IsSuccess)
+                    {
+                        await context.Channel.SendMessageAsync(string.Empty,
+                            embed: new EmbedBuilder()
+                                .WithColor(Color.Red)
+                                .WithTitle("Error Executing Command" + (result?.Error != null ? ": " + ((result.Error.Value == CommandError.Exception && result is ExecuteResult ? new ExecuteResult?((ExecuteResult)result) : null)?.Exception?.GetType()?.Name ?? (result?.Error.Value.ToString() ?? "Internal Command Execution Error")).ToStringCamelCaseToSpace() : string.Empty))
+                                .WithDescription(result?.ErrorReason ?? "An unknown error occurred.")
+                                .WithTimestamp(message.CreatedAt)).ConfigureAwait(false);
+                    }
+                });
         }
 
     }
