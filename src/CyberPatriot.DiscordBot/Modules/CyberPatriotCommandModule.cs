@@ -373,25 +373,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 {
                     await GraphProvider.WriteHistogramPngAsync(data, "Score", "Frequency", datum => datum.ToString("0.0#"), BitmapProvider.Color.Parse("#32363B"), BitmapProvider.Color.Parse("#7289DA"), BitmapProvider.Color.White, BitmapProvider.Color.Gray, memStr).ConfigureAwait(false);
                     memStr.Position = 0;
-
-                    // This shouldn't be necessary, Discord's API supports embedding attached images
-                    // BUT discord.net does not, see #796
-                    var httpClient = new System.Net.Http.HttpClient();
-                    var imagePostMessage = new System.Net.Http.MultipartFormDataContent();
-                    var innerStream = new System.Net.Http.StreamContent(memStr);
-                    innerStream.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("form-data")
-                    {
-                        Name = "\"file\"",
-                        FileName = "\"histogram.png\"",
-                        FileNameStar = null
-                    };
-                    innerStream.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
-                    imagePostMessage.Add(innerStream);
-                    var reqMesg = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Post, "https://pasteboard.co/upload");
-                    reqMesg.Content = imagePostMessage;
-                    reqMesg.Headers.Referrer = new Uri("https://pasteboard.co/");
-                    Task<System.Net.Http.HttpResponseMessage> uploadUrlResponseTask = httpClient.SendAsync(reqMesg);
-
+                    
                     var histogramEmbed = new EmbedBuilder()
                                          .WithTitle("CyberPatriot Score Analysis")
                                          .WithDescription(Utilities.JoinNonNullNonEmpty(" | ", filter.Division?.ToStringCamelCaseToSpace(), filter.Tier, locCode).CoalesceBlank("All Teams"))
@@ -402,16 +384,12 @@ namespace CyberPatriot.DiscordBot.Modules
                                          .AddInlineField("Median", $"{data.Median():0.##}")
                                          .AddInlineField("Third Quartile", $"{data.Skip(data.Length / 2).ToArray().Median():0.##}")
                                          .AddInlineField("Min Score", $"{data.Min()}")
-                                         .AddInlineField("Max Score", $"{data.Max()}");
-                    var uploadResponse = await (await uploadUrlResponseTask.ConfigureAwait(false)).Content.ReadAsStringAsync().ConfigureAwait(false);
-                    histogramEmbed = histogramEmbed
-                                        .WithImageUrl(
-                                            "https://cdn.pbrd.co/images/" + Newtonsoft.Json.JsonConvert.DeserializeAnonymousType(uploadResponse, new { url = "", fileName = "" }).fileName
-                                         )
+                                         .AddInlineField("Max Score", $"{data.Max()}")
                                          .WithTimestamp(scoreboard.SnapshotTimestamp)
-                                         .WithFooter(ScoreRetrievalService.Metadata.StaticSummaryLine);
+                                         .WithFooter(ScoreRetrievalService.Metadata.StaticSummaryLine)
+                                         .WithImageUrl("attachment://histogram.png"); // Discord API requirement to use the uploaded histogram
 
-                    await Context.Channel.SendMessageAsync("", embed: histogramEmbed.Build()).ConfigureAwait(false);
+                    await Context.Channel.SendFileAsync(memStr, "histogram.png", embed: histogramEmbed.Build()).ConfigureAwait(false);
                 }
             }
         }
