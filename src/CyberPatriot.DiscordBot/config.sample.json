@@ -12,6 +12,11 @@
   "httpConfig": {
     "defaultHostname": "scoreboard.uscyberpatriot.org"
   },
+  "backendPriority": [
+    "http",
+    "json",
+    "csv"
+  ],
   "allServiceCategoryMapFile": "Path to file containing colon-delimited mapping of team ID to category (for all service peering)",
   "enableUpNotification": false
 }
