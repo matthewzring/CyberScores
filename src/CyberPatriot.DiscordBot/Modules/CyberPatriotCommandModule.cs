@@ -135,49 +135,32 @@ namespace CyberPatriot.DiscordBot.Modules
         #region Scoreboard
 
         [Command("scoreboard"), Alias("leaderboard"), HideCommandHelp]
-        public async Task GetLeaderboardAsync(int pageNumber = 1)
-        {
-            using (Context.Channel.EnterTypingState())
-            {
-                CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false);
-                if (teamScore == null)
-                {
-                    throw new Exception("Error obtaining scoreboard.");
-                }
-                await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false))).ConfigureAwait(false);
-            }
-        }
+        public Task GetLeaderboardAsync(int pageNumber = 1) => GetLeaderboardImplementationAsync(null, ScoreboardFilterInfo.NoFilter, pageNumber);
 
         [Command("scoreboard"), Alias("leaderboard"), HideCommandHelp]
-        public async Task GetLeaderboardAsync(Division division, int pageNumber = 1)
-        {
-            using (Context.Channel.EnterTypingState())
-            {
-                CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(division, null)).ConfigureAwait(false);
-                if (teamScore == null)
-                {
-                    throw new Exception("Error obtaining scoreboard.");
-                }
-                await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false))).ConfigureAwait(false);
-            }
-        }
+        public Task GetLeaderboardAsync(LocationCode location, int pageNumber = 1) => GetLeaderboardImplementationAsync(location, ScoreboardFilterInfo.NoFilter, pageNumber);
+
+        [Command("scoreboard"), Alias("leaderboard"), HideCommandHelp]
+        public Task GetLeaderboardAsync(Division division, int pageNumber = 1) => GetLeaderboardImplementationAsync(null, new ScoreboardFilterInfo(division, null), pageNumber);
+
+        [Command("scoreboard"), Alias("leaderboard"), HideCommandHelp]
+        public Task GetLeaderboardAsync(LocationCode location, Division division, int pageNumber = 1) => GetLeaderboardImplementationAsync(location, new ScoreboardFilterInfo(division, null), pageNumber);
+
+        [Command("scoreboard"), Alias("leaderboard"), HideCommandHelp]
+        public Task GetLeaderboardAsync(Tier tier, int pageNumber = 1) => GetLeaderboardImplementationAsync(null, new ScoreboardFilterInfo(null, tier), pageNumber);
+
+        [Command("scoreboard"), Alias("leaderboard"), HideCommandHelp]
+        public Task GetLeaderboardAsync(LocationCode location, Tier tier, int pageNumber = 1) => GetLeaderboardImplementationAsync(location, new ScoreboardFilterInfo(null, tier), pageNumber);
+
+        [Command("scoreboard"), Alias("leaderboard"), HideCommandHelp]
+        public Task GetLeaderboardAsync(Division division, Tier tier, int pageNumber = 1) => GetLeaderboardImplementationAsync(null, new ScoreboardFilterInfo(division, tier), pageNumber);
 
         [Command("scoreboard"), Alias("leaderboard"), Summary("Returns the current CyberPatriot leaderboard.")]
-        public async Task GetLeaderboardAsync(
+        public Task GetLeaderboardAsync(
+            [Summary("The location to which scoreboard display should be filtered, if provided."), AlterParameterDisplay(DisplayAsOptional = true)] LocationCode location,
             [Summary("The division to which scoreboard display should be filtered, if provided."), AlterParameterDisplay(DisplayAsOptional = true)] Division division,
-            [Summary("The tier to which scoreboard display should be filtered, if provided."), AlterParameterDisplay(DisplayAsOptional = true, SubordinateTo = "division")] Tier tier,
-            int pageNumber = 1)
-        {
-            using (Context.Channel.EnterTypingState())
-            {
-                CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(division, tier)).ConfigureAwait(false);
-                if (teamScore == null)
-                {
-                    throw new Exception("Error obtaining scoreboard.");
-                }
-                await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false))).ConfigureAwait(false);
-            }
-        }
+            [Summary("The tier to which scoreboard display should be filtered, if provided."), AlterParameterDisplay(DisplayAsOptional = true)] Tier tier,
+            int pageNumber = 1) => GetLeaderboardImplementationAsync(location, new ScoreboardFilterInfo(division, tier), pageNumber);
 
         [Command("scoreboard"), Alias("leaderboard", "peerboard", "peerleaderboard", "peerscoreboard"), Summary("Shows the given team's placement on the current CyberPatriot leaderboard consisting only of its peers."), Priority(5)]
         public async Task GeneratePeerLeaderboardAsync(TeamId team)
@@ -195,9 +178,27 @@ namespace CyberPatriot.DiscordBot.Modules
                 await ReplyAsync(ScoreEmbedBuilder.CreatePeerLeaderboardEmbed(teamDetails.TeamId, scoreboard, CompetitionRoundLogicService.GetPeerTeams(ScoreRetrievalService.Round, scoreboard, teamDetails.Summary), timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false))).ConfigureAwait(false);
             }
         }
+        
+        public async Task GetLeaderboardImplementationAsync(string location, ScoreboardFilterInfo filterInfo, int pageNumber)
+        {
+            using (Context.Channel.EnterTypingState())
+            {
+                CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(filterInfo).ConfigureAwait(false);
+                if (teamScore == null)
+                {
+                    throw new Exception("Error obtaining scoreboard.");
+                }
 
+                await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, customFilter: location == null ? null : new ScoreboardMessageBuilderService.CustomFiltrationInfo()
+                {
+                    Predicate = t => t.Location == location,
+                    FilterDescription = location // TODO full name of state?
+                }, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false))).ConfigureAwait(false);
+            }
+        }
         #endregion
         #region Specialized scoreboards
+
         private bool CategoryEquals(ScoreboardSummaryEntry team, string category)
         {
             if (team.Category == null)
@@ -266,24 +267,6 @@ namespace CyberPatriot.DiscordBot.Modules
             }
         }
 
-        public async Task GetLocationLeaderboardImplementationAsync(string location, ScoreboardFilterInfo filterInfo, int pageNumber)
-        {
-            using (Context.Channel.EnterTypingState())
-            {
-                CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(filterInfo).ConfigureAwait(false);
-                if (teamScore == null)
-                {
-                    throw new Exception("Error obtaining scoreboard.");
-                }
-
-                await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, customFilter: new ScoreboardMessageBuilderService.CustomFiltrationInfo()
-                {
-                    Predicate = t => t.Location == location,
-                    FilterDescription = location // TODO full name of state?
-                }, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false))).ConfigureAwait(false);
-            }
-        }
-
         [Command("servicescoreboard"), Alias("allservicescoreboard", "serviceleaderboard", "allserviceleaderboard", "categoryscoreboard", "categoryleaderboard")]
         [HideCommandHelp]
         public Task GetServiceLeaderboardAsync(string category, int pageNumber = 1) => GetServiceLeaderboardImplementationAsync(category, null, pageNumber);
@@ -291,14 +274,6 @@ namespace CyberPatriot.DiscordBot.Modules
         [Command("servicescoreboard"), Alias("allservicescoreboard", "serviceleaderboard", "allserviceleaderboard", "categoryscoreboard", "categoryleaderboard"), Summary("Returns the current CyberPatriot leaderboard for the given category of All Service teams.")]
         public Task GetServiceLeaderboardAsync(string category, [AlterParameterDisplay(DisplayAsOptional = true), Summary("If provided, filters the returned scoreboard to contain only teams in the given tier.")] Tier tier, int pageNumber = 1) => GetServiceLeaderboardImplementationAsync(category, tier, pageNumber);
 
-        [Command("locationscoreboard"), Alias("statescoreboard", "locationleaderboard", "stateleaderboard")]
-        [HideCommandHelp]
-        public Task GetLocationLeaderboardAsync(LocationCode location, int pageNumber = 1) => GetLocationLeaderboardImplementationAsync(location, ScoreboardFilterInfo.NoFilter, pageNumber);
-        [Command("locationscoreboard"), Alias("statescoreboard", "locationleaderboard", "stateleaderboard")]
-        [HideCommandHelp]
-        public Task GetLocationLeaderboardAsync(LocationCode location, Division division, int pageNumber = 1) => GetLocationLeaderboardImplementationAsync(location, new ScoreboardFilterInfo(division, null), pageNumber);
-        [Command("locationscoreboard"), Alias("statescoreboard", "locationleaderboard", "stateleaderboard"), Summary("Returns the current CyberPatriot leaderboard for teams in the given location.")]
-        public Task GetLocationLeaderboardAsync(LocationCode location, [AlterParameterDisplay(DisplayAsOptional = true), Summary("If provided, filters the returned scoreboard to contain only teams in the given division.")] Division division, [AlterParameterDisplay(DisplayAsOptional = true, SubordinateTo = "division"), Summary("If provided, filters the returned scoreboard to contain only teams in the given tier.")] Tier tier, int pageNumber = 1) => GetLocationLeaderboardImplementationAsync(location, new ScoreboardFilterInfo(division, tier), pageNumber);
         #endregion
         #region Histogram
 
