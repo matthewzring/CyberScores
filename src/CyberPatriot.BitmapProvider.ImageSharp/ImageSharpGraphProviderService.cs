@@ -130,7 +130,7 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
                         {
                             textRenderImage.Mutate(tempContext =>
                                 tempContext
-                                    .DrawText(relevantText, font, Pens.Solid(labelColor.ToRgba32(), 1), PointF.Empty)
+                                    .DrawText(relevantText, font, labelColor.ToRgba32(), PointF.Empty)
                                     .Rotate(-45));
                             textRenderImage.MutateCropToColored();
 
