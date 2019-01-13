@@ -48,6 +48,8 @@ namespace CyberPatriot.DiscordBot.Services
         protected ICompetitionRoundLogicService _roundInferenceService = null;
         protected IExternalCategoryProviderService _categoryProvider = null;
 
+        internal IConfigurationSection _httpConfiguration;
+
         public HttpScoreboardScoreRetrievalService() : this(null)
         {
 
@@ -60,14 +62,14 @@ namespace CyberPatriot.DiscordBot.Services
             Metadata = new HttpPassthroughScoreRetrieverMetadata(this);
         }
 
-        public Task InitializeAsync(IServiceProvider provider)
+        public Task InitializeAsync(IServiceProvider provider, IConfigurationSection httpConfSection)
         {
-            var confProvider = provider.GetRequiredService<IConfiguration>();
+            _httpConfiguration = httpConfSection;
             if (Hostname == null)
             {
-                Hostname = confProvider["httpConfig:defaultHostname"];
+                Hostname = httpConfSection["defaultHostname"];
             }
-            var httpConfSection = confProvider.GetSection("httpConfig");
+
             if (httpConfSection != null)
             {
                 string uname, pw;

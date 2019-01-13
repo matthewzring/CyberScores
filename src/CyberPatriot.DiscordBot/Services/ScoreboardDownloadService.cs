@@ -241,7 +241,7 @@ namespace CyberPatriot.DiscordBot.Services
                     // optimization: our service only makes low-priority requests
                     var newRateLimit = underlyingHttp.RateLimiter is PriorityTimerRateLimitProvider ? (underlyingHttp.RateLimiter as PriorityTimerRateLimitProvider).LowPriorityRateLimiter : underlyingHttp.RateLimiter;
                     // TODO cases when this might differ from the original service set outside our intent?
-                    await newHttp.InitializeAsync(Provider.Overlay<IRateLimitProvider>(newRateLimit)).ConfigureAwait(false);
+                    await newHttp.InitializeAsync(Provider.Overlay<IRateLimitProvider>(newRateLimit), underlyingHttp._httpConfiguration).ConfigureAwait(false);
                     scoreRetriever = newHttp;
                 }
 

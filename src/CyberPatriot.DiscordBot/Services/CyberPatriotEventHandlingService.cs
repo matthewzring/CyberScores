@@ -25,7 +25,6 @@ namespace CyberPatriot.DiscordBot.Services
         private IScoreRetrievalService _scoreRetriever;
         private ICompetitionRoundLogicService _competitionLogic;
         private LogService _logService;
-        protected Regex _teamUrlRegex;
 
         public CyberPatriotEventHandlingService(IServiceProvider provider, DiscordSocketClient discord,
             IDataPersistenceService database, IConfiguration config, ScoreboardMessageBuilderService messageBuilder,
@@ -39,10 +38,6 @@ namespace CyberPatriot.DiscordBot.Services
             _scoreRetriever = scoreRetriever;
             _competitionLogic = competitionLogic;
             _logService = logService;
-
-            _discord.MessageReceived += MessageReceived;
-            _teamUrlRegex = new Regex("https?://" + _config["httpConfig:defaultHostname"].Replace(".", "\\.") +
-                                      "/team\\.php\\?team=([0-9]{2}-[0-9]{4})");
         }
 
         class TimerStateWrapper
@@ -216,24 +211,6 @@ namespace CyberPatriot.DiscordBot.Services
             catch (Exception ex)
             {
                 await _logService.LogApplicationMessageAsync(LogSeverity.Error, "Error in team monitor timer task", ex).ConfigureAwait(false);
-            }
-        }
-
-        private async Task MessageReceived(SocketMessage rawMessage)
-        {
-            // Ignore system messages and messages from bots
-            if (!(rawMessage is SocketUserMessage message)) return;
-            if (message.Source != MessageSource.User) return;
-
-            // show embed for team links
-            Match scoreboardMatch = _teamUrlRegex.Match(message.Content);
-            if (scoreboardMatch != null && scoreboardMatch.Success)
-            {
-                await message.Channel.SendMessageAsync(string.Empty,
-                    embed: _messageBuilder
-                        .CreateTeamDetailsEmbed(
-                            await _scoreRetriever.GetDetailsAsync(TeamId.Parse(scoreboardMatch.Groups[1].Value)).ConfigureAwait(false))
-                        .Build()).ConfigureAwait(false);
             }
         }
     }

@@ -50,22 +50,16 @@ namespace CyberPatriot.DiscordBot.Services
 
         protected Dictionary<TeamId, ScoreboardDetails> teamInfo = new Dictionary<TeamId, ScoreboardDetails>();
 
-        public Task InitializeAsync(IServiceProvider provider)
+        public Task InitializeAsync(IServiceProvider provider, IConfigurationSection conf)
         {
             // reset
             summariesByFilter = new Dictionary<ScoreboardFilterInfo, CompleteScoreboardSummary>();
             teamInfo = new Dictionary<TeamId, ScoreboardDetails>();
-
-            return InitializeFromConfiguredCsvAsync(provider);
-        }
-
-        public Task<SpreadsheetScoreRetrievalService> InitializeFromConfiguredCsvAsync(IServiceProvider serviceProvider)
-        {
-            var conf = serviceProvider.GetRequiredService<IConfiguration>();
+            
             string[] srcList;
             try
             {
-                srcList = conf.GetSection("csvSources").Get<string[]>();
+                srcList = conf.GetSection("sources").Get<string[]>();
             }
             catch
             {
@@ -74,7 +68,7 @@ namespace CyberPatriot.DiscordBot.Services
 
             try
             {
-                Round = (CompetitionRound)conf.GetValue("csvRound", 0);
+                Round = (CompetitionRound)conf.GetValue("round", 0);
             }
             catch
             {

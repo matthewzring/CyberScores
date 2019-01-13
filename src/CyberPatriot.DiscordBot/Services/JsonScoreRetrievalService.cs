@@ -27,12 +27,14 @@ namespace CyberPatriot.DiscordBot.Services
             FormattingOptions = new ScoreFormattingOptions()
         };
 
-        public JsonScoreRetrievalService(string jsonContents)
+        public JsonScoreRetrievalService()
         {
-            Deserialize(jsonContents);
         }
 
-        Task IScoreRetrievalService.InitializeAsync(IServiceProvider provider) => Task.CompletedTask;
+        public async Task InitializeAsync(IServiceProvider provider, Microsoft.Extensions.Configuration.IConfigurationSection config)
+        {
+            Deserialize(await File.ReadAllTextAsync(config["source"]).ConfigureAwait(false));
+        }
 
         public static async Task<string> SerializeAsync(CompleteScoreboardSummary summary,
             IDictionary<TeamId, ScoreboardDetails> teamDetails, CompetitionRound round = 0)

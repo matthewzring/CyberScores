@@ -30,7 +30,7 @@ namespace CyberPatriot.DiscordBot.Services
             PurgeTimer = new Timer(PurgeCacheTimerTick, null, MaxTeamLifespan * 5, MaxTeamLifespan * 5);
         }
 
-        public Task InitializeAsync(IServiceProvider provider) => Backend.InitializeAsync(provider);
+        public Task InitializeAsync(IServiceProvider provider, Microsoft.Extensions.Configuration.IConfigurationSection conf) => Backend.InitializeAsync(provider, conf);
 
         protected class CachedObject<TCachee>
         {

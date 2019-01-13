@@ -98,6 +98,7 @@ namespace CyberPatriot.DiscordBot.Services
                     var candidateBackendTaskFactory = _backendOptions[i];
                     try
                     {
+                        // construct and initialize the backend
                         var candidateBackend = await candidateBackendTaskFactory(provider).ConfigureAwait(false);
                         if (candidateBackend == null)
                         {
@@ -163,10 +164,6 @@ namespace CyberPatriot.DiscordBot.Services
                 _cacheConfigurator(csrs);
                 Backend = csrs;
                 _lastBackendRefresh = DateTimeOffset.UtcNow;
-
-                // initialize the backend properly
-                // this initializes the cache, which passes through initialization to the real backend
-                await Backend.InitializeAsync(provider).ConfigureAwait(false);
             }
             finally
             {
@@ -174,7 +171,7 @@ namespace CyberPatriot.DiscordBot.Services
             }
         }
 
-        public Task InitializeAsync(IServiceProvider provider) => ResolveBackendAsync(provider);
+        public Task InitializeAsync(IServiceProvider provider, Microsoft.Extensions.Configuration.IConfigurationSection conf) => ResolveBackendAsync(provider);
 
         public Task RefreshBackendIfNeeded()
         {

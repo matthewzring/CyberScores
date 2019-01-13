@@ -198,7 +198,9 @@ namespace CyberPatriot.DiscordBot.Modules
                             using (var downloader = new HttpClient())
                             using (var unzipStream = new GZipStream(await downloader.GetStreamAsync(attachmentUrl).ConfigureAwait(false), CompressionMode.Decompress))
                             {
-                                existingArchive = new JsonScoreRetrievalService(await new StreamReader(unzipStream).ReadToEndAsync().ConfigureAwait(false)).StoredTeamDetails;
+                                var temp = new JsonScoreRetrievalService();
+                                temp.Deserialize(await new StreamReader(unzipStream).ReadToEndAsync().ConfigureAwait(false));
+                                existingArchive = temp.StoredTeamDetails;
                             }
                         }
                     }

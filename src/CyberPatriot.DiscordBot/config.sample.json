@@ -1,21 +1,25 @@
 {
   "token": "<Your Discord API token>",
   "databaseFilename": "bot.db",
-  "csvSources": [
-    "Array of filenames",
-    "Appropriately processed CSVs, based on the official score spreadsheets",
-    "Omit this array if not relevant",
-    "The csvRound property below specifies what round these CSV files are taken from - number from 1 to 4"
-  ],
-  "csvRound": 0,
-  "jsonSource": "path to a .json file for use by the JsonScoreRetrieval service, can be omitted if not needed",
-  "httpConfig": {
-    "defaultHostname": "scoreboard.uscyberpatriot.org"
-  },
-  "backendPriority": [
-    "http",
-    "json",
-    "csv"
+  "backends": [
+    {
+      "type": "http",
+      "defaultHostname": "scoreboard.uscyberpatriot.org"
+    },
+    {
+      "type": "json",
+      "source": "path to a .json file for use by the JsonScoreRetrieval service, can be omitted if not needed"
+    },
+    {
+      "type": "csv",
+      "round": 0,
+      "sources": [
+        "Array of file paths",
+        "Appropriately processed CSVs, based on the official score spreadsheets",
+        "Omit this array if not relevant",
+        "The round property specifies what round these CSV files are taken from - number from 1 to 4"
+      ]
+    }
   ],
   "allServiceCategoryMapFile": "Path to file containing colon-delimited mapping of team ID to category (for all service peering)",
   "enableUpNotification": false

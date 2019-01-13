@@ -17,7 +17,7 @@ namespace CyberPatriot.DiscordBot
         private struct ScoreBackendInitializerWrapper
         {
             public string Name;
-            public Func<IServiceProvider, Task<IScoreRetrievalService>> InitializationTask;
+            public Func<IConfigurationSection, Func<IServiceProvider, Task<IScoreRetrievalService>>> InitializationTask;
         }
 
         // I don't like big static properties
@@ -41,7 +41,7 @@ namespace CyberPatriot.DiscordBot
                 services.GetRequiredService<CommandHandlingService>().InitializeAsync(services),
                 services.GetRequiredService<IDataPersistenceService>().InitializeAsync(services),
                 services.GetRequiredService<CyberPatriotEventHandlingService>().InitializeAsync(services),
-                services.GetRequiredService<IScoreRetrievalService>().InitializeAsync(services),
+                services.GetRequiredService<IScoreRetrievalService>().InitializeAsync(services, null),
                 services.GetService<IExternalCategoryProviderService>()?.InitializeAsync(services) ?? Task.CompletedTask,
                 services.GetService<ScoreboardDownloadService>()?.InitializeAsync(services) ?? Task.CompletedTask
             );
@@ -88,6 +88,30 @@ namespace CyberPatriot.DiscordBot
 
         private IServiceProvider ConfigureServices()
         {
+            var scoreBackendInitializersByName = new ScoreBackendInitializerWrapper[] {
+                new ScoreBackendInitializerWrapper { Name = "http", InitializationTask = conf => async innerProv =>
+                    {
+                        var serv = new HttpScoreboardScoreRetrievalService();
+                        await serv.InitializeAsync(innerProv, conf).ConfigureAwait(false);
+                        return serv;
+                    }
+                },
+                new ScoreBackendInitializerWrapper { Name = "json", InitializationTask = conf => async innerProv =>
+                    {
+                        var serv = new JsonScoreRetrievalService();
+                        await serv.InitializeAsync(innerProv, conf).ConfigureAwait(false);
+                        return serv;
+                    }
+                },
+                new ScoreBackendInitializerWrapper { Name = "csv", InitializationTask = conf => async innerProv =>
+                    {
+                        var serv = new SpreadsheetScoreRetrievalService();
+                        await serv.InitializeAsync(innerProv, conf).ConfigureAwait(false);
+                        return serv;
+                    }
+                }
+            }.ToDictionary(x => x.Name, x => x.InitializationTask);
+
             return new ServiceCollection()
                 // Base
                 .AddSingleton(_client)
@@ -107,22 +131,11 @@ namespace CyberPatriot.DiscordBot
                 .AddSingleton<IScoreRetrievalService, FallbackScoreRetrievalService>(prov => new FallbackScoreRetrievalService(
                     prov,
                     _ => { },
-                    new ScoreBackendInitializerWrapper[] {
-                        new ScoreBackendInitializerWrapper { Name = "http", InitializationTask = async innerProv =>
+                    _config.GetSection("backends").AsEnumerable(true).Where(x => int.TryParse(x.Key, out int _)).OrderBy(x => int.Parse(x.Key)).Select(x =>
                     {
-                        var httpServ = new HttpScoreboardScoreRetrievalService();
-                        await httpServ.InitializeAsync(innerProv).ConfigureAwait(false);
-                        return httpServ;
-                    } },
-                    new ScoreBackendInitializerWrapper { Name = "json", InitializationTask = async innerProv =>
-                        // if the constructor throws an exception, e.g. missing config, means this provider is skipped
-                        new JsonScoreRetrievalService(await System.IO.File.ReadAllTextAsync(innerProv.GetRequiredService<IConfiguration>()["jsonSource"]).ConfigureAwait(false)) },
-                    new ScoreBackendInitializerWrapper { Name = "csv", InitializationTask = async innerProv => await new SpreadsheetScoreRetrievalService().InitializeFromConfiguredCsvAsync(innerProv).ConfigureAwait(false) }
-                    }.Conditionally(_config.GetSection("backendPriority")?.AsEnumerable(true)?.Count() > 0, initializers =>
-                    {
-                        var backendsPrioritized = _config.GetSection("backendPriority")?.AsEnumerable(true).ToDictionary(x => x.Value, x => int.Parse(x.Key));
-                        return initializers.OrderBy(x => backendsPrioritized.TryGetValue(x.Name, out int ind) ? ind : 10000000);
-                    }).Select(x => x.InitializationTask)
+                        var confSection = _config.GetSection("backends:" + x.Key);
+                        return scoreBackendInitializersByName[confSection["type"]](confSection);
+                    }).ToArray()
                 ))
                 .AddSingleton<ICompetitionRoundLogicService, CyberPatriotElevenCompetitionRoundLogicService>()
                 .AddSingleton<IExternalCategoryProviderService, FileBackedCategoryProviderService>()
