@@ -22,5 +22,6 @@
     }
   ],
   "allServiceCategoryMapFile": "Path to file containing colon-delimited mapping of team ID to category (for all service peering)",
+  "locationCodeMapFile":  "Path to file containing colon-delimited mapping of location codes to location names",
   "enableUpNotification": false
 }
