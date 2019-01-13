@@ -737,5 +737,55 @@ namespace CyberPatriot.DiscordBot
         {
             return task.Value.GetAwaiter();
         }
+
+        public class SimpleNode<T>
+        {
+            public T Value { get; set; }
+            public IList<SimpleNode<T>> Children { get; } = new List<SimpleNode<T>>();
+
+            public SimpleNode<T> FindBreadthFirst(Func<SimpleNode<T>, bool> predicate)
+            {
+                var queue = new Queue<SimpleNode<T>>();
+                queue.Enqueue(this);
+                while (queue.Count > 0)
+                {
+                    SimpleNode<T> node = queue.Dequeue();
+                    if (predicate(node))
+                    {
+                        return node;
+                    }
+                    foreach (var child in node.Children)
+                    {
+                        queue.Enqueue(child);
+                    }
+                }
+
+                return null;
+            }
+
+            public SimpleNode<T> FindDepthFirst(Func<SimpleNode<T>, bool> predicate)
+            {
+                if (predicate(this))
+                {
+                    return this;
+                }
+
+                foreach (var child in Children)
+                {
+                    SimpleNode<T> depthFirstResult = child.FindDepthFirst(predicate);
+                    if (depthFirstResult != null)
+                    {
+                        return depthFirstResult;
+                    }
+                }
+
+                return null;
+            }
+
+            public void Add(T value)
+            {
+                Children.Add(new SimpleNode<T>() { Value = value });
+            }
+        }
     }
 }

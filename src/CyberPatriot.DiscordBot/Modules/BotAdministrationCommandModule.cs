@@ -39,8 +39,8 @@ namespace CyberPatriot.DiscordBot.Modules
             // we can ConfigureAwait(false) here because we're done with the stopwatch
             await myMessage.ModifyAsync(mp => mp.Content = messageContents.ToString()).ConfigureAwait(false);
         }
-
-        [Command("info"), Alias("about"), Summary("Returns information about the bot.")]
+        
+        [Command("info"), Alias("about", "invite"), Summary("Returns information about the bot, including an invite link.")]
         public async Task InfoAsync()
         {
             var appinfo = await Context.Client.GetApplicationInfoAsync().ConfigureAwait(false);
@@ -48,7 +48,7 @@ namespace CyberPatriot.DiscordBot.Modules
             await ReplyAsync(string.Empty, embed: await new EmbedBuilder()
                 .WithAuthor(Context.Client.CurrentUser.Username, Context.Client.CurrentUser.GetAvatarUrlOrDefault())
                 .WithDescription("**Purpose:** A bot for interaction with CyberPatriot scoreboards.\n"
-                + $"[**Add me to your server!**](https://discordapp.com/oauth2/authorize?client_id={appinfo.Id}&permissions={CyberPatriotDiscordBot.RequiredPermissions}&scope=bot)\n"
+                + $"[**Add me to your server!**](https://discordapp.com/oauth2/authorize?client_id={appinfo.Id}&permissions={CyberPatriotDiscordBot.RequiredPermissions}&scope=bot) Don't forget to set a prefix!\n"
                 + $"**Code:** [On GitHub](https://github.com/glen3b/CyPatScoreboardBot)\n"
                 + "**Disclaimer:** This bot is not affiliated with the Air Force Association nor the CyberPatriot program. All scores displayed, even those marked \"official,\" are non-binding unofficial scores and should be treated as such. Official scores can only be found [on the CyberPatriot website](http://www.uscyberpatriot.org/competition/current-competition/scores). NO GUARANTEES OR WARRANTIES ARE MADE as to the accuracy of any information displayed by this bot. Refer to the GitHub README for more information.")
                 .WithFooter("Made by glen3b | Written in C# using Discord.Net", "https://avatars.githubusercontent.com/glen3b")

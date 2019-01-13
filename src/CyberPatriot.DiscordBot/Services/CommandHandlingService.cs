@@ -42,7 +42,7 @@ namespace CyberPatriot.DiscordBot.Services
             {
                 Dictionary<string, Action<Discord.Commands.Builders.ModuleBuilder>> buildersBySubmoduleName = new Dictionary<string, Action<Discord.Commands.Builders.ModuleBuilder>>();
                 Dictionary<string, IList<CommandInfo>> commandsByAlias = new Dictionary<string, IList<CommandInfo>>();
-                foreach (var cmd in _commands.Commands)
+                foreach (var cmd in _commands.Commands.Where(x => !x.Preconditions.Any(y => y is HideCommandHelpAttribute)))
                 {
                     foreach (var alias in cmd.Aliases)
                     {
@@ -94,7 +94,7 @@ namespace CyberPatriot.DiscordBot.Services
 
                 // add overall help
                 mb.AddCommand(string.Empty, HelpOverallAsync, cb => cb
-                    .WithSummary("Overall help. Pass a command specification (e.g. 'help admin ping') to show help for that command, or a page number (e.g. 'help 1') for paginated overall help.")
+                    .WithSummary("Overall help. Pass a command specification (e.g. 'help ping') to show help for that command, or a page number (e.g. 'help 1') for paginated overall help.")
                     .WithPriority(int.MinValue / 2)
                     .AddParameter<int>("pageNumber", pb =>
                         pb.WithDefault(1)
@@ -113,7 +113,9 @@ namespace CyberPatriot.DiscordBot.Services
             // param logic is enforced by the command service
             int pageNumber = (int)parameters[0];
 
-            CommandInfo[] cmds = await _commands.Commands.ToAsyncEnumerable()
+            CommandInfo[] cmds = await _commands.Commands
+                .Where(cmd => !cmd.Preconditions.Any(precond => precond is HideCommandHelpAttribute))
+                .ToAsyncEnumerable()
                 .WhereAsync(async cmd =>
                 {
                     ModuleInfo rootModule = cmd.Module;
@@ -169,31 +171,100 @@ namespace CyberPatriot.DiscordBot.Services
             return ExecuteResult.FromSuccess();
         }
 
+        private struct ExtendedParameterInfo
+        {
+            public bool Optional;
+            public AlterParameterDisplayAttribute AlteredParameterSettings;
+            public Discord.Commands.ParameterInfo Info;
+            public string Name;
+        }
+
         private void BuildHelpAsField(EmbedBuilder embed, CommandInfo cmd, string commandInvocation = null)
         {
             if (commandInvocation == null)
             {
                 commandInvocation = cmd.Aliases[0];
             }
-            StringBuilder invocationString = new StringBuilder();
-            invocationString.Append('`').Append(commandInvocation);
             var paramDescs = new Dictionary<Discord.Commands.ParameterInfo, string>();
+
+            var paramTreeRoot = new Utilities.SimpleNode<ExtendedParameterInfo>();
+
             foreach (var param in cmd.Parameters)
             {
-                invocationString.Append(' ');
-                invocationString.Append(param.IsOptional ? '[' : '<');
+                var paramSettings = new ExtendedParameterInfo();
+                bool optional = param.IsOptional;
 
-                var paramStringBuilder = new StringBuilder();
+                var alteredParamDisplaySettings = param.Preconditions.Select(x => x as AlterParameterDisplayAttribute).FirstOrDefault(x => x != null);
+                if (alteredParamDisplaySettings != null && alteredParamDisplaySettings.DisplayAsMandatory ^ alteredParamDisplaySettings.DisplayAsOptional)
+                {
+                    if (alteredParamDisplaySettings.DisplayAsOptional)
+                    {
+                        optional = true;
+                    }
+                    else
+                    {
+                        optional = false;
+                    }
+                }
 
-                paramStringBuilder.Append(param.Name);
-                if (param.DefaultValue != null) paramStringBuilder.Append(" = ").Append(param.DefaultValue);
-                if (param.IsRemainder || param.IsMultiple) paramStringBuilder.Append("...");
+                paramSettings.Optional = optional;
+                paramSettings.Info = param;
+                paramSettings.AlteredParameterSettings = alteredParamDisplaySettings;
+                paramSettings.Name = param.Name;
 
-                paramDescs[param] = paramStringBuilder.ToString();
-                invocationString.Append(paramStringBuilder.ToString());
-                invocationString.Append(param.IsOptional ? ']' : '>');
-
+                // name is null on root item, so this will work in nonsubordinate cases
+                paramTreeRoot.FindBreadthFirst(x => x.Value.Name == alteredParamDisplaySettings?.SubordinateTo).Add(paramSettings);
             }
+            StringBuilder invocationString = new StringBuilder();
+            invocationString.Append('`').Append(commandInvocation);
+
+            void ProcessParamNode(Utilities.SimpleNode<ExtendedParameterInfo> node, bool rootLevel)
+            {
+                var param = node.Value;
+                var paramInfo = param.Info;
+
+                invocationString.Append(' ');
+                invocationString.Append(param.Optional ? "[" : (rootLevel ? "<" : ""));
+
+                var paramDescStringBuilder = new StringBuilder("`");
+
+                if (param.Optional)
+                {
+                    paramDescStringBuilder.Append("[Optional] ");
+                }
+
+                paramDescStringBuilder.Append(paramInfo.Type.Name).Append(' ');
+                paramDescStringBuilder.Append(param.Name);
+                invocationString.Append(param.Name);
+                if (paramInfo.DefaultValue != null)
+                {
+                    paramDescStringBuilder.Append(" = ").Append(paramInfo.DefaultValue);
+                    invocationString.Append('=').Append(paramInfo.DefaultValue);
+                }
+                if (paramInfo.IsRemainder || paramInfo.IsMultiple)
+                {
+                    paramDescStringBuilder.Append("...");
+                    invocationString.Append("...");
+                }
+
+                paramDescStringBuilder.Append("` - ");
+                paramDescStringBuilder.Append(paramInfo.Summary ?? "*No description provided.*");
+
+                paramDescs[paramInfo] = paramDescStringBuilder.ToString();
+
+                foreach (var childParam in node.Children)
+                {
+                    ProcessParamNode(childParam, false);
+                }
+
+                invocationString.Append(param.Optional ? "]" : (rootLevel ? ">" : ""));
+            }
+
+            foreach (var param in paramTreeRoot.Children)
+            {
+                ProcessParamNode(param, true);
+            }
+
             invocationString.Append('`').AppendLine();
             StringBuilder description = new StringBuilder();
             if (cmd.Summary != null || cmd.Remarks != null)
@@ -216,8 +287,7 @@ namespace CyberPatriot.DiscordBot.Services
 
             foreach (var param in cmd.Parameters)
             {
-                string descText = paramDescs[param];
-                description.AppendFormat("`{3}{2} {0}` - {1}", descText, param.Summary ?? "*No description provided.*", param.Type.Name, param.IsOptional ? "[Optional] " : string.Empty).AppendLine();
+                description.Append(paramDescs[param]).AppendLine();
             }
 
             embed.AddField("__" + invocationString.ToString() + "__", description.ToString());

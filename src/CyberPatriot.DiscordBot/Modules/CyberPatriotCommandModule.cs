@@ -63,14 +63,17 @@ namespace CyberPatriot.DiscordBot.Modules
 
         #region Rank
 
-        [Command("rank"), Alias("getrank"), Summary("Gets score information for the team with the given rank.")]
+        [Command("rank"), Alias("getrank"), HideCommandHelp]
         public Task GetTeamWithRankCommandAsync(int rank) => GetTeamWithRankAsync(rank);
 
-        [Command("rank"), Alias("getrank"), Summary("Gets score information for the team with the given rank in the given division.")]
+        [Command("rank"), Alias("getrank"), HideCommandHelp]
         public Task GetTeamWithRankCommandAsync(int rank, Division division) => GetTeamWithRankAsync(rank, division);
 
-        [Command("rank"), Alias("getrank"), Summary("Gets score information for the team with the given rank in the given division and tier.")]
-        public Task GetTeamWithRankCommandAsync(int rank, Division division, Tier tier) => GetTeamWithRankAsync(rank, division, tier);
+        [Command("rank"), Alias("getrank"), Summary("Gets score information for the team with the given rank.")]
+        public Task GetTeamWithRankCommandAsync(
+            [Summary("The placement to display. The team at this placement will be displayed. Must be inclusively between 1 and the number of teams.")] int rank,
+            [Summary("If provided, the division within which ranking should be calculated."), AlterParameterDisplay(DisplayAsOptional = true)] Division division,
+            [Summary("If provided, the tier within which ranking should be calculated."), AlterParameterDisplay(DisplayAsOptional = true, SubordinateTo = "division")] Tier tier) => GetTeamWithRankAsync(rank, division, tier);
 
         public async Task GetTeamWithRankAsync(int rank, Division? division = null, Tier? tier = null)
         {
@@ -95,14 +98,17 @@ namespace CyberPatriot.DiscordBot.Modules
         #endregion
         #region Percentile
 
-        [Command("percentile"), Summary("Gets score information for the team at the given percentile rank.")]
+        [Command("percentile"), HideCommandHelp]
         public Task GetTeamWithPercentileCommandAsync([InclusiveRange(0, 100)] double rank) => GetTeamWithPercentileAsync(rank);
 
-        [Command("percentile"), Summary("Gets score information for the team at the given percentile rank in the given division.")]
+        [Command("percentile"), HideCommandHelp]
         public Task GetTeamWithPercentileCommandAsync([InclusiveRange(0, 100)] double rank, Division division) => GetTeamWithPercentileAsync(rank, division);
 
-        [Command("percentile"), Summary("Gets score information for the team at the given percentile rank in the given division and tier.")]
-        public Task GetTeamWithPercentileCommandAsync([InclusiveRange(0, 100)] double rank, Division division, Tier tier) => GetTeamWithPercentileAsync(rank, division, tier);
+        [Command("percentile"), Summary("Gets score information for the team at the given percentile rank.")]
+        public Task GetTeamWithPercentileCommandAsync(
+            [Summary("The percentile rank, from 0 to 100, for which information should be displayed."), InclusiveRange(0, 100)] double rank,
+            [Summary("If provided, the division within which the percentile will be calculated."), AlterParameterDisplay(DisplayAsOptional = true)] Division division,
+            [Summary("If provided, the tier within which the percentile will be calculated."), AlterParameterDisplay(DisplayAsOptional = true, SubordinateTo = "division")] Tier tier) => GetTeamWithPercentileAsync(rank, division, tier);
 
         public async Task GetTeamWithPercentileAsync(double rank, Division? division = null, Tier? tier = null)
         {
@@ -128,7 +134,7 @@ namespace CyberPatriot.DiscordBot.Modules
         #endregion
         #region Scoreboard
 
-        [Command("scoreboard"), Alias("leaderboard"), Summary("Returns the current CyberPatriot leaderboard.")]
+        [Command("scoreboard"), Alias("leaderboard"), HideCommandHelp]
         public async Task GetLeaderboardAsync(int pageNumber = 1)
         {
             using (Context.Channel.EnterTypingState())
@@ -142,7 +148,7 @@ namespace CyberPatriot.DiscordBot.Modules
             }
         }
 
-        [Command("scoreboard"), Alias("leaderboard"), Summary("Returns the current CyberPatriot leaderboard for the given division.")]
+        [Command("scoreboard"), Alias("leaderboard"), HideCommandHelp]
         public async Task GetLeaderboardAsync(Division division, int pageNumber = 1)
         {
             using (Context.Channel.EnterTypingState())
@@ -156,8 +162,11 @@ namespace CyberPatriot.DiscordBot.Modules
             }
         }
 
-        [Command("scoreboard"), Alias("leaderboard"), Summary("Returns the current CyberPatriot leaderboard for the given division and tier.")]
-        public async Task GetLeaderboardAsync(Division division, Tier tier, int pageNumber = 1)
+        [Command("scoreboard"), Alias("leaderboard"), Summary("Returns the current CyberPatriot leaderboard.")]
+        public async Task GetLeaderboardAsync(
+            [Summary("The division to which scoreboard display should be filtered, if provided."), AlterParameterDisplay(DisplayAsOptional = true)] Division division,
+            [Summary("The tier to which scoreboard display should be filtered, if provided."), AlterParameterDisplay(DisplayAsOptional = true, SubordinateTo = "division")] Tier tier,
+            int pageNumber = 1)
         {
             using (Context.Channel.EnterTypingState())
             {
@@ -275,18 +284,21 @@ namespace CyberPatriot.DiscordBot.Modules
             }
         }
 
-        [Command("servicescoreboard"), Alias("allservicescoreboard", "serviceleaderboard", "allserviceleaderboard", "categoryscoreboard", "categoryleaderboard"), Summary("Returns the current CyberPatriot leaderboard for the given category of All Service teams.")]
+        [Command("servicescoreboard"), Alias("allservicescoreboard", "serviceleaderboard", "allserviceleaderboard", "categoryscoreboard", "categoryleaderboard")]
+        [HideCommandHelp]
         public Task GetServiceLeaderboardAsync(string category, int pageNumber = 1) => GetServiceLeaderboardImplementationAsync(category, null, pageNumber);
 
-        [Command("servicescoreboard"), Alias("allservicescoreboard", "serviceleaderboard", "allserviceleaderboard", "categoryscoreboard", "categoryleaderboard"), Summary("Returns the current CyberPatriot leaderboard for the given category of All Service teams in the given tier.")]
-        public Task GetServiceLeaderboardAsync(string category, Tier tier, int pageNumber = 1) => GetServiceLeaderboardImplementationAsync(category, tier, pageNumber);
+        [Command("servicescoreboard"), Alias("allservicescoreboard", "serviceleaderboard", "allserviceleaderboard", "categoryscoreboard", "categoryleaderboard"), Summary("Returns the current CyberPatriot leaderboard for the given category of All Service teams.")]
+        public Task GetServiceLeaderboardAsync(string category, [AlterParameterDisplay(DisplayAsOptional = true), Summary("If provided, filters the returned scoreboard to contain only teams in the given tier.")] Tier tier, int pageNumber = 1) => GetServiceLeaderboardImplementationAsync(category, tier, pageNumber);
 
-        [Command("locationscoreboard"), Alias("statescoreboard", "locationleaderboard", "stateleaderboard"), Summary("Returns the current CyberPatriot leaderboard for teams in the given location.")]
+        [Command("locationscoreboard"), Alias("statescoreboard", "locationleaderboard", "stateleaderboard")]
+        [HideCommandHelp]
         public Task GetLocationLeaderboardAsync(LocationCode location, int pageNumber = 1) => GetLocationLeaderboardImplementationAsync(location, ScoreboardFilterInfo.NoFilter, pageNumber);
-        [Command("locationscoreboard"), Alias("statescoreboard", "locationleaderboard", "stateleaderboard"), Summary("Returns the current CyberPatriot leaderboard for teams in the given location and division.")]
+        [Command("locationscoreboard"), Alias("statescoreboard", "locationleaderboard", "stateleaderboard")]
+        [HideCommandHelp]
         public Task GetLocationLeaderboardAsync(LocationCode location, Division division, int pageNumber = 1) => GetLocationLeaderboardImplementationAsync(location, new ScoreboardFilterInfo(division, null), pageNumber);
-        [Command("locationscoreboard"), Alias("statescoreboard", "locationleaderboard", "stateleaderboard"), Summary("Returns the current CyberPatriot leaderboard for teams in the given location, division, and tier.")]
-        public Task GetLocationLeaderboardAsync(LocationCode location, Division division, Tier tier, int pageNumber = 1) => GetLocationLeaderboardImplementationAsync(location, new ScoreboardFilterInfo(division, tier), pageNumber);
+        [Command("locationscoreboard"), Alias("statescoreboard", "locationleaderboard", "stateleaderboard"), Summary("Returns the current CyberPatriot leaderboard for teams in the given location.")]
+        public Task GetLocationLeaderboardAsync(LocationCode location, [AlterParameterDisplay(DisplayAsOptional = true), Summary("If provided, filters the returned scoreboard to contain only teams in the given division.")] Division division, [AlterParameterDisplay(DisplayAsOptional = true, SubordinateTo = "division"), Summary("If provided, filters the returned scoreboard to contain only teams in the given tier.")] Tier tier, int pageNumber = 1) => GetLocationLeaderboardImplementationAsync(location, new ScoreboardFilterInfo(division, tier), pageNumber);
         #endregion
         #region Histogram
 
@@ -294,40 +306,44 @@ namespace CyberPatriot.DiscordBot.Modules
         // Unfortunately since it has to be a compile-time constant we can't refactor out the alias list
         //private static readonly string[] HistogramAliases = { "scoregraph", "scorestats", "statistics" };
 
-        [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of all scores on the current CyberPatriot leaderboard.")]
+        [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), HideCommandHelp]
         public Task HistogramCommandAsync() => GenerateHistogramAsync(ScoreboardFilterInfo.NoFilter, null, null);
         // [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of all scores for the given image on the current CyberPatriot leaderboard.")]
         // [Priority(-1)]
         // public Task HistogramCommandAsync(string imageName) => GenerateHistogramAsync(ScoreboardFilterInfo.NoFilter, imageName, null);
 
-        [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of all scores on the current CyberPatriot leaderboard for teams in the given state.")]
-        public Task HistogramCommandAsync([Summary("The location (either two-letter postal code or three-letter country code, in all caps) to filter the analysis to.")] LocationCode location) => GenerateHistogramAsync(ScoreboardFilterInfo.NoFilter, null, location);
+        [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), HideCommandHelp]
+        public Task HistogramCommandAsync(LocationCode location) => GenerateHistogramAsync(ScoreboardFilterInfo.NoFilter, null, location);
         // [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of all scores for the given image on the current CyberPatriot leaderboard for teams in the given state.")]
         // [Priority(-1)]
         // public Task HistogramCommandAsync([OverrideTypeReader(typeof(LocationTypeReader))] string location, string imageName) => GenerateHistogramAsync(ScoreboardFilterInfo.NoFilter, imageName, location);
 
-        [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given division's scores on the current CyberPatriot leaderboard.")]
+        [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), HideCommandHelp]
         public Task HistogramCommandAsync(Division div) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, null), null, null);
         // [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given division's scores for the given image on the current CyberPatriot leaderboard.")]
         // [Priority(-1)]
         // public Task HistogramCommandAsync(Division div, string imageName) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, null), imageName, null);
 
 
-        [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given division's scores within the given state on the current CyberPatriot leaderboard.")]
-        public Task HistogramCommandAsync([Summary("The location (either two-letter postal code or three-letter country code, in all caps) to filter the analysis to.")] LocationCode location, Division div) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, null), null, location);
+        [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), HideCommandHelp]
+        public Task HistogramCommandAsync(LocationCode location, Division div) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, null), null, location);
         // [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given division's scores for the given image within the given state on the current CyberPatriot leaderboard.")]
         // [Priority(-1)]
         // public Task HistogramCommandAsync([OverrideTypeReader(typeof(LocationTypeReader))] string location, Division div, string imageName) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, null), imageName, location);
 
 
-        [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given tier's scores on the current CyberPatriot leaderboard.")]
+        [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), HideCommandHelp]
         public Task HistogramCommandAsync(Division div, Tier tier) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, tier), null, null);
         // [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given tier's scores for the given image on the current CyberPatriot leaderboard.")]
         // [Priority(-1)]
         // public Task HistogramCommandAsync(Division div, Tier tier, string imageName) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, tier), imageName, null);
 
-        [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given tier's scores within the given state on the current CyberPatriot leaderboard.")]
-        public Task HistogramCommandAsync([Summary("The location (either two-letter postal code or three-letter country code, in all caps) to filter the analysis to.")] LocationCode location, Division div, Tier tier) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, tier), null, location);
+        [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of scores on the current CyberPatriot leaderboard.")]
+        public Task HistogramCommandAsync(
+            [Summary("The location (either two-letter postal code or three-letter country code, in all caps) to filter the analysis to, if provided."), AlterParameterDisplay(DisplayAsOptional = true)] LocationCode location,
+            [Summary("The division to filter the analysis to, if provided."), AlterParameterDisplay(DisplayAsOptional = true)] Division div,
+            [Summary("The tier to filter the analysis to, if provided."), AlterParameterDisplay(DisplayAsOptional = true, SubordinateTo = "div")] Tier tier
+            ) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, tier), null, location);
         // [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), Summary("Generates a histogram of the given tier's scores for the given image within the given state on the current CyberPatriot leaderboard.")]
         // [Priority(-1)]
         // public Task HistogramCommandAsync([OverrideTypeReader(typeof(LocationTypeReader))] string location, Division div, Tier tier, string imageName) => GenerateHistogramAsync(new ScoreboardFilterInfo(div, tier), imageName, location);
