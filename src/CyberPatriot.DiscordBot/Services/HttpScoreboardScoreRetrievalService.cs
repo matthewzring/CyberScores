@@ -20,7 +20,7 @@ namespace CyberPatriot.DiscordBot.Services
         public string Hostname { get; protected set; }
         protected HttpClient Client { get; }
 
-        public virtual CompetitionRound Round => _roundInferenceService == null ? 0 : _roundInferenceService.InferRound(DateTimeOffset.UtcNow);
+        public virtual CompetitionRound Round => _roundInferenceService.InferRound(DateTimeOffset.UtcNow);
 
         protected class HttpPassthroughScoreRetrieverMetadata : Models.IScoreRetrieverMetadata
         {
@@ -70,6 +70,8 @@ namespace CyberPatriot.DiscordBot.Services
                 Hostname = httpConfSection["defaultHostname"];
             }
 
+            int forcedCompetitionRound = 0;
+
             if (httpConfSection != null)
             {
                 string uname, pw;
@@ -82,9 +84,15 @@ namespace CyberPatriot.DiscordBot.Services
                 {
                     Client.DefaultRequestHeaders.Add("User-Agent", usragentheader);
                 }
+                forcedCompetitionRound = httpConfSection.GetValue<int>("forceRound");
             }
 
             _roundInferenceService = provider.GetService<ICompetitionRoundLogicService>() ?? _roundInferenceService;
+
+            if (forcedCompetitionRound > 0 || _roundInferenceService == null)
+            {
+                _roundInferenceService = new PreconfiguredRoundPassthroughCompetitionRoundLogicService((CompetitionRound)forcedCompetitionRound, _roundInferenceService);
+            }
 
             // optionally, attempt to deduce categories
             _categoryProvider = provider.GetService<IExternalCategoryProviderService>();
@@ -112,7 +120,7 @@ namespace CyberPatriot.DiscordBot.Services
 
                 queryList.Add("tier=" + WebUtility.UrlEncode(tierFilter.Value.ToString()));
             }
-            
+
             builder.Query = string.Join("&", queryList);
             return builder.Uri;
         }

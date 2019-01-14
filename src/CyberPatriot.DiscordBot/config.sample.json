@@ -4,7 +4,8 @@
   "backends": [
     {
       "type": "http",
-      "defaultHostname": "scoreboard.uscyberpatriot.org"
+      "defaultHostname": "scoreboard.uscyberpatriot.org",
+      "forceRound": 0 /* Optionally, force this backend to consider its data as having come from the given round regardless of current date */
     },
     {
       "type": "json",
