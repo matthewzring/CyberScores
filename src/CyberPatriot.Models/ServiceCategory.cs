@@ -10,7 +10,7 @@ namespace CyberPatriot.Models
     public enum ServiceCategory
     {
         [CanonicalName("Air Force JROTC")]
-        [Shorthands("Air Force", "AF", "AFJROTC", PreferredAbbreviation = "AF")]
+        [Shorthands("Air Force", "airforce", "AF", "AFJROTC", PreferredAbbreviation = "AF")]
         AirForce,
         [CanonicalName("Army JROTC")]
         [Shorthands("Army", PreferredAbbreviation = "Army")]
@@ -22,7 +22,7 @@ namespace CyberPatriot.Models
         [Shorthands("MCJROTC", "Marines", "Marine Corps", "marinecorps", PreferredAbbreviation = "Marines")]
         MarineCorps,
         [CanonicalName("Naval Sea Cadet Corps")]
-        [Shorthands("naval", "Naval Sea Cadets", "Sea Cadets", "seacadets", PreferredAbbreviation = "Naval")]
+        [Shorthands("naval", "Naval Sea Cadets", "navalseacadets", "Sea Cadets", "seacadets", "seacadetcorps", PreferredAbbreviation = "Naval")]
         NavalSeaCadets,
         [CanonicalName("Navy JROTC")]
         [Shorthands("Navy", "NJROTC", PreferredAbbreviation = "Navy")]
