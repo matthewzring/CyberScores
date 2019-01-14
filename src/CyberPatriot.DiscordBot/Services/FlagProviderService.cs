@@ -50,6 +50,10 @@ namespace CyberPatriot.DiscordBot.Services
                             // Romania
                             flagUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Flag_of_Romania.svg/320px-Flag_of_Romania.svg.png";
                             break;
+                        case "EST":
+                            // Estonia
+                            flagUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Flag_of_Estonia.svg/320px-Flag_of_Estonia.svg.png";
+                            break;
                     }
                 }
                 else if (locationCode.Length == 2)
