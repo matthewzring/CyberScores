@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using CyberPatriot.DiscordBot.TypeReaders;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -36,6 +37,7 @@ namespace CyberPatriot.DiscordBot.Services
             _commands.AddTypeReader<CyberPatriot.Models.Division>(new DivisionTypeReader());
             _commands.AddTypeReader<CyberPatriot.Models.Tier>(new TierTypeReader());
             _commands.AddTypeReader<CyberPatriot.Models.ServiceCategory>(new ServiceCategoryTypeReader());
+            _commands.AddTypeReader<Models.DivisionWithCategory>(new DivisionWithCategoryTypeReader());
             // the nasty hack type
             _commands.AddTypeReader<LocationCode>(new LocationTypeReader());
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), provider).ConfigureAwait(false);

@@ -4,7 +4,7 @@ using Discord;
 using Discord.Commands;
 using CyberPatriot.Models;
 
-namespace CyberPatriot.DiscordBot
+namespace CyberPatriot.DiscordBot.TypeReaders
 {
     public class LocationTypeReader : TypeReader
     {
