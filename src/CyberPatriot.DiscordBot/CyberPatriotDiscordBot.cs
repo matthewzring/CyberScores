@@ -140,7 +140,9 @@ namespace CyberPatriot.DiscordBot
                 ))
                 .AddSingleton<ICompetitionRoundLogicService, CyberPatriotElevenCompetitionRoundLogicService>()
                 .AddSingleton<IExternalCategoryProviderService, FileBackedCategoryProviderService>()
-                .AddSingleton<ILocationResolutionService, FileBackedLocationResolutionService>() // note: this is REQUIRED but there is a null provider
+                .AddSingleton<ILocationResolutionService>(prov => prov.GetRequiredService<IConfiguration>().GetValue<string>("locationCodeMapFile", null) != null ?
+                    (ILocationResolutionService)new FileBackedLocationResolutionService() :
+                    (ILocationResolutionService)new NullIdentityLocationResolutionService())
                 .AddSingleton<ScoreboardDownloadService>()
                 .AddSingleton<FlagProviderService>()
                 .AddSingleton<CyberPatriotEventHandlingService>()
