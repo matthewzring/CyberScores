@@ -187,7 +187,7 @@ namespace CyberPatriot.DiscordBot.Services
             return stringBuilder.ToString();
         }
 
-        public EmbedBuilder CreateTeamDetailsEmbed(ScoreboardDetails teamScore, TeamDetailRankingInformation rankingData = null)
+        public EmbedBuilder CreateTeamDetailsEmbed(ScoreboardDetails teamScore, TeamDetailRankingInformation rankingData = null, TimeZoneInfo timeZone = null)
         {
             if (teamScore == null)
             {
@@ -306,6 +306,55 @@ namespace CyberPatriot.DiscordBot.Services
                 }
 
                 builder.AddInlineField("Warnings", warningsOverview);
+            }
+
+            var timingFieldBuilder = new StringBuilder();
+
+            if (ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.TimeDisplay, teamScore.ScoreTime))
+            {
+                if (timingFieldBuilder.Length > 0)
+                {
+                    timingFieldBuilder.AppendLine();
+                }
+                timingFieldBuilder.AppendFormat("Score achieved in {0}", teamScore.ScoreTime.ToHoursMinutesString());
+            }
+
+            DateTimeOffset? maxImageTime = null;
+            if (teamScore.ImageScoresOverTime != null)
+            {
+                foreach (var dto in teamScore.ImageScoresOverTime.Select(x => x.Value.Keys.Last()))
+                {
+                    if (!maxImageTime.HasValue || dto > maxImageTime.Value)
+                    {
+                        maxImageTime = dto;
+                    }
+                }
+            }
+
+            if (maxImageTime.HasValue)
+            {
+                if (timingFieldBuilder.Length > 0)
+                {
+                    timingFieldBuilder.AppendLine();
+                }
+                timingFieldBuilder.Append("Score last updated:");
+                timingFieldBuilder.AppendLine().Append("\u00A0\u00A0"); //NBSP x2
+
+                if (DateTimeOffset.UtcNow - maxImageTime.Value < TimeSpan.FromDays(1))
+                {
+                    timingFieldBuilder.Append((DateTimeOffset.UtcNow - maxImageTime.Value).ToLongString(showSeconds: false)).Append(" ago");
+                }
+                else
+                {
+                    DateTimeOffset timestamp = timeZone == null ? maxImageTime.Value : TimeZoneInfo.ConvertTime(maxImageTime.Value, timeZone);
+                    timingFieldBuilder.AppendFormat("{0:g} ", timestamp);
+                    timingFieldBuilder.Append(TimeZoneNames.TZNames.GetAbbreviationsForTimeZone(timeZone.Id, "en-US").Generic.Replace("UTC Time", "UTC"));
+                }
+            }
+
+            if (timingFieldBuilder.Length > 0)
+            {
+                builder.AddInlineField("Timing", timingFieldBuilder.ToString());
             }
 
             if (rankingData != null)
