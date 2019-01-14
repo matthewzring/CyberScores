@@ -340,6 +340,28 @@ namespace CyberPatriot.DiscordBot.Services
                 builder.AddInlineField("Margin", marginBuilder.ToString());
 
                 StringBuilder standingFieldBuilder = new StringBuilder();
+
+                IList<ScoreboardSummaryEntry> subPeer = null;
+                string subPeerLabel = null;
+
+                if (teamScore.Summary.Category.HasValue)
+                {
+                    var myCategory = teamScore.Summary.Category.Value;
+                    subPeer = rankingData.Peers.Where(x => x.Category == myCategory).ToIList();
+                    subPeerLabel = " in category";
+                }
+                else
+                {
+                    var myLocation = teamScore.Summary.Location;
+                    subPeer = rankingData.Peers.Where(x => x.Location == myLocation).ToIList();
+                    subPeerLabel = " in state";
+                }
+
+                if (rankingData.PeerCount != subPeer.Count)
+                {
+                    standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(subPeer.IndexOfWhere(x => x.TeamId == teamScore.TeamId) + 1) + " of " + Utilities.Pluralize("peer team", subPeer.Count) + subPeerLabel);
+                }
+
                 standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(myIndexInPeerList + 1) + " of " + Utilities.Pluralize("peer team", rankingData.PeerCount));
 
                 // non-peer rankings use parentheticals - peer rankings are used for the rest of the logic
