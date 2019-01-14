@@ -22,6 +22,8 @@ namespace CyberPatriot.DiscordBot.Modules
 
         public ICompetitionRoundLogicService CompetitionRoundLogicService { get; set; }
 
+        public ILocationResolutionService LocationResolutionService { get; set; }
+
         [Command("team"), Alias("getteam"), Summary("Gets score information for a given team.")]
         public async Task GetTeamAsync(TeamId teamId)
         {
@@ -102,7 +104,7 @@ namespace CyberPatriot.DiscordBot.Modules
                     throw new Exception("Error obtaining team score.");
                 }
 
-                string classSpec = string.Join(", ", new string[] { location, division == null ? null : division.Value.ToStringCamelCaseToSpace() + " Division", tier == null ? null : tier.Value.ToStringCamelCaseToSpace() + " Tier" }.Where(x => x != null));
+                string classSpec = Utilities.JoinNonNullNonEmpty(", ", location == null ? null : LocationResolutionService.GetFullName(location), division == null ? null : (division.Value.ToStringCamelCaseToSpace() + " Division"), tier == null ? null : (tier.Value.ToStringCamelCaseToSpace() + " Tier"));
 
                 await ReplyAsync(
                     "**" + Utilities.AppendOrdinalSuffix(rank) + " place " + (classSpec.Length == 0 ? "overall" : "in " + classSpec) + ": " + team.TeamId + "**",
@@ -207,7 +209,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, customFilter: location == null ? null : new ScoreboardMessageBuilderService.CustomFiltrationInfo()
                 {
                     Predicate = t => t.Location == location,
-                    FilterDescription = location // TODO full name of state?
+                    FilterDescription = LocationResolutionService.GetFullName(location)
                 }, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false))).ConfigureAwait(false);
             }
         }
@@ -376,7 +378,7 @@ namespace CyberPatriot.DiscordBot.Modules
                     
                     var histogramEmbed = new EmbedBuilder()
                                          .WithTitle("CyberPatriot Score Analysis")
-                                         .WithDescription(Utilities.JoinNonNullNonEmpty(" | ", filter.Division?.ToStringCamelCaseToSpace(), filter.Tier, locCode).CoalesceBlank("All Teams"))
+                                         .WithDescription(Utilities.JoinNonNullNonEmpty(" | ", filter.Division?.ToStringCamelCaseToSpace(), filter.Tier, locCode == null ? null : LocationResolutionService.GetFullName(locCode)).CoalesceBlank("All Teams"))
                                          .AddInlineField("Teams", data.Length)
                                          .AddInlineField("Mean", $"{data.Average():0.##}")
                                          .AddInlineField("Standard Deviation", $"{data.StandardDeviation():0.##}")

@@ -24,11 +24,13 @@ namespace CyberPatriot.DiscordBot.Services
 
         public ICompetitionRoundLogicService CompetitionLogic { get; set; }
         public FlagProviderService FlagProvider { get; set; }
+        public ILocationResolutionService LocationResolution { get; set; }
 
-        public ScoreboardMessageBuilderService(FlagProviderService flagProvider, IScoreRetrievalService scoreRetriever, ICompetitionRoundLogicService competitionLogic)
+        public ScoreboardMessageBuilderService(FlagProviderService flagProvider, IScoreRetrievalService scoreRetriever, ICompetitionRoundLogicService competitionLogic, ILocationResolutionService locationResolution)
         {
             FlagProvider = flagProvider;
             CompetitionLogic = competitionLogic;
+            LocationResolution = locationResolution;
 
 #pragma warning disable 0618 // initial assignment, see comments near the property
             _scoreRetriever = scoreRetriever;
@@ -222,7 +224,7 @@ namespace CyberPatriot.DiscordBot.Services
             var builder = new EmbedBuilder()
                           .WithTimestamp(teamScore.SnapshotTimestamp)
                           .WithTitle("Team " + teamScore.TeamId)
-                          .WithDescription(Utilities.JoinNonNullNonEmpty(" | ", CompetitionLogic.GetEffectiveDivisionDescriptor(teamScore.Summary), teamScore.Summary.Tier, teamScore.Summary.Location))
+                          .WithDescription(Utilities.JoinNonNullNonEmpty(" | ", CompetitionLogic.GetEffectiveDivisionDescriptor(teamScore.Summary), teamScore.Summary.Tier, LocationResolution.GetFullName(teamScore.Summary.Location)))
                           .WithFooter(ScoreRetrieverMetadata.StaticSummaryLine);
 
             if (!string.IsNullOrWhiteSpace(teamScore.Comment))

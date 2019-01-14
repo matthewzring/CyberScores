@@ -79,9 +79,13 @@ namespace CyberPatriot.DiscordBot.Services
             string[] lines = await System.IO.File.ReadAllLinesAsync(path).ConfigureAwait(false);
             foreach (var line in lines)
             {
+                if (line.Length == 0 || line.StartsWith('#'))
+                {
+                    continue;
+                }
                 string[] parts = line.Split(new char[] { ':' }, 2);
                 _codesToNames.Add(parts[0], parts[1]);
-                _namesToCodes.Add(parts[1], parts[0]);
+                _namesToCodes.Add(parts[1].Trim(), parts[0]);
             }
         }
     }
