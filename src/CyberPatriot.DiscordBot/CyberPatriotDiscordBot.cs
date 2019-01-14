@@ -42,6 +42,7 @@ namespace CyberPatriot.DiscordBot
                 services.GetRequiredService<IDataPersistenceService>().InitializeAsync(services),
                 services.GetRequiredService<CyberPatriotEventHandlingService>().InitializeAsync(services),
                 services.GetRequiredService<IScoreRetrievalService>().InitializeAsync(services, null),
+                services.GetRequiredService<ILocationResolutionService>().InitializeAsync(services),
                 services.GetService<IExternalCategoryProviderService>()?.InitializeAsync(services) ?? Task.CompletedTask,
                 services.GetService<ScoreboardDownloadService>()?.InitializeAsync(services) ?? Task.CompletedTask
             );
@@ -139,7 +140,7 @@ namespace CyberPatriot.DiscordBot
                 ))
                 .AddSingleton<ICompetitionRoundLogicService, CyberPatriotElevenCompetitionRoundLogicService>()
                 .AddSingleton<IExternalCategoryProviderService, FileBackedCategoryProviderService>()
-                .AddSingleton<ILocationResolutionService, FileBackedLocationResolutionService>()
+                .AddSingleton<ILocationResolutionService, FileBackedLocationResolutionService>() // note: this is REQUIRED but there is a null provider
                 .AddSingleton<ScoreboardDownloadService>()
                 .AddSingleton<FlagProviderService>()
                 .AddSingleton<CyberPatriotEventHandlingService>()

@@ -89,4 +89,13 @@ namespace CyberPatriot.DiscordBot.Services
             }
         }
     }
+
+    public class NullIdentityLocationResolutionService : ILocationResolutionService
+    {
+        public string GetAbbreviation(string locationName) => locationName ?? throw new ArgumentNullException(nameof(locationName));
+
+        public string GetFullName(string locationCode) => locationCode ?? throw new ArgumentNullException(nameof(locationCode));
+
+        public Task InitializeAsync(IServiceProvider provider) => Task.CompletedTask;
+    }
 }
