@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using CyberPatriot.Models;
+using CyberPatriot.Models.Serialization;
 using Newtonsoft.Json;
 
 namespace JsonCategoryBackfill
@@ -37,11 +38,11 @@ namespace JsonCategoryBackfill
             Console.Error.WriteLine($"Got {categoryPath} as category mapfile path");
 
             var input = JsonConvert.DeserializeObject<Output>(File.ReadAllText(jsonPath));
-            var teamCategoryDictionary = File.ReadAllLines(categoryPath).Select(l => l.Trim().Split(new[] { ':' }, 2)).Where(l => TeamId.TryParse(l[0], out TeamId _)).ToDictionary(l => TeamId.Parse(l[0]), l => l[1]);
+            var teamCategoryDictionary = File.ReadAllLines(categoryPath).Select(l => l.Trim().Split(new[] { ':' }, 2)).Where(l => TeamId.TryParse(l[0], out TeamId _)).ToDictionary(l => TeamId.Parse(l[0]), l => ServiceCategoryExtensions.ParseCanonicalName(l[1]));
             // fix summary data
             foreach (var teamSummary in input.summary.TeamList)
             {
-                if (teamSummary.Category == null && teamCategoryDictionary.TryGetValue(teamSummary.TeamId, out string newCategory) && newCategory != null)
+                if (teamSummary.Category == null && teamCategoryDictionary.TryGetValue(teamSummary.TeamId, out ServiceCategory newCategory))
                 {
                     teamSummary.Category = newCategory;
                 }

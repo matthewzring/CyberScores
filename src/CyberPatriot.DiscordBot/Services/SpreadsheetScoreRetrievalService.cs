@@ -242,7 +242,7 @@ namespace CyberPatriot.DiscordBot.Services
                             teamInfo.Summary.Tier = tierInd == -1 || !Enum.TryParse<Tier>(data[tierInd], true, out Tier tier) ? null : (Tier?)tier;
                             if (catInd >= 0 && !string.IsNullOrWhiteSpace(data[catInd]))
                             {
-                                teamInfo.Summary.Category = data[catInd];
+                                teamInfo.Summary.Category = CyberPatriot.Models.Serialization.ServiceCategoryExtensions.ParseAliasName(data[catInd]);
                             }
                             if (divInd >= 0 && Utilities.TryParseEnumSpaceless(data[divInd], out Division division))
                             {

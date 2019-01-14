@@ -7,6 +7,7 @@ using CyberPatriot.DiscordBot.Services;
 using CyberPatriot.Models;
 using System.Linq;
 using CyberPatriot.BitmapProvider;
+using CyberPatriot.Models.Serialization;
 
 namespace CyberPatriot.DiscordBot.Modules
 {
@@ -50,7 +51,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 CompleteScoreboardSummary scoreboard = await scoreboardTask.ConfigureAwait(false);
                 foreach (var team in scoreboard.TeamList)
                 {
-                    await targetWriter.WriteLineAsync($"{team.TeamId},{team.Division.ToStringCamelCaseToSpace()},{team.Category ?? string.Empty},{team.Location},{(team.Tier.HasValue ? team.Tier.Value.ToString() : string.Empty)},{team.ImageCount},{team.PlayTime.ToHoursMinutesString()},{ScoreRetrievalService.Metadata.FormattingOptions.FormatScore(team.TotalScore)},{team.Warnings.ToConciseString()}").ConfigureAwait(false);
+                    await targetWriter.WriteLineAsync($"{team.TeamId},{team.Division.ToStringCamelCaseToSpace()},{(!team.Category.HasValue ? string.Empty : team.Category.Value.ToCanonicalName())},{team.Location},{(team.Tier.HasValue ? team.Tier.Value.ToString() : string.Empty)},{team.ImageCount},{team.PlayTime.ToHoursMinutesString()},{ScoreRetrievalService.Metadata.FormattingOptions.FormatScore(team.TotalScore)},{team.Warnings.ToConciseString()}").ConfigureAwait(false);
                 }
 
                 TimeZoneInfo tz = await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false);
@@ -215,51 +216,7 @@ namespace CyberPatriot.DiscordBot.Modules
         }
         #endregion
         #region Specialized scoreboards
-
-        private bool CategoryEquals(ScoreboardSummaryEntry team, string category)
-        {
-            if (team.Category == null)
-            {
-                return category == null;
-            }
-
-            string teamCategory = team.Category.Trim().ToLowerInvariant();
-            category = category.Trim().ToLowerInvariant();
-            if (teamCategory.Equals(category))
-            {
-                return true;
-            }
-            if (teamCategory.StartsWith(category))
-            {
-                // starts to get really soft from this comparison onwards
-                return true;
-            }
-            if (teamCategory.StartsWithWhereElement(c => c != ' ', category))
-            {
-                return true;
-            }
-
-            if (teamCategory.Replace(" ", "").Contains(category.Replace(" ", "")))
-            {
-                return true;
-            }
-
-            string[] teamCategoryWords = teamCategory.Split(' ');
-            if (category.Length > 1 && category == string.Join("", teamCategoryWords.Where(w => w != "jrotc").Select(w => w[0])))
-            {
-                // abbreviation, e.g. CAP or AF
-                return true;
-            }
-
-            if (category.EndsWith('s') && !category.EndsWith("corps") && CategoryEquals(team, category.Substring(0, category.Length - 1) + "corps"))
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        public async Task GetServiceLeaderboardImplementationAsync(string category, Tier? tier, int pageNumber)
+        public async Task GetServiceLeaderboardImplementationAsync(ServiceCategory category, Tier? tier, int pageNumber)
         {
             using (Context.Channel.EnterTypingState())
             {
@@ -269,27 +226,22 @@ namespace CyberPatriot.DiscordBot.Modules
                     throw new Exception("Error obtaining scoreboard.");
                 }
 
-                // validate category
-                string realCategory = teamScore.TeamList.Where(t => CategoryEquals(t, category)).Select(t => t.Category).Distinct().SingleIfOne();
-                if (realCategory == null)
-                {
-                    throw new ArgumentException("The given category was not found - it was either ambiguous or invalid.", nameof(category));
-                }
-
+                string categoryName = category.ToCanonicalName();
+                
                 await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, customFilter: new ScoreboardMessageBuilderService.CustomFiltrationInfo()
                 {
-                    Predicate = t => t.Category == realCategory,
-                    FilterDescription = realCategory
+                    Predicate = t => t.Category == category,
+                    FilterDescription = categoryName
                 }, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false), showDivision: false)).ConfigureAwait(false);
             }
         }
 
         [Command("servicescoreboard"), Alias("allservicescoreboard", "serviceleaderboard", "allserviceleaderboard", "categoryscoreboard", "categoryleaderboard")]
         [HideCommandHelp]
-        public Task GetServiceLeaderboardAsync(string category, int pageNumber = 1) => GetServiceLeaderboardImplementationAsync(category, null, pageNumber);
+        public Task GetServiceLeaderboardAsync(ServiceCategory category, int pageNumber = 1) => GetServiceLeaderboardImplementationAsync(category, null, pageNumber);
 
         [Command("servicescoreboard"), Alias("allservicescoreboard", "serviceleaderboard", "allserviceleaderboard", "categoryscoreboard", "categoryleaderboard"), Summary("Returns the current CyberPatriot leaderboard for the given category of All Service teams.")]
-        public Task GetServiceLeaderboardAsync(string category, [AlterParameterDisplay(DisplayAsOptional = true), Summary("If provided, filters the returned scoreboard to contain only teams in the given tier.")] Tier tier, int pageNumber = 1) => GetServiceLeaderboardImplementationAsync(category, tier, pageNumber);
+        public Task GetServiceLeaderboardAsync(ServiceCategory category, [AlterParameterDisplay(DisplayAsOptional = true), Summary("If provided, filters the returned scoreboard to contain only teams in the given tier.")] Tier tier, int pageNumber = 1) => GetServiceLeaderboardImplementationAsync(category, tier, pageNumber);
 
         #endregion
         #region Histogram

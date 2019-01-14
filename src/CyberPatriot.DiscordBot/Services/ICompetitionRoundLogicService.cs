@@ -33,7 +33,7 @@ namespace CyberPatriot.DiscordBot.Services
 
     public abstract class CyberPatriotCompetitionRoundLogicService : ICompetitionRoundLogicService
     {
-        public virtual string GetEffectiveDivisionDescriptor(ScoreboardSummaryEntry team) => team.Category ?? team.Division.ToStringCamelCaseToSpace();
+        public virtual string GetEffectiveDivisionDescriptor(ScoreboardSummaryEntry team) => team.Category.HasValue ? CyberPatriot.Models.Serialization.ServiceCategoryExtensions.ToCanonicalName(team.Category.Value) : team.Division.ToStringCamelCaseToSpace();
 
         public abstract double GetCiscoPointsPossible(CompetitionRound round, Division division, Tier? tier);
 

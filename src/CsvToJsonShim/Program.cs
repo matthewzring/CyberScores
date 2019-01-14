@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using CyberPatriot.Models;
+using CyberPatriot.Models.Serialization;
 using Newtonsoft.Json;
 
 namespace CsvToJsonShim
@@ -22,11 +23,11 @@ namespace CsvToJsonShim
             Console.WriteLine("Enter origin URI:");
             string originUri = Console.ReadLine();
 
-            Dictionary<TeamId, string> categories = new Dictionary<TeamId, string>();
+            var categories = new Dictionary<TeamId, ServiceCategory>();
 
             if (servicePath != "")
             {
-                categories = File.ReadAllLines(servicePath).Select(x => x.Split(':')).Where(x => TeamId.TryParse(x[0], out TeamId _)).ToDictionary(x => TeamId.Parse(x[0]), x => x[1]);
+                categories = File.ReadAllLines(servicePath).Select(x => x.Split(':')).Where(x => TeamId.TryParse(x[0], out TeamId _)).ToDictionary(x => TeamId.Parse(x[0]), x => ServiceCategoryExtensions.ParseCanonicalName(x[1]));
             }
 
             var lines = File.ReadAllLines(path);
@@ -44,7 +45,7 @@ namespace CsvToJsonShim
                 {
                     TeamId = TeamId.Parse(data[0]),
                     Division = Enum.Parse<Division>(data[1].Replace(" ", ""), true),
-                    Category = string.IsNullOrEmpty(data[2]) ? categories.TryGetValue(TeamId.Parse(data[0]), out string c) ? c : null : data[2],
+                    Category = string.IsNullOrEmpty(data[2]) ? categories.TryGetValue(TeamId.Parse(data[0]), out ServiceCategory c) ? (ServiceCategory?)c : null : ServiceCategoryExtensions.ParseAliasName(data[2].Trim()),
                     Location = data[3],
                     Tier = Enum.TryParse<Tier>(data[4],true,out Tier t) ? t : (Tier?)null,
                     ImageCount = int.Parse(data[5]),

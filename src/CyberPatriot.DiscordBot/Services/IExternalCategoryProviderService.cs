@@ -16,16 +16,16 @@ namespace CyberPatriot.DiscordBot.Services
         /// <summary>
         /// Attempts to obtain the category for the given team. If a category is not available, returns null.
         /// </summary>
-        string GetCategory(TeamId team);
+        ServiceCategory? GetCategory(TeamId team);
     }
 
     public class FileBackedCategoryProviderService : IExternalCategoryProviderService
     {
-        private IDictionary<TeamId, string> _allServiceCategoryMap;
+        private IDictionary<TeamId, ServiceCategory?> _allServiceCategoryMap;
 
         public async Task InitializeAsync(IServiceProvider provider)
         {
-            _allServiceCategoryMap = new Dictionary<TeamId, string>();
+            _allServiceCategoryMap = new Dictionary<TeamId, ServiceCategory?>();
             string allServiceCategoryMapFile = provider.GetRequiredService<IConfiguration>().GetValue<string>("allServiceCategoryMapFile", null);
             if (!string.IsNullOrWhiteSpace(allServiceCategoryMapFile) && File.Exists(allServiceCategoryMapFile))
             {
@@ -34,7 +34,10 @@ namespace CyberPatriot.DiscordBot.Services
                     try
                     {
                         string[] components = line.Split(new[] { ':' }, 2);
-                        _allServiceCategoryMap[TeamId.Parse(components[0].Trim())] = components[1].Trim();
+                        if (CyberPatriot.Models.Serialization.ServiceCategoryExtensions.TryParseAliasName(components[1].Trim(), out ServiceCategory value))
+                        {
+                            _allServiceCategoryMap[TeamId.Parse(components[0].Trim())] = value;
+                        }
                     }
                     catch
                     {
@@ -44,6 +47,6 @@ namespace CyberPatriot.DiscordBot.Services
             }
         }
 
-        public string GetCategory(TeamId team) => _allServiceCategoryMap.TryGetValue(team, out string category) ? category : null;
+        public ServiceCategory? GetCategory(TeamId team) => _allServiceCategoryMap.TryGetValue(team, out ServiceCategory? category) ? category : null;
     }
 }

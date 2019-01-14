@@ -6,7 +6,7 @@ namespace CyberPatriot.Models
     {
         public TeamId TeamId { get; set; }
         public string Location { get; set; }
-        public string Category { get; set; }
+        public ServiceCategory? Category { get; set; }
         public Division Division { get; set; }
         public Tier? Tier { get; set; }
         public int ImageCount { get; set; }

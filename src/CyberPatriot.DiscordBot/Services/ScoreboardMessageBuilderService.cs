@@ -45,39 +45,12 @@ namespace CyberPatriot.DiscordBot.Services
 
         protected string AbbreviateDivision(ScoreboardSummaryEntry team)
         {
-            if (team.Category == null || team.Division != Division.AllService)
+            if (!team.Category.HasValue || team.Division != Division.AllService)
             {
                 return team.Division.ToConciseString();
             }
 
-            string abbreviatedCategory = team.Category;
-
-            if (abbreviatedCategory == "Civil Air Patrol")
-            {
-                abbreviatedCategory = "CAP";
-            }
-            else if (abbreviatedCategory == "Naval Sea Cadet Corps")
-            {
-                abbreviatedCategory = "Naval";
-            }
-            else if (abbreviatedCategory == "Marine Corps JROTC")
-            {
-                abbreviatedCategory = "Marines";
-            }
-            else
-            {
-                string[] categoryComponents = team.Category.Split(' ');
-                if (categoryComponents.Last() == "JROTC" && categoryComponents.Length == 2)
-                {
-                    abbreviatedCategory = categoryComponents[0];
-                }
-                else if (categoryComponents[categoryComponents.Length - 1] == "JROTC" && categoryComponents[categoryComponents.Length - 2] != "Corps")
-                {
-                    abbreviatedCategory = string.Join("", categoryComponents.Take(categoryComponents.Length - 1).Select(x => x[0]));
-                }
-            }
-
-            return "AS:" + abbreviatedCategory;
+            return "AS:" + CyberPatriot.Models.Serialization.ServiceCategoryExtensions.Abbreviate(team.Category.Value);
         }
 
         public string CreateTopLeaderboardEmbed(CompleteScoreboardSummary scoreboard, CustomFiltrationInfo customFilter = null, TimeZoneInfo timeZone = null, int pageNumber = 1, int pageSize = 15, bool showDivision = true)

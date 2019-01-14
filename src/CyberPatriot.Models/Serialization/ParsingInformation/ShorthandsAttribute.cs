@@ -22,5 +22,7 @@ namespace CyberPatriot.Models.Serialization.ParsingInformation
         {
             get { return permittedShorthands; }
         }
+        
+        public string PreferredAbbreviation { get; set; }
     }
 }
