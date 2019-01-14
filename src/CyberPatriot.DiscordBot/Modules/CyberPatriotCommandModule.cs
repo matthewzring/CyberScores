@@ -111,7 +111,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 {
                     teamList = teamList.Where(t => t.Category == category);
                 }
-                var team = teamList.Where(t => t.Location == location).Skip(rank - 1).First();
+                var team = teamList.Skip(rank - 1).First();
                 ScoreboardDetails teamScore = await ScoreRetrievalService.GetDetailsAsync(team.TeamId).ConfigureAwait(false);
                 if (teamScore == null)
                 {
