@@ -429,7 +429,7 @@ namespace CyberPatriot.DiscordBot.Modules
 
                     var histogramEmbed = new EmbedBuilder()
                                          .WithTitle("CyberPatriot Score Analysis")
-                                         .WithDescription(Utilities.JoinNonNullNonEmpty(" • ",
+                                         .WithDescription(Utilities.JoinNonNullNonEmpty(" | ",
                                              imageName.AppendPrependIfNonEmpty("`"),
                                              divisionWithCategory?.Division.ToStringCamelCaseToSpace(),
                                              tier,
