@@ -27,15 +27,14 @@ namespace CyberPatriot.DiscordBot.Services
         public FlagProviderService FlagProvider { get; set; }
         public ILocationResolutionService LocationResolution { get; set; }
 
-        public ScoreboardMessageBuilderService(IServiceProvider services)
-            //FlagProviderService flagProvider, IScoreRetrievalService scoreRetriever, ICompetitionRoundLogicService competitionLogic, ILocationResolutionService locationResolution)
+        public ScoreboardMessageBuilderService(FlagProviderService flagProvider, IScoreRetrievalService scoreRetriever, ICompetitionRoundLogicService competitionLogic, ILocationResolutionService locationResolution)
         {
-            FlagProvider = services.GetService<FlagProviderService>();
-            CompetitionLogic = services.GetRequiredService<ICompetitionRoundLogicService>();
-            LocationResolution = services.GetRequiredService<ILocationResolutionService>();
+            FlagProvider = flagProvider;
+            CompetitionLogic = competitionLogic;
+            LocationResolution = locationResolution;
 
 #pragma warning disable 0618 // initial assignment, see comments near the property
-            _scoreRetriever = services.GetRequiredService<IScoreRetrievalService>();
+            _scoreRetriever = scoreRetriever;
 #pragma warning restore 0618
         }
 
@@ -55,7 +54,14 @@ namespace CyberPatriot.DiscordBot.Services
             return "AS:" + CyberPatriot.Models.Serialization.ServiceCategoryExtensions.Abbreviate(team.Category.Value);
         }
 
-        public string CreateTopLeaderboardEmbed(CompleteScoreboardSummary scoreboard, CustomFiltrationInfo customFilter = null, TimeZoneInfo timeZone = null, int pageNumber = 1, int pageSize = 15, bool showDivision = true)
+        private string GetTeamLeaderboardEntry(ScoreboardSummaryEntry team, int friendlyIndex, bool useAbbreviatedDivision = false, string prefix = "#")
+        {
+            string divisionFormatString = useAbbreviatedDivision ? "{0,6}" : "  {0,-10}";
+
+            return $"{prefix}{friendlyIndex,-5}{team.TeamId,-7}{team.Location,4}" + string.Format(divisionFormatString, AbbreviateDivision(team)) + $"{team.Tier,10}{ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore),16}{(team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : (ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.TimeDisplay, team.PlayTime) ? team.PlayTime.ToHoursMinutesString() : "")),7}{team.Warnings.ToConciseString(),4}";
+        }
+
+        public string CreateTopLeaderboardEmbed(CompleteScoreboardSummary scoreboard, CustomFiltrationInfo customFilter = null, TimeZoneInfo timeZone = null, int pageNumber = 1, int pageSize = 15)
         {
             if (pageSize <= 0)
             {
@@ -102,20 +108,10 @@ namespace CyberPatriot.DiscordBot.Services
             stringBuilder.Append(' ').Append(timeZone == null ? "UTC" : TimeZoneNames.TZNames.GetAbbreviationsForTimeZone(timeZone.Id, "en-US").Generic).AppendLine("*");
             stringBuilder.AppendLine("```");
 
-            string divisionFormatString = "  {6,-10}";
-
-            if (!showDivision)
-            {
-                divisionFormatString = "";
-            }
-            else if ((scoreboard.Filter.Division.HasValue && scoreboard.Filter.Division.Value != Division.AllService) || !scoreboard.TeamList.Where(predicate).Any(x => x.Category != null))
-            {
-                divisionFormatString = "{6,6}";
-            }
-
-            // FIXME time display logic according to FormattingOptions
+            bool conciseDivision = (scoreboard.Filter.Division.HasValue && scoreboard.Filter.Division.Value != Division.AllService) || !scoreboard.TeamList.Where(predicate).Any(x => x.Category.HasValue);
+            
             scoreboard.TeamList.Where(predicate).Skip(pageNumber * pageSize).Take(pageSize)
-                .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1,-7}{2,4}" + divisionFormatString + "{7,10}{3,16}{4,7}{5,4}", i + 1 + (pageNumber * pageSize), team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : team.PlayTime.ToHoursMinutesString(), team.Warnings.ToConciseString(), AbbreviateDivision(team), team.Tier).AppendLine())
+                .Select((team, i) => stringBuilder.AppendLine(GetTeamLeaderboardEntry(team, i + 1 + (pageNumber * pageSize), useAbbreviatedDivision: conciseDivision)))
                 .Last().AppendLine("```");
             if (scoreboard.OriginUri != null)
             {
@@ -146,38 +142,33 @@ namespace CyberPatriot.DiscordBot.Services
             }
             stringBuilder.AppendLine("*");
 
-            string divisionFormatString = "  {6,-10}";
-
-            if (!peerTeams.Any(x => x.Category != null))
-            {
-                divisionFormatString = "{6,6}";
-            }
-
+            bool conciseDivision = !peerTeams.Any(x => x.Category != null);
+            
             stringBuilder.AppendLine("```bash");
             // zero-based rank of the given team
             int pos = peerTeams.IndexOfWhere(team => team.TeamId == teamId);
             if (pos < nearbyTeams + topTeams + 1)
             {
                 peerTeams.Take(nearbyTeams + pos + 1)
-                          .Select((team, i) => stringBuilder.AppendFormat("{8}{0,-5}{1,-7}{2,4}" + divisionFormatString + "{7,10}{3,16}{4,7}{5,4}", i + 1, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : team.PlayTime.ToHoursMinutesString(), team.Warnings.ToConciseString(), AbbreviateDivision(team), team.Tier, team.TeamId == teamId ? ">" : "#").AppendLine())
+                          .Select((team, i) => stringBuilder.AppendLine(GetTeamLeaderboardEntry(team, i + 1, useAbbreviatedDivision: conciseDivision, prefix: team.TeamId == teamId ? ">" : "#")))
                           .Consume();
             }
             else
             {
                 peerTeams.Take(topTeams)
-                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1,-7}{2,4}" + divisionFormatString + "{7,10}{3,16}{4,7}{5,4}", i + 1, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : team.PlayTime.ToHoursMinutesString(), team.Warnings.ToConciseString(), AbbreviateDivision(team), team.Tier).AppendLine())
+                          .Select((team, i) => stringBuilder.AppendLine(GetTeamLeaderboardEntry(team, i + 1, useAbbreviatedDivision: conciseDivision)))
                           .Consume();
                 stringBuilder.AppendLine("...");
                 peerTeams.Skip(pos - nearbyTeams)
                           .Take(nearbyTeams)
-                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1,-7}{2,4}" + divisionFormatString + "{7,10}{3,16}{4,7}{5,4}", i + pos - nearbyTeams + 1, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : team.PlayTime.ToHoursMinutesString(), team.Warnings.ToConciseString(), AbbreviateDivision(team), team.Tier).AppendLine())
+                          .Select((team, i) => stringBuilder.AppendLine(GetTeamLeaderboardEntry(team, i + pos - nearbyTeams + 1, useAbbreviatedDivision: conciseDivision)))
                           .Consume();
                 ScoreboardSummaryEntry thisTeamDetails = peerTeams.Single(t => t.TeamId == teamId);
-                stringBuilder.AppendFormat(">{0,-5}{1,-7}{2,4}" + divisionFormatString + "{7,10}{3,16}{4,7}{5,4}", pos + 1, thisTeamDetails.TeamId, thisTeamDetails.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(thisTeamDetails.TotalScore), thisTeamDetails.Advancement.HasValue ? thisTeamDetails.Advancement.Value.ToConciseString() : thisTeamDetails.PlayTime.ToHoursMinutesString(), thisTeamDetails.Warnings.ToConciseString(), AbbreviateDivision(thisTeamDetails), thisTeamDetails.Tier).AppendLine();
+                stringBuilder.AppendLine(GetTeamLeaderboardEntry(thisTeamDetails, pos + 1, useAbbreviatedDivision: conciseDivision, prefix: ">"));
                 // since pos and i are both zero-based, i + pos + 2 returns correct team rank for teams after given team
                 peerTeams.Skip(pos + 1)
                           .Take(nearbyTeams)
-                          .Select((team, i) => stringBuilder.AppendFormat("#{0,-5}{1,-7}{2,4}" + divisionFormatString + "{7,10}{3,16}{4,7}{5,4}", i + pos + 2, team.TeamId, team.Location, ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore), team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : team.PlayTime.ToHoursMinutesString(), team.Warnings.ToConciseString(), AbbreviateDivision(team), team.Tier).AppendLine())
+                          .Select((team, i) => stringBuilder.AppendLine(GetTeamLeaderboardEntry(team, i + pos + 2, useAbbreviatedDivision: conciseDivision)))
                           .Consume();
             }
 
