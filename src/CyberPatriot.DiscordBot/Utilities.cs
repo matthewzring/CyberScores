@@ -131,6 +131,25 @@ namespace CyberPatriot.DiscordBot
             throw new ArgumentOutOfRangeException();
         }
 
+        public static IAsyncEnumerable<T> ToTaskResultEnumerable<T>(this IEnumerable<Task<T>> rootEnum)
+        {
+            return AsyncEnumerable.CreateEnumerable(() =>
+            {
+                IEnumerator<Task<T>> rootEnumerator = rootEnum.GetEnumerator();
+                T val = default(T);
+                return AsyncEnumerable.CreateEnumerator(async ct =>
+                {
+                    if (!rootEnumerator.MoveNext())
+                    {
+                        return false;
+                    }
+
+                    val = await rootEnumerator.Current.ConfigureAwait(false);
+                    return true;
+                }, () => val, () => rootEnumerator.Dispose());
+            });
+        }
+
         public static IAsyncEnumerable<T> WhereAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, Task<bool>> predicate)
         {
             return AsyncEnumerable.CreateEnumerable(() =>
@@ -259,6 +278,9 @@ namespace CyberPatriot.DiscordBot
             // TODO covariance
             return enumerable;
         }
+
+        public static IEnumerable<TOut> Ternary<TIn, TOut>(this IEnumerable<TIn> enumerable, bool condition, Func<IEnumerable<TIn>, IEnumerable<TOut>> trueAction, Func<IEnumerable<TIn>, IEnumerable<TOut>> falseAction) => condition ? trueAction(enumerable) : falseAction(enumerable);
+        public static IAsyncEnumerable<TOut> TernaryAsync<TIn, TOut>(this IEnumerable<TIn> enumerable, bool condition, Func<IEnumerable<TIn>, IAsyncEnumerable<TOut>> trueAction, Func<IEnumerable<TIn>, IAsyncEnumerable<TOut>> falseAction) => condition ? trueAction(enumerable) : falseAction(enumerable);
 
         /// <summary>
         /// Skips a given number of elements, which are processed specially, and wraps the remainder of the enumerable.
