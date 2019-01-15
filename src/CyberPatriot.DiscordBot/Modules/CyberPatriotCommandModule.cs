@@ -335,7 +335,7 @@ namespace CyberPatriot.DiscordBot.Modules
                     message: ScoreEmbedBuilder.CreateImageLeaderboardEmbed(downloadTasks.Where(t => t.IsCompletedSuccessfully).Select(
                         t => new System.Collections.Generic.KeyValuePair<ScoreboardSummaryEntry, ScoreboardImageDetails>(t.Result.Summary,
                             t.Result.Images.SingleOrDefault(i => i.ImageName.Equals(image, StringComparison.InvariantCultureIgnoreCase))))
-                        .Where(kvp => kvp.Value != null).OrderByDescending(kvp => kvp.Value.Score).ThenByDescending(kvp => kvp.Value.PlayTime),
+                        .Where(kvp => kvp.Value != null).OrderByDescending(kvp => kvp.Value.Score).ThenBy(kvp => kvp.Value.PlayTime),
                         filterDescription: filterDesc, pageNumber: pageNumber)).ConfigureAwait(false);
             }
         }
