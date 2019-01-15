@@ -14,12 +14,6 @@ namespace CyberPatriot.DiscordBot
 {
     internal class CyberPatriotDiscordBot
     {
-        private struct ScoreBackendInitializerWrapper
-        {
-            public string Name;
-            public Func<IConfigurationSection, Func<IServiceProvider, Task<IScoreRetrievalService>>> InitializationTask;
-        }
-
         // I don't like big static properties
         public static DateTimeOffset StartupTime { get; private set; }
         public const int RequiredPermissions = 510016;
@@ -43,6 +37,7 @@ namespace CyberPatriot.DiscordBot
                 services.GetRequiredService<CyberPatriotEventHandlingService>().InitializeAsync(services),
                 services.GetRequiredService<IScoreRetrievalService>().InitializeAsync(services, null),
                 services.GetRequiredService<ILocationResolutionService>().InitializeAsync(services),
+                services.GetService<AlternateDataBackendProviderService>()?.InitializeAsync(services) ?? Task.CompletedTask,
                 services.GetService<IExternalCategoryProviderService>()?.InitializeAsync(services) ?? Task.CompletedTask,
                 services.GetService<ScoreboardDownloadService>()?.InitializeAsync(services) ?? Task.CompletedTask
             );
@@ -89,31 +84,7 @@ namespace CyberPatriot.DiscordBot
 
         private IServiceProvider ConfigureServices()
         {
-            var scoreBackendInitializersByName = new ScoreBackendInitializerWrapper[] {
-                new ScoreBackendInitializerWrapper { Name = "http", InitializationTask = conf => async innerProv =>
-                    {
-                        var serv = new HttpScoreboardScoreRetrievalService();
-                        await serv.InitializeAsync(innerProv, conf).ConfigureAwait(false);
-                        return serv;
-                    }
-                },
-                new ScoreBackendInitializerWrapper { Name = "json", InitializationTask = conf => async innerProv =>
-                    {
-                        var serv = new JsonScoreRetrievalService();
-                        await serv.InitializeAsync(innerProv, conf).ConfigureAwait(false);
-                        return serv;
-                    }
-                },
-                new ScoreBackendInitializerWrapper { Name = "csv", InitializationTask = conf => async innerProv =>
-                    {
-                        var serv = new SpreadsheetScoreRetrievalService();
-                        await serv.InitializeAsync(innerProv, conf).ConfigureAwait(false);
-                        return serv;
-                    }
-                }
-            }.ToDictionary(x => x.Name, x => x.InitializationTask);
-
-            return new ServiceCollection()
+            var serviceCollection = new ServiceCollection()
                 // Base
                 .AddSingleton(_client)
                 .AddSingleton<CommandService>()
@@ -135,7 +106,7 @@ namespace CyberPatriot.DiscordBot
                     _config.GetSection("backends").AsEnumerable(true).Where(x => int.TryParse(x.Key, out int _)).OrderBy(x => int.Parse(x.Key)).Select(x =>
                     {
                         var confSection = _config.GetSection("backends:" + x.Key);
-                        return scoreBackendInitializersByName[confSection["type"]](confSection);
+                        return AlternateDataBackendProviderService.ScoreBackendInitializerProvidersByName[confSection["type"]](confSection);
                     }).ToArray()
                 ))
                 .AddSingleton<ICompetitionRoundLogicService, CyberPatriotElevenCompetitionRoundLogicService>()
@@ -146,8 +117,13 @@ namespace CyberPatriot.DiscordBot
                 .AddSingleton<ScoreboardDownloadService>()
                 .AddSingleton<FlagProviderService>()
                 .AddSingleton<CyberPatriotEventHandlingService>()
-                .AddSingleton<ScoreboardMessageBuilderService>()
-                .BuildServiceProvider();
+                .AddSingleton<AlternateDataBackendProviderService>()
+                .AddTransient<ScoreboardMessageBuilderService>();
+
+            var servicesList = serviceCollection.ToIList();
+            serviceCollection.AddSingleton<System.Collections.Generic.IList<ServiceDescriptor>>(_ => servicesList);
+
+            return serviceCollection.BuildServiceProvider();
         }
 
         private IConfiguration BuildConfig()

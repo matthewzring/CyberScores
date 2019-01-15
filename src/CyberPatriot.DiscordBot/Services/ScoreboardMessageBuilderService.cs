@@ -7,6 +7,7 @@ using Discord;
 using CyberPatriot.DiscordBot;
 using CyberPatriot.Models;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CyberPatriot.DiscordBot.Services
 {
@@ -26,14 +27,15 @@ namespace CyberPatriot.DiscordBot.Services
         public FlagProviderService FlagProvider { get; set; }
         public ILocationResolutionService LocationResolution { get; set; }
 
-        public ScoreboardMessageBuilderService(FlagProviderService flagProvider, IScoreRetrievalService scoreRetriever, ICompetitionRoundLogicService competitionLogic, ILocationResolutionService locationResolution)
+        public ScoreboardMessageBuilderService(IServiceProvider services)
+            //FlagProviderService flagProvider, IScoreRetrievalService scoreRetriever, ICompetitionRoundLogicService competitionLogic, ILocationResolutionService locationResolution)
         {
-            FlagProvider = flagProvider;
-            CompetitionLogic = competitionLogic;
-            LocationResolution = locationResolution;
+            FlagProvider = services.GetService<FlagProviderService>();
+            CompetitionLogic = services.GetRequiredService<ICompetitionRoundLogicService>();
+            LocationResolution = services.GetRequiredService<ILocationResolutionService>();
 
 #pragma warning disable 0618 // initial assignment, see comments near the property
-            _scoreRetriever = scoreRetriever;
+            _scoreRetriever = services.GetRequiredService<IScoreRetrievalService>();
 #pragma warning restore 0618
         }
 
@@ -213,7 +215,7 @@ namespace CyberPatriot.DiscordBot.Services
             }
 
             // location -> flag in thumbnail
-            string flagUrl = FlagProvider.GetFlagUri(teamScore.Summary.Location);
+            string flagUrl = FlagProvider?.GetFlagUri(teamScore.Summary.Location);
             if (flagUrl != null)
             {
                 builder.ThumbnailUrl = flagUrl;

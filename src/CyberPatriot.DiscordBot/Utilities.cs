@@ -7,6 +7,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using CyberPatriot.DiscordBot.Services;
 using CyberPatriot.Models;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace CyberPatriot.DiscordBot
 {
@@ -559,20 +561,69 @@ namespace CyberPatriot.DiscordBot
             return defVal;
         }
 
-        public static IServiceProvider Overlay<TService>(this IServiceProvider provider, TService newService)
+        public static IServiceProvider Overlay<TService>(this IServiceProvider provider, TService newService) where TService : class
         {
-            // default to adding to existing overlay, otherwise create the overlay
-            var overlay = provider as OverlayServiceProvider;
-            if (overlay == null)
+            var internalServiceDescriptors = provider.GetService<IList<ServiceDescriptor>>();
+            if (internalServiceDescriptors != null)
             {
-                overlay = new OverlayServiceProvider()
+                // we can use .NET's API for this, kind of
+                var newServColl = new ServiceCollection();
+                foreach (var serviceDescriptor in internalServiceDescriptors)
                 {
-                    Parent = provider
-                };
-            }
+                    if (serviceDescriptor.ServiceType == typeof(TService)
+                        || serviceDescriptor.ServiceType == typeof(IList<ServiceDescriptor>))
+                    {
+                        continue;
+                    }
 
-            overlay.OverlayedServices[typeof(TService)] = newService;
-            return overlay;
+                    ServiceDescriptor newDescriptor = null;
+                    if (serviceDescriptor.Lifetime == ServiceLifetime.Singleton)
+                    {
+                        try
+                        {
+                            newDescriptor = new ServiceDescriptor(serviceDescriptor.ServiceType, provider.GetService(serviceDescriptor.ServiceType));
+                        }
+                        catch { }
+                    }
+
+                    if (newDescriptor == null)
+                    {
+                        if (serviceDescriptor.ImplementationType != null)
+                        {
+                            newDescriptor = new ServiceDescriptor(serviceDescriptor.ServiceType, serviceDescriptor.ImplementationType, serviceDescriptor.Lifetime);
+                        }
+                        else if (serviceDescriptor.ImplementationInstance != null && serviceDescriptor.Lifetime == ServiceLifetime.Singleton)
+                        {
+                            newDescriptor = new ServiceDescriptor(serviceDescriptor.ServiceType, serviceDescriptor.ImplementationInstance);
+                        }
+                        else if (serviceDescriptor.ImplementationFactory != null)
+                        {
+                            newDescriptor = new ServiceDescriptor(serviceDescriptor.ServiceType, serviceDescriptor.ImplementationFactory, serviceDescriptor.Lifetime);
+                        }
+                    }
+
+                    newServColl.Add(newDescriptor);
+                }
+
+                newServColl.AddSingleton(typeof(TService), newService);
+                return newServColl.BuildServiceProvider();
+            }
+            else
+            {
+                // create a thin overlay
+                // default to adding to existing overlay, otherwise create the overlay
+                var overlay = provider as OverlayServiceProvider;
+                if (overlay == null)
+                {
+                    overlay = new OverlayServiceProvider()
+                    {
+                        Parent = provider
+                    };
+                }
+
+                overlay.OverlayedServices[typeof(TService)] = newService;
+                return overlay;
+            }
         }
 
 
