@@ -19,6 +19,7 @@ namespace CyberPatriot.DiscordBot.Services
         protected Models.ScoreRetrieverMetadata Metadata { get; set; } = new Models.ScoreRetrieverMetadata()
         {
             IsDynamic = false,
+            SupportsInexpensiveDetailQueries = true,
             StaticSummaryLine = "Official Scores Released"
         };
 

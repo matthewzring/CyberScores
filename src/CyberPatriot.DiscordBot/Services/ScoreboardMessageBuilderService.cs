@@ -54,11 +54,105 @@ namespace CyberPatriot.DiscordBot.Services
             return "AS:" + CyberPatriot.Models.Serialization.ServiceCategoryExtensions.Abbreviate(team.Category.Value);
         }
 
-        private string GetTeamLeaderboardEntry(ScoreboardSummaryEntry team, int friendlyIndex, bool useAbbreviatedDivision = false, string prefix = "#")
+        private string GetTeamLeaderboardEntry(ScoreboardSummaryEntry team, int friendlyIndex, bool useAbbreviatedDivision = false, string prefix = "#", bool showAdvancement = true)
         {
             string divisionFormatString = useAbbreviatedDivision ? "{0,6}" : "  {0,-10}";
 
-            return $"{prefix}{friendlyIndex,-5}{team.TeamId,-7}{team.Location,4}" + string.Format(divisionFormatString, AbbreviateDivision(team)) + $"{team.Tier,10}{ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore),16}{(team.Advancement.HasValue ? team.Advancement.Value.ToConciseString() : (ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.TimeDisplay, team.PlayTime) ? team.PlayTime.ToHoursMinutesString() : "")),7}{team.Warnings.ToConciseString(),4}";
+            return $"{prefix}{friendlyIndex,-5}{team.TeamId,-7}{team.Location,4}" + string.Format(divisionFormatString, AbbreviateDivision(team)) + $"{team.Tier,10}{ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore),16}{((showAdvancement && team.Advancement.HasValue) ? team.Advancement.Value.ToConciseString() : (ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.TimeDisplay, team.PlayTime) ? team.PlayTime.ToHoursMinutesString() : "")),7}{team.Warnings.ToConciseString(),4}";
+        }
+
+        private string GetImageLeaderboardEntry(ScoreboardSummaryEntry team, ScoreboardImageDetails image, int friendlyIndex, bool useAbbreviatedDivision = false, string prefix = "#")
+        {
+            string divisionFormatString = useAbbreviatedDivision ? "{0,6}" : "  {0,-10}";
+            string vulnPenString = new string(' ', 10);
+            if (ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.VulnerabilityDisplay, image.VulnerabilitiesFound, image.VulnerabilitiesRemaining))
+            {
+                vulnPenString = $"{image.VulnerabilitiesFound,5}v {image.Penalties,2}p";
+            }
+
+            return $"{prefix}{friendlyIndex,-5}{team.TeamId,-7}{team.Location,4}" +
+                string.Format(divisionFormatString, AbbreviateDivision(team)) + $"{team.Tier,10}" +
+                $"{ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(image.Score),13}" +
+                vulnPenString +
+                $"{(ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.TimeDisplay, image.PlayTime) ? image.PlayTime.ToHoursMinutesString() : ""),7}" +
+                $"{image.Warnings.ToConciseString(),4}";
+        }
+
+        public string CreateImageLeaderboardEmbed(IEnumerable<KeyValuePair<ScoreboardSummaryEntry, ScoreboardImageDetails>> completeImageData, string filterDescription, int teamCount = -1, int pageNumber = 1, int pageSize = 15)
+        {
+            if (pageSize <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(pageSize));
+            }
+
+            if (teamCount == -1)
+            {
+                completeImageData = completeImageData.ToIList();
+                teamCount = completeImageData.Count();
+            }
+
+            int pageCount = (int)Math.Ceiling(((double)teamCount) / pageSize);
+
+            pageNumber--;
+
+            if (pageNumber < 0 || pageNumber >= pageCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(pageNumber));
+            }
+
+            IList<KeyValuePair<ScoreboardSummaryEntry, ScoreboardImageDetails>> thisPageImageData = completeImageData.Skip(pageNumber * pageSize).Take(pageSize).ToIList();
+
+            StringBuilder resultBuilder = new StringBuilder();
+            resultBuilder.Append("**CyberPatriot Image Scoreboard");
+            if (!string.IsNullOrWhiteSpace(filterDescription))
+            {
+                resultBuilder.Append(", ").Append(filterDescription);
+            }
+            if (pageCount > 1)
+            {
+                resultBuilder.Append($" (Page {pageNumber + 1} of {pageCount})");
+            }
+            resultBuilder.AppendLine("**");
+
+            ScoreboardImageDetails canonicalImage = thisPageImageData[0].Value;
+            resultBuilder.AppendFormat("**`{0}`", canonicalImage.ImageName);
+            int vulnCt = canonicalImage.VulnerabilitiesRemaining + canonicalImage.VulnerabilitiesFound;
+            double pts = canonicalImage.PointsPossible;
+            bool displayVulns = ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.VulnerabilityDisplay, vulnCt);
+            bool displayPts = ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.VulnerabilityDisplay, pts);
+
+            if (displayVulns || displayPts)
+            {
+                resultBuilder.Append(": ");
+                if (displayVulns)
+                {
+                    resultBuilder.Append(Utilities.Pluralize("vulnerability", vulnCt));
+
+                    if (displayPts)
+                    {
+                        resultBuilder.Append(", ");
+                    }
+                }
+                if (displayPts)
+                {
+                    resultBuilder.Append(ScoreRetrieverMetadata.FormattingOptions.FormatScore(pts)).Append(" points possible");
+                }
+            }
+
+            resultBuilder.AppendLine("**");
+            resultBuilder.AppendLine("```");
+
+            bool conciseDivision = !thisPageImageData.Any(x => x.Key.Category != null);
+
+            for (int i = 0; i < thisPageImageData.Count; i++)
+            {
+                var teamScore = thisPageImageData[i];
+                int friendlyIndex = i + 1 + (pageNumber * pageSize);
+                resultBuilder.AppendLine(GetImageLeaderboardEntry(teamScore.Key, teamScore.Value, friendlyIndex, useAbbreviatedDivision: conciseDivision));
+            }
+            resultBuilder.AppendLine("```");
+
+            return resultBuilder.ToString();
         }
 
         public string CreateTopLeaderboardEmbed(CompleteScoreboardSummary scoreboard, CustomFiltrationInfo customFilter = null, TimeZoneInfo timeZone = null, int pageNumber = 1, int pageSize = 15)
@@ -109,7 +203,7 @@ namespace CyberPatriot.DiscordBot.Services
             stringBuilder.AppendLine("```");
 
             bool conciseDivision = (scoreboard.Filter.Division.HasValue && scoreboard.Filter.Division.Value != Division.AllService) || !scoreboard.TeamList.Where(predicate).Any(x => x.Category.HasValue);
-            
+
             scoreboard.TeamList.Where(predicate).Skip(pageNumber * pageSize).Take(pageSize)
                 .Select((team, i) => stringBuilder.AppendLine(GetTeamLeaderboardEntry(team, i + 1 + (pageNumber * pageSize), useAbbreviatedDivision: conciseDivision)))
                 .Last().AppendLine("```");
@@ -143,7 +237,7 @@ namespace CyberPatriot.DiscordBot.Services
             stringBuilder.AppendLine("*");
 
             bool conciseDivision = !peerTeams.Any(x => x.Category != null);
-            
+
             stringBuilder.AppendLine("```bash");
             // zero-based rank of the given team
             int pos = peerTeams.IndexOfWhere(team => team.TeamId == teamId);

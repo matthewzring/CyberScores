@@ -19,14 +19,14 @@ namespace CyberPatriot.DiscordBot.Modules
 
         [Command("rounddata")]
         [Alias("backend", "datasource")]
-        [Summary("Executes the given command using scores provided by the given data source.")]
+        [Summary("Executes the given command using scores provided by the given data source. The available data sources can be seen via the `listdatasources` command.")]
         public async Task ExecuteWrappedCommandAsync(
             [Summary("The identifier of the data source from which scores should be provided to the command.")] string dataSourceId,
             [Remainder, Summary("The command (without any prefix) that should be executed.")] string command)
         {
             if (!AlternateBackendProvider.TryGetAlternateDataBackend(dataSourceId, out IScoreRetrievalService newBackend))
             {
-                throw new ArgumentException("The given alternate data source ID is invalid.");
+                throw new ArgumentException("The given alternate data source ID is invalid. Valid data sources can be listed with the `listdatasources` command.");
             }
 
             IResult result = await CommandService.ExecuteAsync(Context, command, Services.Overlay(newBackend)).ConfigureAwait(false);
@@ -38,7 +38,6 @@ namespace CyberPatriot.DiscordBot.Modules
 
         [Command("listdatasources"), Alias("listalternatedatasources", "getdatasources", "getalternatedatasources")]
         [Summary("Lists the names of the available loaded alternate data sources.")]
-        [RequireOwner]
         public async Task ListDataSourcesCommandAsync()
         {
             var messageBuilder = new StringBuilder();

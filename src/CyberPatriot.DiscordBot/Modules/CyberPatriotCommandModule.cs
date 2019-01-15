@@ -255,6 +255,91 @@ namespace CyberPatriot.DiscordBot.Modules
             }
         }
         #endregion
+        #region Image Scoreboard
+
+        [Command("imagescoreboard"), Alias("imageleaderboard"), HideCommandHelp]
+        public Task GetImageLeaderboardAsync(string imageName, int pageNumber = 1) => GetImageLeaderboardImplementationAsync(imageName, null, null, null, null, pageNumber);
+
+        [Command("imagescoreboard"), Alias("imageleaderboard"), HideCommandHelp]
+        public Task GetImageLeaderboardAsync(string imageName, LocationCode location, int pageNumber = 1) => GetImageLeaderboardImplementationAsync(imageName, location, null, null, null, pageNumber);
+
+        [Command("imagescoreboard"), Alias("imageleaderboard"), HideCommandHelp]
+        public Task GetImageLeaderboardAsync(string imageName, DivisionWithCategory division, int pageNumber = 1) => GetImageLeaderboardImplementationAsync(imageName, null, division.Category, division.Division, null, pageNumber);
+
+        [Command("imagescoreboard"), Alias("imageleaderboard"), HideCommandHelp]
+        public Task GetImageLeaderboardAsync(string imageName, LocationCode location, DivisionWithCategory division, int pageNumber = 1) => GetImageLeaderboardImplementationAsync(imageName, location, division.Category, division.Division, null, pageNumber);
+
+        [Command("imagescoreboard"), Alias("imageleaderboard"), HideCommandHelp]
+        public Task GetImageLeaderboardAsync(string imageName, Tier tier, int pageNumber = 1) => GetImageLeaderboardImplementationAsync(imageName, null, null, null, tier, pageNumber);
+
+        [Command("imagescoreboard"), Alias("imageleaderboard"), HideCommandHelp]
+        public Task GetImageLeaderboardAsync(string imageName, LocationCode location, Tier tier, int pageNumber = 1) => GetImageLeaderboardImplementationAsync(imageName, location, null, null, tier, pageNumber);
+
+        [Command("imagescoreboard"), Alias("imageleaderboard"), HideCommandHelp]
+        public Task GetImageLeaderboardAsync(string imageName, DivisionWithCategory division, Tier tier, int pageNumber = 1) => GetImageLeaderboardImplementationAsync(imageName, null, division.Category, division.Division, tier, pageNumber);
+
+        [Command("imagescoreboard"), Alias("imageleaderboard")]
+        [Summary("Gets the leaderboard of scores on the given image, optionally filtered by various parameters. Only supported on offline score providers.")]
+        public Task GetImageLeaderboardAsync(
+            [Summary("The image for which information should be retrieved. The name must be an exact match.")] string imageName,
+            [Summary("The location to which scoreboard display should be filtered, if provided."), AlterParameterDisplay(DisplayAsOptional = true)] LocationCode location,
+            [Summary("The division (and optionally category) to which scoreboard display should be filtered, if provided."), AlterParameterDisplay(DisplayAsOptional = true)] DivisionWithCategory division,
+            [Summary("The tier to which scoreboard display should be filtered, if provided."), AlterParameterDisplay(DisplayAsOptional = true)] Tier tier,
+            int pageNumber = 1) => GetImageLeaderboardImplementationAsync(imageName, location, division.Category, division.Division, tier, pageNumber);
+
+
+        public async Task GetImageLeaderboardImplementationAsync(string image, string location, ServiceCategory? category, Division? division, Tier? tier, int pageNumber)
+        {
+            using (Context.Channel.EnterTypingState())
+            {
+                if (!ScoreRetrievalService.Metadata.SupportsInexpensiveDetailQueries)
+                {
+                    throw new InvalidOperationException("Image-specific queries cannot be performed on online score providers. Please use datasource to specify an offline score provider.");
+                }
+
+                System.Collections.Generic.IEnumerable<ScoreboardSummaryEntry> teams = (await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(division, tier)).ConfigureAwait(false))?.TeamList;
+                if (teams == null)
+                {
+                    throw new Exception("Error obtaining scoreboard.");
+                }
+
+                if (category.HasValue)
+                {
+                    var catVal = category.Value;
+                    teams = teams.Where(t => t.Category == catVal);
+                }
+
+                if (location != null)
+                {
+                    teams = teams.Where(t => t.Location == location);
+                }
+                
+                string filterDesc = Utilities.JoinNonNullNonEmpty(", ",
+                    !division.HasValue ? null : division.Value.ToStringCamelCaseToSpace() + " Division",
+                    !tier.HasValue ? null : tier.Value.ToStringCamelCaseToSpace() + " Tier",
+                    !category.HasValue ? null : category.Value.ToCanonicalName(),
+                    location == null ? null : LocationResolutionService.GetFullName(location));
+
+                var downloadTasks = teams.Select(t => ScoreRetrievalService.GetDetailsAsync(t.TeamId)).ToArray();
+
+                try
+                {
+                    await Task.WhenAll(downloadTasks).ConfigureAwait(false);
+                }
+                catch
+                {
+                    // oh well?
+                }
+
+                await ReplyAsync(
+                    message: ScoreEmbedBuilder.CreateImageLeaderboardEmbed(downloadTasks.Where(t => t.IsCompletedSuccessfully).Select(
+                        t => new System.Collections.Generic.KeyValuePair<ScoreboardSummaryEntry, ScoreboardImageDetails>(t.Result.Summary,
+                            t.Result.Images.SingleOrDefault(i => i.ImageName.Equals(image, StringComparison.InvariantCultureIgnoreCase))))
+                        .Where(kvp => kvp.Value != null).OrderByDescending(kvp => kvp.Value.Score).ThenByDescending(kvp => kvp.Value.PlayTime),
+                        filterDescription: filterDesc, pageNumber: pageNumber)).ConfigureAwait(false);
+            }
+        }
+        #endregion
         #region Histogram
 
         private const string HistogramCommandName = "histogram";

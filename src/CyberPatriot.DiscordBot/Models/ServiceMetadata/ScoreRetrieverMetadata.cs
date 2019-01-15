@@ -6,6 +6,8 @@ namespace CyberPatriot.DiscordBot.Models
     {
         public bool IsDynamic { get; set; }
 
+        public bool SupportsInexpensiveDetailQueries { get; set; }
+
         public string StaticSummaryLine { get; set; }
 
         public ScoreFormattingOptions FormattingOptions { get; set; }

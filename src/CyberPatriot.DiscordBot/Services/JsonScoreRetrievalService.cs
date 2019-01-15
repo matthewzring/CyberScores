@@ -23,6 +23,7 @@ namespace CyberPatriot.DiscordBot.Services
         protected Models.ScoreRetrieverMetadata Metadata { get; set; } = new Models.ScoreRetrieverMetadata()
         {
             IsDynamic = false,
+            SupportsInexpensiveDetailQueries = true,
             StaticSummaryLine = "CCS Archive",
             FormattingOptions = new ScoreFormattingOptions()
         };
@@ -138,7 +139,7 @@ namespace CyberPatriot.DiscordBot.Services
             {
                 if (!teamDetails.TryGetValue(team, out ScoreboardDetails retVal) || retVal == null)
                 {
-                    throw new ArgumentException("The given team does not exist.");
+                    return Task.FromException<ScoreboardDetails>(new ArgumentException("The given team does not exist."));
                 }
 
                 return Task.FromResult(retVal);

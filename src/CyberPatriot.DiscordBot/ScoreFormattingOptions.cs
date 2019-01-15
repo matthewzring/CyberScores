@@ -35,6 +35,23 @@ namespace CyberPatriot.DiscordBot
             throw new ArgumentOutOfRangeException();
         }
 
+        public static bool EvaluateNumericDisplay(NumberDisplayCriteria criteria, double number)
+        {
+            switch (criteria)
+            {
+                case NumberDisplayCriteria.Always:
+                    return true;
+                case NumberDisplayCriteria.WhenNonNegative:
+                    return number >= 0;
+                case NumberDisplayCriteria.WhenNonZero:
+                    return number != 0;
+                case NumberDisplayCriteria.Never:
+                    return false;
+            }
+
+            throw new ArgumentOutOfRangeException();
+        }
+
         public static bool EvaluateNumericDisplay(NumberDisplayCriteria criteria, int a, int b)
         {
             // checks both

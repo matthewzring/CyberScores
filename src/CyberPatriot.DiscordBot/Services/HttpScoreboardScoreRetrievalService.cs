@@ -33,6 +33,8 @@ namespace CyberPatriot.DiscordBot.Services
 
             public virtual bool IsDynamic => true;
 
+            public virtual bool SupportsInexpensiveDetailQueries => false;
+
             public virtual string StaticSummaryLine => ScoreRetriever.Hostname;
 
             public virtual ScoreFormattingOptions FormattingOptions { get; protected set; } = new ScoreFormattingOptions();
