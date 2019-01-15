@@ -15,18 +15,32 @@ namespace CyberPatriot.Models.Serialization
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue,
             JsonSerializer serializer)
         {
-            var val = (string)reader.Value;
-            if (Enum.TryParse(val, out ServiceCategory retVal))
-            {
-                return retVal;
-            }
-            else if (ServiceCategoryExtensions.TryParseCanonicalName(val, out retVal))
-            {
-                return retVal;
-            }
-            else if (objectType == typeof(ServiceCategory?) && (val == null || val == "null"))
+            if (objectType == typeof(ServiceCategory?) && (reader.Value == null || string.Equals("null", reader.Value)))
             {
                 return null;
+            }
+            else if (reader.Value is string val)
+            {
+                if (Enum.TryParse(val, out ServiceCategory retVal))
+                {
+                    return retVal;
+                }
+                else if (ServiceCategoryExtensions.TryParseCanonicalName(val, out retVal))
+                {
+                    return retVal;
+                }
+            }
+            else if (reader.Value is Int64 l)
+            {
+                return (ServiceCategory)l;
+            }
+            else if (reader.Value is Int32 i)
+            {
+                return (ServiceCategory)i;
+            }
+            else if (reader.Value is Int16 s)
+            {
+                return (ServiceCategory)s;
             }
 
             throw new JsonReaderException("Error parsing ServiceCategory.");
