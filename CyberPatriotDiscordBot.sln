@@ -11,9 +11,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CyberPatriot.BitmapProvider
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CyberPatriot.BitmapProvider.ImageSharp", "src\CyberPatriot.BitmapProvider.ImageSharp\CyberPatriot.BitmapProvider.ImageSharp.csproj", "{6267ADFD-66B6-4A4F-B199-19BA151CDC99}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CsvToJsonShim", "src\CsvToJsonShim\CsvToJsonShim.csproj", "{B67B95C2-BB71-4005-9854-4749DC018E15}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CsvToJsonShim", "src\CsvToJsonShim\CsvToJsonShim.csproj", "{B67B95C2-BB71-4005-9854-4749DC018E15}"
 EndProject
-Project("{F4B7E20C-BE5E-4F5C-8720-F5F1B6C1C2C5}") = "JsonCategoryBackfill", "src\JsonCategoryBackfill\JsonCategoryBackfill.csproj", "{0CDFB68E-5F07-4A50-AB7C-68F7713E8512}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JsonCategoryBackfill", "src\JsonCategoryBackfill\JsonCategoryBackfill.csproj", "{0CDFB68E-5F07-4A50-AB7C-68F7713E8512}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonCorrector", "JsonCorrector\JsonCorrector.csproj", "{B9474C2B-4697-482A-A044-8722386C232C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +47,10 @@ Global
 		{0CDFB68E-5F07-4A50-AB7C-68F7713E8512}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0CDFB68E-5F07-4A50-AB7C-68F7713E8512}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0CDFB68E-5F07-4A50-AB7C-68F7713E8512}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B9474C2B-4697-482A-A044-8722386C232C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9474C2B-4697-482A-A044-8722386C232C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9474C2B-4697-482A-A044-8722386C232C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9474C2B-4697-482A-A044-8722386C232C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
