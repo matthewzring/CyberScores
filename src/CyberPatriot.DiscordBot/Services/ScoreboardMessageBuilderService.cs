@@ -8,6 +8,7 @@ using CyberPatriot.DiscordBot;
 using CyberPatriot.Models;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using CyberPatriot.Models.Serialization;
 
 namespace CyberPatriot.DiscordBot.Services
 {
@@ -226,9 +227,9 @@ namespace CyberPatriot.DiscordBot.Services
 
             var teamScoreboardSummaryEntry = peerTeams.Single(x => x.TeamId == teamId);
             stringBuilder.AppendFormat("*{0} is: {1} Division", teamId, teamScoreboardSummaryEntry.Division.ToStringCamelCaseToSpace());
-            if (teamScoreboardSummaryEntry.Category != null)
+            if (teamScoreboardSummaryEntry.Category.HasValue)
             {
-                stringBuilder.AppendFormat(", {0}", teamScoreboardSummaryEntry.Category);
+                stringBuilder.AppendFormat(", {0}", teamScoreboardSummaryEntry.Category.Value.ToCanonicalName());
             }
             if (teamScoreboardSummaryEntry.Tier.HasValue)
             {
