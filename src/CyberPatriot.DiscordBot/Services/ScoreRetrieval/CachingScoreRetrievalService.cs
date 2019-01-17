@@ -7,7 +7,7 @@ using System.Threading;
 using CyberPatriot.Models;
 using System.Collections;
 
-namespace CyberPatriot.DiscordBot.Services
+namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
 {
     public class CachingScoreRetrievalService : IScoreRetrievalService, IComposingService<IScoreRetrievalService>, IDisposable
     {

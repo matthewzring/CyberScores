@@ -8,7 +8,7 @@ using CyberPatriot.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace CyberPatriot.DiscordBot.Services
+namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
 {
     /// <summary>
     /// Retrieves scores from a released score spreadsheet.

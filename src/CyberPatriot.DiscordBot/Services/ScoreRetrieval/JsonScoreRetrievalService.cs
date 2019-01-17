@@ -8,7 +8,7 @@ using CyberPatriot.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace CyberPatriot.DiscordBot.Services
+namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
 {
     public class JsonScoreRetrievalService : IScoreRetrievalService, IDisposable
     {

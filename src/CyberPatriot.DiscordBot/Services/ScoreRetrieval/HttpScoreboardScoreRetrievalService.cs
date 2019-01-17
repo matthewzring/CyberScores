@@ -13,7 +13,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Text.RegularExpressions;
 
-namespace CyberPatriot.DiscordBot.Services
+namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
 {
     public class HttpScoreboardScoreRetrievalService : IScoreRetrievalService, IDisposable
     {

@@ -1,7 +1,7 @@
 using System;
 using CyberPatriot.Models;
 
-namespace CyberPatriot.DiscordBot.Services
+namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
 {
     public class ArchivalHttpScoreboardScoreRetrievalService : HttpScoreboardScoreRetrievalService
     {

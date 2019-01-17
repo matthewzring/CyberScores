@@ -9,6 +9,7 @@ using LiteDB;
 using CyberPatriot.DiscordBot.Services;
 using CyberPatriot.BitmapProvider;
 using System.Linq;
+using CyberPatriot.DiscordBot.Services.ScoreRetrieval;
 
 namespace CyberPatriot.DiscordBot
 {

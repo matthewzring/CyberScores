@@ -6,6 +6,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CyberPatriot.DiscordBot.Services.ScoreRetrieval;
 using CyberPatriot.Models;
 
 namespace CyberPatriot.DiscordBot.Services
