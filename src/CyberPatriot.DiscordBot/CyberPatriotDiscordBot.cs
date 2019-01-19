@@ -116,7 +116,6 @@ namespace CyberPatriot.DiscordBot
                     (ILocationResolutionService)new FileBackedLocationResolutionService() :
                     (ILocationResolutionService)new NullIdentityLocationResolutionService())
                 .AddSingleton<ScoreboardDownloadService>()
-                .AddSingleton<FlagProviderService>()
                 .AddSingleton<CyberPatriotEventHandlingService>()
                 .AddSingleton<AlternateDataBackendProviderService>()
                 .AddTransient<ScoreboardMessageBuilderService>();

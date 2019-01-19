@@ -121,7 +121,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 }
 
                 string classSpec = Utilities.JoinNonNullNonEmpty(", ",
-                    location == null ? null : LocationResolutionService.GetFullName(location),
+                    LocationResolutionService.GetFullNameOrNull(location),
                     division == null ? null : (division.Value.ToStringCamelCaseToSpace() + " Division"),
                     !category.HasValue ? null : category.Value.ToCanonicalName(),
                     tier == null ? null : (tier.Value.ToStringCamelCaseToSpace() + " Tier"));
@@ -245,7 +245,7 @@ namespace CyberPatriot.DiscordBot.Modules
 
                 string filterDesc = Utilities.JoinNonNullNonEmpty(", ",
                     !category.HasValue ? null : category.Value.ToCanonicalName(),
-                    location == null ? null : LocationResolutionService.GetFullName(location));
+                    LocationResolutionService.GetFullNameOrNull(location));
 
                 await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, customFilter: location == null && !category.HasValue ? null : new ScoreboardMessageBuilderService.CustomFiltrationInfo()
                 {
@@ -318,7 +318,7 @@ namespace CyberPatriot.DiscordBot.Modules
                     !division.HasValue ? null : division.Value.ToStringCamelCaseToSpace() + " Division",
                     !tier.HasValue ? null : tier.Value.ToStringCamelCaseToSpace() + " Tier",
                     !category.HasValue ? null : category.Value.ToCanonicalName(),
-                    location == null ? null : LocationResolutionService.GetFullName(location));
+                    LocationResolutionService.GetFullNameOrNull(location));
 
                 var downloadTasks = teams.Select(t => ScoreRetrievalService.GetDetailsAsync(t.TeamId)).ToArray();
 
@@ -434,7 +434,7 @@ namespace CyberPatriot.DiscordBot.Modules
                                              divisionWithCategory?.Division.ToStringCamelCaseToSpace(),
                                              tier,
                                              divisionWithCategory?.Category?.ToCanonicalName(),
-                                             locCode == null ? null : LocationResolutionService.GetFullName(locCode))
+                                             LocationResolutionService.GetFullNameOrNull(locCode))
                                            .CoalesceBlank("All Teams"))
                                          .AddInlineField("Teams", data.Length)
                                          .AddInlineField("Mean", $"{data.Average():0.##}")

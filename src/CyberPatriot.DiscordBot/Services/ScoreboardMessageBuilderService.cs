@@ -25,12 +25,10 @@ namespace CyberPatriot.DiscordBot.Services
 #pragma warning restore 0618
 
         public ICompetitionRoundLogicService CompetitionLogic { get; set; }
-        public FlagProviderService FlagProvider { get; set; }
         public ILocationResolutionService LocationResolution { get; set; }
 
-        public ScoreboardMessageBuilderService(FlagProviderService flagProvider, IScoreRetrievalService scoreRetriever, ICompetitionRoundLogicService competitionLogic, ILocationResolutionService locationResolution)
+        public ScoreboardMessageBuilderService(IScoreRetrievalService scoreRetriever, ICompetitionRoundLogicService competitionLogic, ILocationResolutionService locationResolution)
         {
-            FlagProvider = flagProvider;
             CompetitionLogic = competitionLogic;
             LocationResolution = locationResolution;
 
@@ -301,10 +299,10 @@ namespace CyberPatriot.DiscordBot.Services
             }
 
             // location -> flag in thumbnail
-            string flagUrl = FlagProvider?.GetFlagUri(teamScore.Summary.Location);
+            Uri flagUrl = LocationResolution?.GetFlagUriOrNull(teamScore.Summary.Location);
             if (flagUrl != null)
             {
-                builder.ThumbnailUrl = flagUrl;
+                builder.ThumbnailUrl = flagUrl.ToString();
             }
 
             // tier -> color on side
