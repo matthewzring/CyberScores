@@ -6,6 +6,7 @@ using System.Runtime.InteropServices.ComTypes;
 using System.Threading.Tasks;
 using CyberPatriot.Models;
 using LiteDB;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CyberPatriot.DiscordBot.Services
@@ -15,6 +16,11 @@ namespace CyberPatriot.DiscordBot.Services
         public LiteDatabase Database { get; set; }
 
         protected virtual LiteCollection<TModel> GetCollection<TModel>() => Database.GetCollection<TModel>();
+
+        public LiteDbDataPersistenceService()
+        {
+
+        }
 
         public LiteDbDataPersistenceService(LiteDatabase db)
         {
@@ -26,6 +32,11 @@ namespace CyberPatriot.DiscordBot.Services
             if (Database == null)
             {
                 Database = provider.GetService<LiteDatabase>();
+                if (Database == null)
+                {
+                    var conf = provider.GetRequiredService<IConfiguration>();
+                    Database = new LiteDatabase(conf["databaseFilename"]);
+                }
             }
 
             // this is code specific to this program, the rest of this class is fairly generic

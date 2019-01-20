@@ -79,6 +79,7 @@ namespace CyberPatriot.DiscordBot.Services
                     ListLock = listLock;
                     DetailsTaskList = null;
                     OriginalTaskList = null;
+                    OriginalDownloadList = null;
                     StartTime = startTime;
                 }
 
@@ -100,6 +101,8 @@ namespace CyberPatriot.DiscordBot.Services
                 }
 
                 public Task<ScoreboardDetails>[] OriginalTaskList;
+
+                public TeamId[] OriginalDownloadList;
             }
 
             public readonly object StateLock = new object();
@@ -116,6 +119,12 @@ namespace CyberPatriot.DiscordBot.Services
             {
                 get => state.OriginalTaskList;
                 set => state.OriginalTaskList = value;
+            }
+
+            public TeamId[] OriginalDownloadList
+            {
+                get => state.OriginalDownloadList;
+                set => state.OriginalDownloadList = value;
             }
 
             // clone state (value type), so observers can have a consistent object
@@ -246,6 +255,8 @@ namespace CyberPatriot.DiscordBot.Services
                     scoreRetriever = newHttp;
                 }
 
+                teamDetailRetrieveTasksBuilder = teamDetailRetrieveTasksBuilder.ToIList();
+
                 // use the optimized score retriever
                 List<Task<ScoreboardDetails>> teamDetailRetrieveTasks =
                     teamDetailRetrieveTasksBuilder.Select(tId => scoreRetriever.GetDetailsAsync(tId)).ToList();
@@ -255,6 +266,7 @@ namespace CyberPatriot.DiscordBot.Services
                 {
                     currentDownload.DetailsTaskList = teamDetailRetrieveTasks;
                     currentDownload.OriginalTaskList = originalTaskList;
+                    currentDownload.OriginalDownloadList = teamDetailRetrieveTasksBuilder.ToArray();
                 }
 
                 retState.DownloadTasks = originalTaskList;

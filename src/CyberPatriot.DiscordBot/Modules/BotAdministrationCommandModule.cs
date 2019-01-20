@@ -9,6 +9,7 @@ using Discord.Commands;
 using CyberPatriot.Models;
 using CyberPatriot.DiscordBot.Services;
 using System.Net.Http;
+using System.Text;
 
 namespace CyberPatriot.DiscordBot.Modules
 {
@@ -39,7 +40,7 @@ namespace CyberPatriot.DiscordBot.Modules
             // we can ConfigureAwait(false) here because we're done with the stopwatch
             await myMessage.ModifyAsync(mp => mp.Content = messageContents.ToString()).ConfigureAwait(false);
         }
-        
+
         [Command("info"), Alias("about", "invite"), Summary("Returns information about the bot, including an invite link.")]
         public async Task InfoAsync()
         {
@@ -144,16 +145,35 @@ namespace CyberPatriot.DiscordBot.Modules
 
                 // second might be higher because tasks continue executing during this
                 int completedCount = state.OriginalTaskList.Count(t => t.IsCompleted);
-                int faultedCount = state.OriginalTaskList.Count(t => t.IsFaulted);
+                TeamId[] faulted = state.OriginalTaskList.Select((t, i) => new { Id = state.OriginalDownloadList[i], Task = t }).Where(x => x.Task.IsFaulted).Select(x => x.Id).ToArray();
 
                 TimeZoneInfo userTz = await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false);
                 TimeSpan elapsed = DateTimeOffset.UtcNow - state.StartTime;
 
+                var faultedTeamsStatus = new StringBuilder();
+                if (faulted.Length > 0)
+                {
+                    faultedTeamsStatus.AppendLine();
+                    faultedTeamsStatus.AppendLine();
+                    faultedTeamsStatus.AppendLine("__Teams whose downloads failed:__");
+                    const int maxFaultedToDisplay = 20;
+                    int cap = Math.Min(faulted.Length, maxFaultedToDisplay);
+                    for (int i = 0; i < cap; i++)
+                    {
+                        faultedTeamsStatus.AppendLine(faulted[i].ToString());
+                    }
+
+                    if (faulted.Length > maxFaultedToDisplay)
+                    {
+                        faultedTeamsStatus.AppendLine($"(and {faulted.Length - maxFaultedToDisplay} others)");
+                    }
+                }
+
                 await ReplyAsync("__Status:__\n" +
                 $"Started: {TimeZoneInfo.ConvertTime(state.StartTime, userTz):g} {userTz.GetAbbreviations().Generic} ({elapsed.ToLongString()} ago)\n" +
                 $"Team downloads completed: {completedCount} / {state.OriginalTaskList.Length} ({(100.0 * completedCount) / state.OriginalTaskList.Length:F1}%)\n" +
-                $"Team downloads errored: {faultedCount}\n" +
-                $"About {(elapsed * Math.Min(state.OriginalTaskList.Length / (1.0*(completedCount + faultedCount)), 100000000) - elapsed).ToLongString(showSeconds: false)} remaining").ConfigureAwait(false);
+                $"Team downloads errored: {faulted.Length}\n" +
+                $"About {(elapsed * Math.Min(state.OriginalTaskList.Length / (1.0 * (completedCount + faulted.Length)), 100000000) - elapsed).ToLongString(showSeconds: false)} remaining" + faultedTeamsStatus.ToString()).ConfigureAwait(false);
             }
 
             [Command("redownload")]

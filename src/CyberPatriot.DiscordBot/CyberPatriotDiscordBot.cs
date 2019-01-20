@@ -95,7 +95,7 @@ namespace CyberPatriot.DiscordBot
                 .AddSingleton<LogService>()
                 // Extra
                 .AddSingleton(_config)
-                .AddSingleton<IDataPersistenceService, LiteDbDataPersistenceService>(prov => new LiteDbDataPersistenceService(new LiteDatabase(_config["databaseFilename"])))
+                .AddSingleton<IDataPersistenceService, LiteDbDataPersistenceService>()
                 .AddSingleton<PreferenceProviderService>()
                 .AddSingleton<IGraphProviderService, BitmapProvider.ImageSharp.ImageSharpGraphProviderService>()
                 .AddSingleton<IRateLimitProvider, TimerRateLimitProvider>(prov => new PriorityTimerRateLimitProvider(2000, 1))
