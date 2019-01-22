@@ -6,7 +6,7 @@ using System.Threading;
 using CyberPatriot.Models;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
+namespace CyberPatriot.Services.ScoreRetrieval
 {
     public class FallbackScoreRetrievalService : IScoreRetrievalService, IComposingService<IScoreRetrievalService>
     {
@@ -14,7 +14,7 @@ namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
         private Action<CachingScoreRetrievalService> _cacheConfigurator;
         private int _selectedBackendIndex;
         private IServiceProvider _provider;
-        private LogService _log;
+        private PostLogAsyncHandler _log;
         private DateTimeOffset _lastBackendRefresh;
         private readonly SemaphoreSlim _backendResolutionLock = new SemaphoreSlim(1);
 
@@ -24,7 +24,7 @@ namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
 
         // Deliberately, these change when the backend changes
         public CompetitionRound Round => Backend.Round;
-        public Models.IScoreRetrieverMetadata Metadata => Backend?.Metadata;
+        public Metadata.IScoreRetrieverMetadata Metadata => Backend?.Metadata;
 
         /// <summary>
         /// Initializes the FallbackScoreRetrievalService with an array of possible backends.
@@ -51,12 +51,14 @@ namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
             _provider = provider;
             _backendOptions = backends.Where(t => t != null).ToList();
             _cacheConfigurator = cacheConfigurator;
-            _log = provider.GetRequiredService<LogService>();
+            _log = provider.GetService<PostLogAsyncHandler>() ?? new PostLogAsyncHandler(NullLog);
         }
 
         public FallbackScoreRetrievalService(IServiceProvider provider, params Func<IServiceProvider, Task<IScoreRetrievalService>>[] backends) : this(provider, crsr => { }, backends)
         {
         }
+
+        private static Task NullLog(Microsoft.Extensions.Logging.LogLevel severity, string message, Exception exception = null, string source = "Application") => Task.CompletedTask;
 
         protected bool IsSummaryValid(CompleteScoreboardSummary returnedSummary)
         {
@@ -136,7 +138,7 @@ namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
                     if (upperSearchBound == -1)
                     {
                         // we searched all possible backends
-                        await _log.LogApplicationMessageAsync(Discord.LogSeverity.Error, "Could not find an IScoreRetrievalService for fallback, continuing with invalid service.", source: nameof(FallbackScoreRetrievalService)).ConfigureAwait(false);
+                        await _log(Microsoft.Extensions.Logging.LogLevel.Error, "Could not find an IScoreRetrievalService for fallback, continuing with invalid service.", source: nameof(FallbackScoreRetrievalService)).ConfigureAwait(false);
                         throw new AggregateException("No valid IScoreRetrievalService found.", errors);
                     }
                     else
@@ -194,7 +196,7 @@ namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
             if (!IsSummaryValid(scoreboardDetails))
             {
                 // well this is awkward
-                await _log.LogApplicationMessageAsync(Discord.LogSeverity.Warning, "Returning known bad scoreboard summary!", source: nameof(FallbackScoreRetrievalService)).ConfigureAwait(false);
+                await _log(Microsoft.Extensions.Logging.LogLevel.Warning, "Returning known bad scoreboard summary!", source: nameof(FallbackScoreRetrievalService)).ConfigureAwait(false);
                 // don't block the caller
                 // exceptions will NOT be caught (!) but there's a log call in there which should be Good Enough(TM) in problematic cases
 #pragma warning disable 4014

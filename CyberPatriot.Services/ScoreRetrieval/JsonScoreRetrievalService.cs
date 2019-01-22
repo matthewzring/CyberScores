@@ -8,7 +8,7 @@ using CyberPatriot.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
+namespace CyberPatriot.Services.ScoreRetrieval
 {
     public class JsonScoreRetrievalService : IScoreRetrievalService, IDisposable
     {
@@ -19,13 +19,13 @@ namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
         public IReadOnlyDictionary<TeamId, ScoreboardDetails> StoredTeamDetails => teamDetails;
 
         public CompetitionRound Round { get; protected set; }
-        Models.IScoreRetrieverMetadata IScoreRetrievalService.Metadata => Metadata;
-        protected Models.ScoreRetrieverMetadata Metadata { get; set; } = new Models.ScoreRetrieverMetadata()
+        Metadata.IScoreRetrieverMetadata IScoreRetrievalService.Metadata => Metadata;
+        protected Metadata.ScoreRetrieverMetadata Metadata { get; set; } = new Metadata.ScoreRetrieverMetadata()
         {
             IsDynamic = false,
             SupportsInexpensiveDetailQueries = true,
             StaticSummaryLine = "CCS Archive",
-            FormattingOptions = new ScoreFormattingOptions()
+            FormattingOptions = new Metadata.ScoreFormattingOptions()
         };
 
         public JsonScoreRetrievalService()
@@ -34,7 +34,7 @@ namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
 
         public async Task InitializeAsync(IServiceProvider provider, Microsoft.Extensions.Configuration.IConfigurationSection config)
         {
-            Deserialize(await File.ReadAllTextAsync(config["source"]).ConfigureAwait(false));
+            Deserialize(await Utilities.ReadAllTextAsync(config["source"]).ConfigureAwait(false));
         }
 
         public static async Task<string> SerializeAsync(CompleteScoreboardSummary summary,

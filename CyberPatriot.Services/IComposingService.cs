@@ -1,4 +1,4 @@
-namespace CyberPatriot.DiscordBot
+namespace CyberPatriot.Services
 {
     public interface IComposingService<out TService>
     {

@@ -5,6 +5,7 @@ using Discord.Commands;
 using CyberPatriot.Models;
 using CyberPatriot.DiscordBot.Services;
 using Microsoft.Extensions.DependencyInjection;
+using CyberPatriot.Services;
 
 namespace CyberPatriot.DiscordBot.TypeReaders
 {

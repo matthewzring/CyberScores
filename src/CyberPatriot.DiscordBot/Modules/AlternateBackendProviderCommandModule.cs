@@ -1,6 +1,7 @@
 ﻿using CyberPatriot.DiscordBot.Models;
 using CyberPatriot.DiscordBot.Services;
 using CyberPatriot.Models;
+using CyberPatriot.Services;
 using Discord.Commands;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

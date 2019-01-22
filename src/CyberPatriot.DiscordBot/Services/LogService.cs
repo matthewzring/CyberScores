@@ -103,6 +103,7 @@ namespace CyberPatriot.DiscordBot.Services
         }
 
         public Task LogApplicationMessageAsync(LogSeverity severity, string message, Exception exception = null, [System.Runtime.CompilerServices.CallerMemberName] string source = "Application") => LogApplicationMessageAsync(new LogMessage(severity, source, message, exception));
+        public Task LogApplicationMessageAsync(LogLevel severity, string message, Exception exception = null, [System.Runtime.CompilerServices.CallerMemberName] string source = "Application") => LogApplicationMessageAsync(LogSeverityFromLevel(severity), message, exception, source);
 
         // public Task LogApplicationMessageAsync(Exception e) => LogApplicationMessageAsync(new LogMessage(LogSeverity.Error, "Exception", e.ToString(), e));
 
@@ -119,6 +120,28 @@ namespace CyberPatriot.DiscordBot.Services
 
         private static LogLevel LogLevelFromSeverity(LogSeverity severity)
             => (LogLevel)(Math.Abs((int)severity - 5));
+
+        private static LogSeverity LogSeverityFromLevel(LogLevel level)
+        {
+            switch (level)
+            {
+                case LogLevel.Critical:
+                    return LogSeverity.Critical;
+                case LogLevel.Debug:
+                    return LogSeverity.Debug;
+                case LogLevel.Error:
+                    return LogSeverity.Error;
+                case LogLevel.Information:
+                    return LogSeverity.Info;
+                case LogLevel.None:
+                case LogLevel.Trace:
+                    return LogSeverity.Verbose;
+                case LogLevel.Warning:
+                    return LogSeverity.Warning;
+            }
+
+            throw new ArgumentOutOfRangeException();
+        }
 
     }
 }

@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CyberPatriot;
 using CyberPatriot.Models;
+using CyberPatriot.Services;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;

@@ -7,7 +7,7 @@ using CyberPatriot.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace CyberPatriot.DiscordBot.Services
+namespace CyberPatriot.Services
 {
     public interface ICompetitionRoundLogicService
     {

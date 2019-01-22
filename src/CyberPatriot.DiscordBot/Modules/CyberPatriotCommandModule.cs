@@ -9,6 +9,7 @@ using System.Linq;
 using CyberPatriot.BitmapProvider;
 using CyberPatriot.Models.Serialization;
 using CyberPatriot.DiscordBot.Models;
+using CyberPatriot.Services;
 
 namespace CyberPatriot.DiscordBot.Modules
 {

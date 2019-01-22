@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CyberPatriot.DiscordBot.Services;
 using CyberPatriot.Models;
+using CyberPatriot.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 

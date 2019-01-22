@@ -1,4 +1,5 @@
-﻿using CyberPatriot.DiscordBot.Services.ScoreRetrieval;
+﻿using CyberPatriot.Services;
+using CyberPatriot.Services.ScoreRetrieval;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;

@@ -13,7 +13,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Text.RegularExpressions;
 
-namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
+namespace CyberPatriot.Services.ScoreRetrieval
 {
     public class HttpScoreboardScoreRetrievalService : IScoreRetrievalService, IDisposable
     {
@@ -22,7 +22,7 @@ namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
 
         public virtual CompetitionRound Round => _roundInferenceService.InferRound(DateTimeOffset.UtcNow);
 
-        protected class HttpPassthroughScoreRetrieverMetadata : Models.IScoreRetrieverMetadata
+        protected class HttpPassthroughScoreRetrieverMetadata : Metadata.IScoreRetrieverMetadata
         {
             protected HttpScoreboardScoreRetrievalService ScoreRetriever { get; set; }
 
@@ -37,10 +37,10 @@ namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
 
             public virtual string StaticSummaryLine => ScoreRetriever.Hostname;
 
-            public virtual ScoreFormattingOptions FormattingOptions { get; protected set; } = new ScoreFormattingOptions();
+            public virtual Metadata.ScoreFormattingOptions FormattingOptions { get; protected set; } = new Metadata.ScoreFormattingOptions();
         }
 
-        Models.IScoreRetrieverMetadata IScoreRetrievalService.Metadata => Metadata;
+        Metadata.IScoreRetrieverMetadata IScoreRetrievalService.Metadata => Metadata;
 
         protected virtual HttpPassthroughScoreRetrieverMetadata Metadata { get; set; }
 
@@ -344,44 +344,42 @@ namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
                 if (headerMatch?.Success ?? false)
                 {
                     retVal.ImageScoresOverTime = new Dictionary<string, SortedDictionary<DateTimeOffset, int?>>();
-                    string[] imageHeaders = headerMatch.Groups[1].Captures.Select(c => c.Value).ToArray();
+                    string[] imageHeaders = headerMatch.Groups[1].Captures.Cast<Capture>().Select(c => c.Value).ToArray();
                     SortedDictionary<DateTimeOffset, int?>[] dictArr = new SortedDictionary<DateTimeOffset, int?>[imageHeaders.Length];
                     for (int i = 0; i < dictArr.Length; i++)
                     {
                         dictArr[i] = new SortedDictionary<DateTimeOffset, int?>();
                         retVal.ImageScoresOverTime[imageHeaders[i]] = dictArr[i];
                     }
-                    teamScoreGraphEntry.Matches(detailsPage).Where(g => g?.Success ?? false).Select<Match, object>((m, ind) =>
+                    foreach (var m in teamScoreGraphEntry.Matches(detailsPage).Cast<Match>().Where(g => g?.Success ?? false))
+                    {
+                        DateTimeOffset dto = default(DateTimeOffset);
+                        try
                         {
-                            DateTimeOffset dto = default(DateTimeOffset);
-                            try
-                            {
-                                // MM/dd hh:mm
-                                string dateStr = m.Groups[1].Value;
-                                string[] dateStrComponents = dateStr.Split(' ');
-                                string[] dateComponents = dateStrComponents[0].Split('/');
-                                string[] timeComponents = dateStrComponents[1].Split(':');
-                                dto = new DateTimeOffset(DateTimeOffset.UtcNow.Year, int.Parse(dateComponents[0]), int.Parse(dateComponents[1]), int.Parse(timeComponents[0]), int.Parse(timeComponents[1]), 0, TimeSpan.Zero);
-                            }
-                            catch
-                            {
-                                return null;
-                            }
+                            // MM/dd hh:mm
+                            string dateStr = m.Groups[1].Value;
+                            string[] dateStrComponents = dateStr.Split(' ');
+                            string[] dateComponents = dateStrComponents[0].Split('/');
+                            string[] timeComponents = dateStrComponents[1].Split(':');
+                            dto = new DateTimeOffset(DateTimeOffset.UtcNow.Year, int.Parse(dateComponents[0]), int.Parse(dateComponents[1]), int.Parse(timeComponents[0]), int.Parse(timeComponents[1]), 0, TimeSpan.Zero);
+                        }
+                        catch
+                        {
+                            continue;
+                        }
 
-                            var captures = m.Groups[2].Captures;
+                        var captures = m.Groups[2].Captures;
 
-                            for (int i = 0; i < captures.Count; i++)
+                        for (int i = 0; i < captures.Count; i++)
+                        {
+                            int? scoreVal = null;
+                            if (int.TryParse(captures[i].Value, out int thingValTemp))
                             {
-                                int? scoreVal = null;
-                                if (int.TryParse(captures[i].Value, out int thingValTemp))
-                                {
-                                    scoreVal = thingValTemp;
-                                }
-                                dictArr[i][dto] = scoreVal;
+                                scoreVal = thingValTemp;
                             }
-
-                            return null;
-                        }).Consume();
+                            dictArr[i][dto] = scoreVal;
+                        }
+                    }
                 }
             }
             catch

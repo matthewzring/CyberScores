@@ -1,6 +1,6 @@
 using System;
 
-namespace CyberPatriot.DiscordBot
+namespace CyberPatriot.Services.Metadata
 {
     public class ScoreFormattingOptions
     {

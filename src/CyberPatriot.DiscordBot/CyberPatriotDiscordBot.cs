@@ -9,7 +9,8 @@ using LiteDB;
 using CyberPatriot.DiscordBot.Services;
 using CyberPatriot.BitmapProvider;
 using System.Linq;
-using CyberPatriot.DiscordBot.Services.ScoreRetrieval;
+using CyberPatriot.Services.ScoreRetrieval;
+using CyberPatriot.Services;
 
 namespace CyberPatriot.DiscordBot
 {
@@ -93,6 +94,7 @@ namespace CyberPatriot.DiscordBot
                 // Logging
                 .AddLogging()
                 .AddSingleton<LogService>()
+                .AddSingleton<PostLogAsyncHandler>(x => x.GetRequiredService<LogService>().LogApplicationMessageAsync)
                 // Extra
                 .AddSingleton(_config)
                 .AddSingleton<IDataPersistenceService, LiteDbDataPersistenceService>()

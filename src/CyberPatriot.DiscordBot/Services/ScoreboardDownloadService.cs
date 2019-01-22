@@ -6,8 +6,9 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using CyberPatriot.DiscordBot.Services.ScoreRetrieval;
 using CyberPatriot.Models;
+using CyberPatriot.Services;
+using CyberPatriot.Services.ScoreRetrieval;
 
 namespace CyberPatriot.DiscordBot.Services
 {
@@ -155,6 +156,12 @@ namespace CyberPatriot.DiscordBot.Services
             return rawStr;
         }
 
+        private Microsoft.Extensions.Configuration.IConfigurationSection GetHttpProviderConfig(HttpScoreboardScoreRetrievalService provider)
+        {
+            var field = typeof(HttpScoreboardScoreRetrievalService).GetField("_httpConfiguration", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            return (Microsoft.Extensions.Configuration.IConfigurationSection)field.GetValue(provider);
+        }
+
         /// <summary>
         /// If a partial previous archive is available, it is used to reduce the number of detail queries performed.
         /// </summary>
@@ -251,7 +258,7 @@ namespace CyberPatriot.DiscordBot.Services
                     // optimization: our service only makes low-priority requests
                     var newRateLimit = underlyingHttp.RateLimiter is PriorityTimerRateLimitProvider ? (underlyingHttp.RateLimiter as PriorityTimerRateLimitProvider).LowPriorityRateLimiter : underlyingHttp.RateLimiter;
                     // TODO cases when this might differ from the original service set outside our intent?
-                    await newHttp.InitializeAsync(Provider.Overlay<IRateLimitProvider>(newRateLimit), underlyingHttp._httpConfiguration).ConfigureAwait(false);
+                    await newHttp.InitializeAsync(Provider.Overlay<IRateLimitProvider>(newRateLimit), GetHttpProviderConfig(underlyingHttp)).ConfigureAwait(false);
                     scoreRetriever = newHttp;
                 }
 

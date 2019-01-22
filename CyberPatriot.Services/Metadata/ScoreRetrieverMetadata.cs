@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace CyberPatriot.DiscordBot.Models
+namespace CyberPatriot.Services.Metadata
 {
     public class ScoreRetrieverMetadata : IScoreRetrieverMetadata
     {

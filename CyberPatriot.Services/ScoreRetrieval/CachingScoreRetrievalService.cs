@@ -7,7 +7,7 @@ using System.Threading;
 using CyberPatriot.Models;
 using System.Collections;
 
-namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
+namespace CyberPatriot.Services.ScoreRetrieval
 {
     public class CachingScoreRetrievalService : IScoreRetrievalService, IComposingService<IScoreRetrievalService>, IDisposable
     {
@@ -19,7 +19,7 @@ namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
         public int MaxCachedTeamDetails { get; set; } = 20;
 
         public CompetitionRound Round => Backend.Round;
-        public Models.IScoreRetrieverMetadata Metadata => Backend.Metadata;
+        public Metadata.IScoreRetrieverMetadata Metadata => Backend.Metadata;
 
         protected Timer PurgeTimer { get; private set; }
 
@@ -27,7 +27,7 @@ namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
         public CachingScoreRetrievalService(IScoreRetrievalService backend)
         {
             Backend = backend;
-            PurgeTimer = new Timer(PurgeCacheTimerTick, null, MaxTeamLifespan * 5, MaxTeamLifespan * 5);
+            PurgeTimer = new Timer(PurgeCacheTimerTick, null, MaxTeamLifespan.MultiplyBy(5), MaxTeamLifespan.MultiplyBy(5));
         }
 
         public Task InitializeAsync(IServiceProvider provider, Microsoft.Extensions.Configuration.IConfigurationSection conf) => Backend.InitializeAsync(provider, conf);
@@ -98,7 +98,8 @@ namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
                 // ToArray to avoid enumeration + modification
                 foreach (var oldTeamInfoId in cachedTeamInformations.Where(kvp => kvp.Value.Age >= MaxTeamLifespan).Select(kvp => kvp.Key).ToArray())
                 {
-                    cachedTeamInformations.Remove(oldTeamInfoId, out var _);
+                    // TODO i don't think we care about tryremove failure
+                    cachedTeamInformations.TryRemove(oldTeamInfoId, out var _);
                 }
             }
             if (cachedTeamInformations.Count > MaxCachedTeamDetails)
@@ -111,7 +112,8 @@ namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
                 TeamId[] destroy = cachedTeamInformations.OrderBy(tInf => Math.Round((20.0 * tInf.Value.HitCount) / Math.Min(tInf.Value.Age.TotalSeconds, MaxTeamLifespan.TotalSeconds * 1.5))).ThenByDescending(tInf => tInf.Value.Age).Take(cachedTeamInformations.Count - (MaxCachedTeamDetails / 2)).Select(tInf => tInf.Key).ToArray();
                 foreach (var oldTeamInfoId in destroy)
                 {
-                    cachedTeamInformations.Remove(oldTeamInfoId, out var _);
+                    // TODO i don't think we care about tryremove failure
+                    cachedTeamInformations.TryRemove(oldTeamInfoId, out var _);
                 }
             }
         }

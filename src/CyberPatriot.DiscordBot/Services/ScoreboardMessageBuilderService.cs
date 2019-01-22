@@ -9,6 +9,8 @@ using CyberPatriot.Models;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using CyberPatriot.Models.Serialization;
+using CyberPatriot.Services;
+using CyberPatriot.Services.Metadata;
 
 namespace CyberPatriot.DiscordBot.Services
 {
@@ -21,7 +23,7 @@ namespace CyberPatriot.DiscordBot.Services
         [Obsolete("The score retriever should not be directly referenced by the formatting class.")]
         private IScoreRetrievalService _scoreRetriever;
 #pragma warning disable 0618 // metadata reference may change
-        public Models.IScoreRetrieverMetadata ScoreRetrieverMetadata => _scoreRetriever.Metadata;
+        public CyberPatriot.Services.Metadata.IScoreRetrieverMetadata ScoreRetrieverMetadata => _scoreRetriever.Metadata;
 #pragma warning restore 0618
 
         public ICompetitionRoundLogicService CompetitionLogic { get; set; }

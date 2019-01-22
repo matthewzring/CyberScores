@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using CyberPatriot.Models;
 
-namespace CyberPatriot.DiscordBot.Services
+namespace CyberPatriot.Services
 {
     /// <summary>
     /// A stub class which provides preconfigured values for competition information and passes through the remaining queries to another competition round logic provider.

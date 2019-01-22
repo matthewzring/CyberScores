@@ -10,6 +10,7 @@ using CyberPatriot.Models;
 using CyberPatriot.DiscordBot.Services;
 using System.Net.Http;
 using System.Text;
+using CyberPatriot.Services;
 
 namespace CyberPatriot.DiscordBot.Modules
 {
@@ -218,7 +219,7 @@ namespace CyberPatriot.DiscordBot.Modules
                             using (var downloader = new HttpClient())
                             using (var unzipStream = new GZipStream(await downloader.GetStreamAsync(attachmentUrl).ConfigureAwait(false), CompressionMode.Decompress))
                             {
-                                var temp = new Services.ScoreRetrieval.JsonScoreRetrievalService();
+                                var temp = new CyberPatriot.Services.ScoreRetrieval.JsonScoreRetrievalService();
                                 temp.Deserialize(await new StreamReader(unzipStream).ReadToEndAsync().ConfigureAwait(false));
                                 existingArchive = temp.StoredTeamDetails;
                             }

@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using CyberPatriot.Models;
 using Microsoft.Extensions.Configuration;
 
-namespace CyberPatriot.DiscordBot.Services
+namespace CyberPatriot.Services
 {
     public interface IScoreRetrievalService
     {
@@ -12,6 +12,6 @@ namespace CyberPatriot.DiscordBot.Services
         Task<ScoreboardDetails> GetDetailsAsync(TeamId team);
         Task InitializeAsync(IServiceProvider provider, IConfigurationSection config);
         CompetitionRound Round { get; }
-        Models.IScoreRetrieverMetadata Metadata { get; }
+        Metadata.IScoreRetrieverMetadata Metadata { get; }
     }
 }

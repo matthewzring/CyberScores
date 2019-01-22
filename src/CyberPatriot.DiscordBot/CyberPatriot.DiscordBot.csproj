@@ -18,10 +18,10 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.2.0" />
-    <PackageReference Include="HtmlAgilityPack" Version="1.8.12" />
     <PackageReference Include="TimeZoneNames" Version="3.4.0" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\CyberPatriot.Services\CyberPatriot.Services.csproj" />
     <ProjectReference Include="..\CyberPatriot.BitmapProvider.ImageSharp\CyberPatriot.BitmapProvider.ImageSharp.csproj" />
     <ProjectReference Include="..\CyberPatriot.BitmapProvider\CyberPatriot.BitmapProvider.csproj" />
     <ProjectReference Include="..\CyberPatriot.Models\CyberPatriot.Models.csproj">

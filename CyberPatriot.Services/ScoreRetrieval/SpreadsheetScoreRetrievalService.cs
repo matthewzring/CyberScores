@@ -8,15 +8,15 @@ using CyberPatriot.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
+namespace CyberPatriot.Services.ScoreRetrieval
 {
     /// <summary>
     /// Retrieves scores from a released score spreadsheet.
     /// </summary>
     public class SpreadsheetScoreRetrievalService : IScoreRetrievalService
     {
-        Models.IScoreRetrieverMetadata IScoreRetrievalService.Metadata => Metadata;
-        protected Models.ScoreRetrieverMetadata Metadata { get; set; } = new Models.ScoreRetrieverMetadata()
+        Metadata.IScoreRetrieverMetadata IScoreRetrievalService.Metadata => Metadata;
+        protected Metadata.ScoreRetrieverMetadata Metadata { get; set; } = new Metadata.ScoreRetrieverMetadata()
         {
             IsDynamic = false,
             SupportsInexpensiveDetailQueries = true,
@@ -40,9 +40,9 @@ namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
             // hacky implementation of a decent idea
             // add decimals at format level to embed creator
             // set format options to display decimals, overriding anything else that may have been set :(
-            var formattingOptions = new ScoreFormattingOptions();
-            formattingOptions.TimeDisplay = ScoreFormattingOptions.NumberDisplayCriteria.Never;
-            formattingOptions.VulnerabilityDisplay = ScoreFormattingOptions.NumberDisplayCriteria.Never;
+            var formattingOptions = new Metadata.ScoreFormattingOptions();
+            formattingOptions.TimeDisplay = Services.Metadata.ScoreFormattingOptions.NumberDisplayCriteria.Never;
+            formattingOptions.VulnerabilityDisplay = Services.Metadata.ScoreFormattingOptions.NumberDisplayCriteria.Never;
             Metadata.FormattingOptions = formattingOptions;
         }
 
@@ -91,7 +91,7 @@ namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
                 throw new ArgumentNullException(nameof(filenames));
             }
             List<Task<string[]>> fileReadTasks =
-                filenames.Select(filename => File.ReadAllLinesAsync(filename)).ToList();
+                filenames.Select(filename => Utilities.ReadAllLinesAsync(filename)).ToList();
 
             while (fileReadTasks.Count > 0)
             {
@@ -126,7 +126,7 @@ namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
                         case 0:
                             // initial comment parsing
                             // these "comments" are assumed to contain metadata
-                            if (!line.StartsWith('#'))
+                            if (!line.StartsWith("#"))
                             {
                                 state = 1;
 
@@ -313,7 +313,7 @@ namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
                 // we've built our team list, now build the summary
                 CompleteScoreboardSummary scoreboardSummary = new CompleteScoreboardSummary();
                 scoreboardSummary.SnapshotTimestamp = snapshotTimestamp;
-                scoreboardSummary.TeamList = scoreDetailsOrdered.Select(details => details.Summary).ToList();
+                scoreboardSummary.TeamList = scoreDetailsOrdered.Select(details => details.Summary).ToIList();
                 scoreboardSummary.Filter = new ScoreboardFilterInfo(
                     scoreboardSummary.TeamList.Select(sum => sum.Division).Distinct().Cast<Division?>().SingleIfOne(),
                     scoreboardSummary.TeamList.Select(sum => sum.Tier).Distinct().SingleIfOne());
@@ -327,7 +327,7 @@ namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
                         scoreboardSummary.SnapshotTimestamp);
                     // union of team list
                     existingSummary.TeamList = existingSummary.TeamList.Union(scoreboardSummary.TeamList)
-                        .OrderByDescending(team => team.TotalScore).ToList();
+                        .OrderByDescending(team => team.TotalScore).ToIList();
                 }
                 else
                 {
@@ -343,7 +343,7 @@ namespace CyberPatriot.DiscordBot.Services.ScoreRetrieval
                 completeSummary.SnapshotTimestamp = existingSummaries.Max(sum => sum.SnapshotTimestamp);
                 completeSummary.Filter = ScoreboardFilterInfo.NoFilter;
                 completeSummary.TeamList = existingSummaries.SelectMany(sum => sum.TeamList).Distinct()
-                    .OrderByDescending(team => team.TotalScore).ToList();
+                    .OrderByDescending(team => team.TotalScore).ToIList();
                 completeSummary.OriginUri = existingSummaries.Select(sum => sum.OriginUri).Distinct().SingleIfOne();
                 this.summariesByFilter[ScoreboardFilterInfo.NoFilter] = completeSummary;
             }
