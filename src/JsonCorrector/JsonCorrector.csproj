@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\CyberPatriot.Models\CyberPatriot.Models.csproj" />
+    <ProjectReference Include="..\CyberPatriot.Models\CyberPatriot.Models.csproj" />
   </ItemGroup>
 
 </Project>
