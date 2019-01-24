@@ -43,6 +43,8 @@ namespace CyberPatriot.Services.ScoreRetrieval
             var formattingOptions = new Metadata.ScoreFormattingOptions();
             formattingOptions.TimeDisplay = Services.Metadata.ScoreFormattingOptions.NumberDisplayCriteria.Never;
             formattingOptions.VulnerabilityDisplay = Services.Metadata.ScoreFormattingOptions.NumberDisplayCriteria.Never;
+            formattingOptions.FormatScore = i => i.ToString("0.00");
+            formattingOptions.FormatLabeledScoreDifference = i => i.ToString("0.00") + " points";
             Metadata.FormattingOptions = formattingOptions;
         }
 
@@ -56,7 +58,7 @@ namespace CyberPatriot.Services.ScoreRetrieval
             // reset
             summariesByFilter = new Dictionary<ScoreboardFilterInfo, CompleteScoreboardSummary>();
             teamInfo = new Dictionary<TeamId, ScoreboardDetails>();
-            
+
             string[] srcList;
             try
             {
