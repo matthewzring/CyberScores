@@ -423,9 +423,14 @@ namespace CyberPatriot.DiscordBot.Modules
                               .Select(i => (decimal)i.Score))
                     .ToArray().ConfigureAwait(false);
                 Array.Sort(data);
+
+                Models.User userSettings = await Preferences.Database.FindOneAsync<Models.User>(u => u.Id == Context.User.Id).ConfigureAwait(false);
+
+                ColorPresets.HistogramColorPreset histogramColorScheme = (userSettings?.DiscordTheme ?? "dark") == "light" ? ColorPresets.DiscordLight : ColorPresets.DiscordDark;
+
                 using (var memStr = new System.IO.MemoryStream())
                 {
-                    await GraphProvider.WriteHistogramPngAsync(data, "Score", "Frequency", datum => datum.ToString("0.0#"), BitmapProvider.Color.Parse("#32363B"), BitmapProvider.Color.Parse("#7289DA"), BitmapProvider.Color.White, BitmapProvider.Color.Gray, memStr).ConfigureAwait(false);
+                    await GraphProvider.WriteHistogramPngAsync(data, "Score", "Frequency", datum => datum.ToString("0.0#"), histogramColorScheme, memStr).ConfigureAwait(false);
                     memStr.Position = 0;
 
                     var histogramEmbed = new EmbedBuilder()

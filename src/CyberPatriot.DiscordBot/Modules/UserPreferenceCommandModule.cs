@@ -51,5 +51,49 @@ namespace CyberPatriot.DiscordBot.Modules
                 await ReplyAsync("Removed personal timezone preference.").ConfigureAwait(false);
             }
         }
+
+        [Group("discordtheme"), Alias("theme")]
+        public class DiscordThemeModule : ModuleBase
+        {
+            private void ValidateTheme(string theme)
+            {
+                if (theme != "light" && theme != "dark")
+                {
+                    throw new ArgumentException("Theme must be either 'light' or 'dark'.");
+                }
+            }
+
+            public IDataPersistenceService Database { get; set; }
+
+            [Command("set")]
+            [Summary("Sets your preferred Discord theme, 'light' or 'dark'. Discord theme preference is considered in some requests.")]
+            public async Task SetThemeAsync([Summary("Your new theme preference.")] string newTheme)
+            {
+                ValidateTheme(newTheme);
+
+                using (var context = Database.OpenContext<User>(true))
+                {
+                    Models.User userSettings = await User.OpenWriteUserSettingsAsync(context, Context.User.Id).ConfigureAwait(false);
+                    userSettings.DiscordTheme = newTheme;
+                    await context.WriteAsync().ConfigureAwait(false);
+                }
+
+                await ReplyAsync($"Theme preferenced updated to {newTheme}.").ConfigureAwait(false);
+            }
+
+            [Command("remove"), Alias("delete", "unset")]
+            [Summary("Removes your theme preference, reverting to the dark theme default.")]
+            public async Task RemoveAsync()
+            {
+                using (var context = Database.OpenContext<User>(true))
+                {
+                    Models.User userSettings = await User.OpenWriteUserSettingsAsync(context, Context.User.Id).ConfigureAwait(false);
+                    userSettings.DiscordTheme = null;
+                    await context.WriteAsync().ConfigureAwait(false);
+                }
+
+                await ReplyAsync("Removed theme preference.").ConfigureAwait(false);
+            }
+        }
     }
 }

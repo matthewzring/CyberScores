@@ -6,6 +6,7 @@ namespace CyberPatriot.DiscordBot.Models
     {
         public ulong Id { get; set; }
         public string TimeZone { get; set; }
+        public string DiscordTheme { get; set; }
 
         protected bool Equals(User other)
         {
@@ -25,7 +26,7 @@ namespace CyberPatriot.DiscordBot.Models
             return Id.GetHashCode();
         }
 
-        public static System.Threading.Tasks.Task<User> OpenWriteGuildSettingsAsync(
+        public static System.Threading.Tasks.Task<User> OpenWriteUserSettingsAsync(
             Services.IDataPersistenceContext<User> context, ulong userId)
             => context.FindOneOrNewAsync(u => u.Id == userId, () => new User() { Id = userId });
     }
