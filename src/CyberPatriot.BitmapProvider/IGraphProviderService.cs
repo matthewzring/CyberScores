@@ -7,6 +7,19 @@ namespace CyberPatriot.BitmapProvider
 {
     public interface IGraphProviderService
     {
+        /// <summary>
+        /// Creates a histogram of the given data and saves it as a PNG to the given stream.
+        /// </summary>
+        /// <param name="dataset">The sorted set of data from which a histogram should be produced.</param>
+        /// <param name="horizontalAxisLabel">The data axis label.</param>
+        /// <param name="verticalAxisLabel">The frequency axis label.</param>
+        /// <param name="getDataEdgeLabel">A function which formats a datum for display as an axis label.</param>
+        /// <param name="backColor">The background color.</param>
+        /// <param name="barColor">The color with which the bars are filled.</param>
+        /// <param name="labelColor">The color of text in the various labels.</param>
+        /// <param name="frequencyGraphLineColor">The color of the background grid lines.</param>
+        /// <param name="target">The stream to which the histogram image should be written.</param>
+        /// <returns>A task which resolves when the histogram has been produced.</returns>
         Task WriteHistogramPngAsync(IEnumerable<decimal> dataset,
             string horizontalAxisLabel, string verticalAxisLabel,
             Func<decimal, string> getDataEdgeLabel,

@@ -25,6 +25,20 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
                                                     getDataEdgeLabel, backColor, barColor, labelColor, frequencyGraphLineColor, target));
         }
 
+        private bool IsSorted(decimal[] arr)
+        {
+            decimal prev = decimal.MinValue;
+            for (int i = 0; i < arr.Length; i++)
+            {
+                if (arr[i] < prev)
+                {
+                    return false;
+                }
+                prev = arr[i];
+            }
+            return true;
+        }
+
         public void WriteHistogramPng(
             IEnumerable<decimal> dataset,
             string horizontalAxisLabel, string verticalAxisLabel,
@@ -43,11 +57,16 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
             const int drawRegionTopOffset = 50;
             const int drawRegionBottomOffset = 110;
 
-            decimal[] data = dataset.OrderBy(x => x).ToArray();
+            decimal[] data = dataset.ToArray();
 
             if (data.Length < 2)
             {
                 throw new ArgumentException("2 or more elements required for a histogram.");
+            }
+
+            if (!IsSorted(data))
+            {
+                throw new ArgumentException("The given data are not sorted.", nameof(dataset));
             }
 
             decimal first = data[0], last = data[data.Length - 1];
