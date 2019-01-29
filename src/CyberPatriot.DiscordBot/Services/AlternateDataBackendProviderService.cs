@@ -53,7 +53,12 @@ namespace CyberPatriot.DiscordBot.Services
             {
                 try
                 {
-                    _backendsByName.Add(serviceConfig.Key, await ScoreBackendInitializerProvidersByName[serviceConfig["type"]](serviceConfig)(services).ConfigureAwait(false));
+                    var scoreProvider = await ScoreBackendInitializerProvidersByName[serviceConfig["type"]](serviceConfig)(services).ConfigureAwait(false);
+                    _backendsByName.Add(serviceConfig.Key, scoreProvider);
+                    foreach (string alias in serviceConfig.GetSection("aliases").GetChildren().Select(x => x.Value))
+                    {
+                        _backendsByName.Add(alias, scoreProvider);
+                    }
                 }
                 catch
                 {
@@ -65,6 +70,6 @@ namespace CyberPatriot.DiscordBot.Services
 
         public bool TryGetAlternateDataBackend(string identifier, out IScoreRetrievalService backend) => _backendsByName.TryGetValue(identifier, out backend);
 
-        public IEnumerable<string> GetBackendNames() => _backendsByName.Keys;
+        public IEnumerable<IGrouping<IScoreRetrievalService, string>> GetBackendNames() => _backendsByName.GroupBy(x => x.Value, x => x.Key);
     }
 }

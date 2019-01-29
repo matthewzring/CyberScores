@@ -19,7 +19,7 @@ namespace CyberPatriot.DiscordBot.Modules
         public IServiceProvider Services { get; set; }
 
         [Command("rounddata")]
-        [Alias("backend", "datasource")]
+        [Alias("backend", "datasource", "archive")]
         [Summary("Executes the given command using scores provided by the given data source. The available data sources can be seen via the `listdatasources` command.")]
         public async Task ExecuteWrappedCommandAsync(
             [Summary("The identifier of the data source from which scores should be provided to the command.")] string dataSourceId,
@@ -37,16 +37,16 @@ namespace CyberPatriot.DiscordBot.Modules
             }
         }
 
-        [Command("listdatasources"), Alias("listalternatedatasources", "getdatasources", "getalternatedatasources")]
+        [Command("listdatasources"), Alias("listalternatedatasources", "getdatasources", "getalternatedatasources", "listarchives")]
         [Summary("Lists the names of the available loaded alternate data sources.")]
         public async Task ListDataSourcesCommandAsync()
         {
             var messageBuilder = new StringBuilder();
             int count = 0;
-            foreach (string dataSourceId in AlternateBackendProvider.GetBackendNames())
+            foreach (var dataSource in AlternateBackendProvider.GetBackendNames())
             {
                 count++;
-                messageBuilder.AppendLine(dataSourceId);
+                messageBuilder.AppendLine(string.Join(" / ", dataSource));
             }
 
             messageBuilder.AppendLine();
