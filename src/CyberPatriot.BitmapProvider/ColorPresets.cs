@@ -27,6 +27,12 @@ namespace CyberPatriot.BitmapProvider
             GridLineColor = Color.Gray
         };
 
-        public static HistogramColorPreset DiscordLight { get; }
+        public static HistogramColorPreset DiscordLight { get; } = new HistogramColorPreset()
+        {
+            BackgroundColor = Color.White,
+            BarFillColor = Color.Parse("#7289DA"),
+            LabelTextColor = Color.Parse("#4F545C"),
+            GridLineColor = Color.Parse("#CACBCE")
+        };
     }
 }
