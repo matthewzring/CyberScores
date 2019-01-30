@@ -39,12 +39,6 @@ namespace CyberPatriot.DiscordBot.Services
 #pragma warning restore 0618
         }
 
-        public class CustomFiltrationInfo
-        {
-            public Func<ScoreboardSummaryEntry, bool> Predicate { get; set; } = _ => true;
-            public string FilterDescription { get; set; }
-        }
-
         protected string AbbreviateDivision(ScoreboardSummaryEntry team)
         {
             if (!team.Category.HasValue || team.Division != Division.AllService)
@@ -156,16 +150,14 @@ namespace CyberPatriot.DiscordBot.Services
             return resultBuilder.ToString();
         }
 
-        public string CreateTopLeaderboardEmbed(CompleteScoreboardSummary scoreboard, CustomFiltrationInfo customFilter = null, TimeZoneInfo timeZone = null, int pageNumber = 1, int pageSize = 15)
+        public string CreateTopLeaderboardEmbed(CompleteScoreboardSummary scoreboard, TimeZoneInfo timeZone = null, int pageNumber = 1, int pageSize = 15)
         {
             if (pageSize <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(pageSize));
             }
 
-            Func<ScoreboardSummaryEntry, bool> predicate = customFilter?.Predicate == null ? _ => true : customFilter.Predicate;
-
-            int pageCount = (int)(Math.Ceiling((((double)scoreboard.TeamList.Count(predicate)) / pageSize)));
+            int pageCount = (int)(Math.Ceiling((((double)scoreboard.TeamList.Count()) / pageSize)));
 
             if (--pageNumber < 0 || pageNumber >= pageCount)
             {
@@ -174,22 +166,17 @@ namespace CyberPatriot.DiscordBot.Services
 
             var stringBuilder = new StringBuilder();
             stringBuilder.Append("**CyberPatriot Scoreboard");
-            if (scoreboard.Filter.Division.HasValue)
-            {
-                stringBuilder.Append(", ").Append(Utilities.ToStringCamelCaseToSpace(scoreboard.Filter.Division.Value));
-                if (scoreboard.Filter.Tier != null)
-                {
-                    stringBuilder.Append(' ').Append(scoreboard.Filter.Tier);
-                }
-            }
-            else if (scoreboard.Filter.Tier != null)
-            {
-                stringBuilder.Append(", ").Append(scoreboard.Filter.Tier).Append(" Tier");
-            }
+            string filterDesc = Utilities.JoinNonNullNonEmpty(", ",
+                scoreboard.Filter.Division.HasValue ? Utilities.ToStringCamelCaseToSpace(scoreboard.Filter.Division.Value) + " Division" : null,
+                scoreboard.Filter.Category?.ToCanonicalName(),
+                scoreboard.Filter.Tier,
+                LocationResolution.GetFullNameOrNull(scoreboard.Filter.Location)
+                );
 
-            if (customFilter?.FilterDescription != null)
+            if (filterDesc.Length > 0)
             {
-                stringBuilder.Append(", ").Append(customFilter.FilterDescription);
+                stringBuilder.Append(", ");
+                stringBuilder.Append(filterDesc);
             }
 
             if (pageCount > 1)
@@ -203,9 +190,9 @@ namespace CyberPatriot.DiscordBot.Services
             stringBuilder.Append(' ').Append(timeZone == null ? "UTC" : TimeZoneNames.TZNames.GetAbbreviationsForTimeZone(timeZone.Id, "en-US").Generic).AppendLine("*");
             stringBuilder.AppendLine("```");
 
-            bool conciseDivision = (scoreboard.Filter.Division.HasValue && scoreboard.Filter.Division.Value != Division.AllService) || !scoreboard.TeamList.Where(predicate).Any(x => x.Category.HasValue);
+            bool conciseDivision = (scoreboard.Filter.Division.HasValue && scoreboard.Filter.Division.Value != Division.AllService) || !scoreboard.TeamList.Any(x => x.Category.HasValue);
 
-            scoreboard.TeamList.Where(predicate).Skip(pageNumber * pageSize).Take(pageSize)
+            scoreboard.TeamList.Skip(pageNumber * pageSize).Take(pageSize)
                 .Select((team, i) => stringBuilder.AppendLine(GetTeamLeaderboardEntry(team, i + 1 + (pageNumber * pageSize), useAbbreviatedDivision: conciseDivision)))
                 .Last().AppendLine("```");
             if (scoreboard.OriginUri != null)
@@ -215,25 +202,30 @@ namespace CyberPatriot.DiscordBot.Services
             return stringBuilder.ToString();
         }
 
-        public string CreatePeerLeaderboardEmbed(TeamId teamId, CompleteScoreboardSummary scoreboard, IList<ScoreboardSummaryEntry> peerTeams, TimeZoneInfo timeZone = null, int topTeams = 3, int nearbyTeams = 5)
+        public string CreatePeerLeaderboardEmbed(TeamId teamId, CompleteScoreboardSummary peerScoreboard, TimeZoneInfo timeZone = null, int topTeams = 3, int nearbyTeams = 5)
         {
             // var peerTeams = CompetitionLogic.GetPeerTeams(ScoreRetriever.Round, scoreboard, teamDetails.Summary);
             var stringBuilder = new StringBuilder();
             stringBuilder.AppendLine("**CyberPatriot Scoreboard**");
-            DateTimeOffset timestamp = timeZone == null ? scoreboard.SnapshotTimestamp : TimeZoneInfo.ConvertTime(scoreboard.SnapshotTimestamp, timeZone);
+            DateTimeOffset timestamp = timeZone == null ? peerScoreboard.SnapshotTimestamp : TimeZoneInfo.ConvertTime(peerScoreboard.SnapshotTimestamp, timeZone);
             stringBuilder.AppendFormat("*Competing against: {0} | As of: ", teamId);
             stringBuilder.AppendFormat("{0:g}", timestamp);
             stringBuilder.Append(' ').Append(timeZone == null ? "UTC" : TimeZoneNames.TZNames.GetAbbreviationsForTimeZone(timeZone.Id, "en-US").Generic).AppendLine("*");
 
-            var teamScoreboardSummaryEntry = peerTeams.Single(x => x.TeamId == teamId);
-            stringBuilder.AppendFormat("*{0} is: {1} Division", teamId, teamScoreboardSummaryEntry.Division.ToStringCamelCaseToSpace());
-            if (teamScoreboardSummaryEntry.Category.HasValue)
+            var peerTeams = peerScoreboard.TeamList;
+
+            stringBuilder.AppendFormat("*{0} competes in: {1} Division", teamId, peerScoreboard.Filter.Division.ToStringCamelCaseToSpace());
+            if (peerScoreboard.Filter.Category.HasValue)
             {
-                stringBuilder.AppendFormat(", {0}", teamScoreboardSummaryEntry.Category.Value.ToCanonicalName());
+                stringBuilder.AppendFormat(", {0}", peerScoreboard.Filter.Category.Value.ToCanonicalName());
             }
-            if (teamScoreboardSummaryEntry.Tier.HasValue)
+            if (peerScoreboard.Filter.Tier.HasValue)
             {
-                stringBuilder.AppendFormat(", {0} Tier", teamScoreboardSummaryEntry.Tier.Value);
+                stringBuilder.AppendFormat(", {0} Tier", peerScoreboard.Filter.Tier.Value);
+            }
+            if (peerScoreboard.Filter.Location != null)
+            {
+                stringBuilder.AppendFormat(", {0}", peerScoreboard.Filter.Location);
             }
             stringBuilder.AppendLine("*");
 
@@ -268,14 +260,14 @@ namespace CyberPatriot.DiscordBot.Services
             }
 
             stringBuilder.AppendLine("```");
-            if (scoreboard.OriginUri != null)
+            if (peerScoreboard.OriginUri != null)
             {
-                stringBuilder.AppendLine(scoreboard.OriginUri.ToString());
+                stringBuilder.AppendLine(peerScoreboard.OriginUri.ToString());
             }
             return stringBuilder.ToString();
         }
 
-        public EmbedBuilder CreateTeamDetailsEmbed(ScoreboardDetails teamScore, TeamDetailRankingInformation rankingData = null, TimeZoneInfo timeZone = null)
+        public EmbedBuilder CreateTeamDetailsEmbed(ScoreboardDetails teamScore, CompleteScoreboardSummary completeScoreboard = null, ScoreboardFilterInfo peerFilter = default(ScoreboardFilterInfo), TimeZoneInfo timeZone = null)
         {
             if (teamScore == null)
             {
@@ -445,11 +437,12 @@ namespace CyberPatriot.DiscordBot.Services
                 builder.AddInlineField("Timing", timingFieldBuilder.ToString());
             }
 
-            if (rankingData != null)
+            if (completeScoreboard != null)
             {
-                int myIndexInPeerList = rankingData.PeerIndex;
+                var peerList = completeScoreboard.Clone().WithFilter(peerFilter).TeamList;
+                int myIndexInPeerList = peerList.IndexOfWhere(x => x.TeamId == teamScore.TeamId);
 
-                double rawPercentile = 1.0 - ((myIndexInPeerList + 1.0) / rankingData.PeerCount);
+                double rawPercentile = 1.0 - ((myIndexInPeerList + 1.0) / peerList.Count);
                 int multipliedPercentile = (int)Math.Round(rawPercentile * 1000);
                 int intPart = multipliedPercentile / 10;
                 int floatPart = multipliedPercentile % 10;
@@ -459,17 +452,17 @@ namespace CyberPatriot.DiscordBot.Services
                 StringBuilder marginBuilder = new StringBuilder();
                 if (myIndexInPeerList > 0)
                 {
-                    double marginUnderFirst = rankingData.Peers[0].TotalScore - teamScore.Summary.TotalScore;
+                    double marginUnderFirst = peerList[0].TotalScore - teamScore.Summary.TotalScore;
                     marginBuilder.AppendLine($"{ScoreRetrieverMetadata.FormattingOptions.FormatLabeledScoreDifference(marginUnderFirst)} under 1st place");
                 }
                 if (myIndexInPeerList >= 2)
                 {
-                    double marginUnderAbove = rankingData.Peers[myIndexInPeerList - 1].TotalScore - teamScore.Summary.TotalScore;
+                    double marginUnderAbove = peerList[myIndexInPeerList - 1].TotalScore - teamScore.Summary.TotalScore;
                     marginBuilder.AppendLine($"{ScoreRetrieverMetadata.FormattingOptions.FormatLabeledScoreDifference(marginUnderAbove)} under {Utilities.AppendOrdinalSuffix(myIndexInPeerList)} place");
                 }
-                if (myIndexInPeerList < rankingData.PeerCount - 1)
+                if (myIndexInPeerList < peerList.Count - 1)
                 {
-                    double marginAboveUnder = teamScore.Summary.TotalScore - rankingData.Peers[myIndexInPeerList + 1].TotalScore;
+                    double marginAboveUnder = teamScore.Summary.TotalScore - peerList[myIndexInPeerList + 1].TotalScore;
                     marginBuilder.AppendLine($"{ScoreRetrieverMetadata.FormattingOptions.FormatLabeledScoreDifference(marginAboveUnder)} above {Utilities.AppendOrdinalSuffix(myIndexInPeerList + 2)} place");
                 }
 
@@ -481,37 +474,38 @@ namespace CyberPatriot.DiscordBot.Services
                 IList<ScoreboardSummaryEntry> subPeer = null;
                 string subPeerLabel = null;
 
-                if (teamScore.Summary.Category.HasValue)
+                if (!peerFilter.Category.HasValue && teamScore.Summary.Category.HasValue)
                 {
                     var myCategory = teamScore.Summary.Category.Value;
-                    subPeer = rankingData.Peers.Where(x => x.Category == myCategory).ToIList();
+                    subPeer = peerList.Where(x => x.Category == myCategory).ToIList();
                     subPeerLabel = " in category";
                 }
-                else
+                else if (peerFilter.Location == null && teamScore.Summary.Location != null)
                 {
                     var myLocation = teamScore.Summary.Location;
-                    subPeer = rankingData.Peers.Where(x => x.Location == myLocation).ToIList();
+                    subPeer = peerList.Where(x => x.Location == myLocation).ToIList();
                     subPeerLabel = " in state";
                 }
 
-                if (rankingData.PeerCount != subPeer.Count)
+                if (subPeerLabel != null)
                 {
                     standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(subPeer.IndexOfWhere(x => x.TeamId == teamScore.TeamId) + 1) + " of " + Utilities.Pluralize("peer team", subPeer.Count) + subPeerLabel);
                 }
 
-                standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(myIndexInPeerList + 1) + " of " + Utilities.Pluralize("peer team", rankingData.PeerCount));
+                standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(myIndexInPeerList + 1) + " of " + Utilities.Pluralize("peer team", peerList.Count));
 
-                // non-peer rankings use parentheticals - peer rankings are used for the rest of the logic
                 // if peer teams != div+tier teams
-                if (rankingData.PeerCount != rankingData.TierCount)
+                if ((peerFilter.Category.HasValue || peerFilter.Location != null) && peerFilter.Tier.HasValue)
                 {
                     // tier ranking, differing from peer ranking
-                    standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(rankingData.TierIndex + 1) + " of " + Utilities.Pluralize("team", rankingData.TierCount) + " in tier");
+                    var tierTeams = completeScoreboard.Clone().WithFilter(new ScoreboardFilterInfo(peerFilter.Division, peerFilter.Tier)).TeamList;
+                    standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(tierTeams.IndexOfWhere(x => x.TeamId == teamScore.TeamId) + 1) + " of " + Utilities.Pluralize("team", tierTeams.Count) + " in tier");
                 }
-                if (rankingData.PeerCount != rankingData.DivisionCount)
+                if (peerFilter.Category.HasValue || peerFilter.Location != null || peerFilter.Tier.HasValue)
                 {
                     // division ranking, differing from peer ranking
-                    standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(rankingData.DivisionIndex + 1) + " of " + Utilities.Pluralize("team", rankingData.DivisionCount) + " in division");
+                    var divTeams = completeScoreboard.Clone().WithFilter(new ScoreboardFilterInfo(peerFilter.Division, null)).TeamList;
+                    standingFieldBuilder.AppendLine(Utilities.AppendOrdinalSuffix(divTeams.IndexOfWhere(x => x.TeamId == teamScore.TeamId) + 1) + " of " + Utilities.Pluralize("team", divTeams.Count) + " in division");
                 }
                 builder.AddInlineField("Standing", standingFieldBuilder.ToString());
             }

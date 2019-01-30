@@ -396,7 +396,7 @@ namespace CyberPatriot.Services.ScoreRetrieval
             RateLimiter.AddPrerequisite(docTask);
 
             var doc = await ParseHtmlDocumentAsync(await docTask).ConfigureAwait(false);
-            var summaries = ProcessSummaries(doc, out DateTimeOffset snapshotTime);
+            var summaries = ProcessSummaries(doc, out DateTimeOffset snapshotTime).Where(x => filter.Matches(x));
 
             return new CompleteScoreboardSummary()
             {

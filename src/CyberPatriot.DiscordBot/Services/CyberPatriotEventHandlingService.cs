@@ -162,8 +162,9 @@ namespace CyberPatriot.DiscordBot.Services
                                     continue;
                                 }
 
+                                // TODO efficiency: we're refiltering every loop iteration
                                 ScoreboardSummaryEntry monitoredEntry = masterScoreboard.TeamList[masterScoreboardIndex];
-                                int peerIndex = _competitionLogic.GetPeerTeams(_scoreRetriever.Round, masterScoreboard, monitoredEntry).IndexOf(monitoredEntry);
+                                int peerIndex = masterScoreboard.Clone().WithFilter(_competitionLogic.GetPeerFilter(_scoreRetriever.Round, monitoredEntry)).TeamList.IndexOf(monitoredEntry);
                                 teamIdsToPeerIndexes[monitored] = peerIndex;
 
                                 // we've obtained all information, now compare to past data
@@ -198,7 +199,8 @@ namespace CyberPatriot.DiscordBot.Services
                                         embed: _messageBuilder
                                                .CreateTeamDetailsEmbed(
                                                teamDetails,
-                                               _competitionLogic.GetRankingInformation(_scoreRetriever.Round, masterScoreboard, teamDetails.Summary))
+                                               masterScoreboard,
+                                               _competitionLogic.GetPeerFilter(_scoreRetriever.Round, teamDetails.Summary))
                                                .Build()).ConfigureAwait(false);
                                     }
                                 }

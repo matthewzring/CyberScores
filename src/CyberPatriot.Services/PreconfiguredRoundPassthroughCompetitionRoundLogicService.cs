@@ -23,10 +23,8 @@ namespace CyberPatriot.Services
 
         string ICompetitionRoundLogicService.GetEffectiveDivisionDescriptor(ScoreboardSummaryEntry team) => underlyingService.GetEffectiveDivisionDescriptor(team);
 
-        IList<ScoreboardSummaryEntry> ICompetitionRoundLogicService.GetPeerTeams(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamInfo) => underlyingService.GetPeerTeams(round, divisionScoreboard, teamInfo);
-
-        TeamDetailRankingInformation ICompetitionRoundLogicService.GetRankingInformation(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamInfo) => underlyingService.GetRankingInformation(round, divisionScoreboard, teamInfo);
-
+        ScoreboardFilterInfo ICompetitionRoundLogicService.GetPeerFilter(CompetitionRound round, ScoreboardSummaryEntry teamInfo) => underlyingService.GetPeerFilter(round, teamInfo);
+        
         public CompetitionRound InferRound(DateTimeOffset date) => preconfiguredRound;
     }
 }

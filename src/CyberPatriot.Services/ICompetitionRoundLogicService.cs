@@ -13,12 +13,10 @@ namespace CyberPatriot.Services
     {
         CompetitionRound InferRound(DateTimeOffset date);
 
-        IList<ScoreboardSummaryEntry> GetPeerTeams(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamInfo);
+        ScoreboardFilterInfo GetPeerFilter(CompetitionRound round, ScoreboardSummaryEntry teamInfo);
 
         string GetEffectiveDivisionDescriptor(ScoreboardSummaryEntry team);
-
-        TeamDetailRankingInformation GetRankingInformation(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamInfo);
-
+        
         /// <summary>
         /// Gets the number of points possible for the Cisco component of competition in the given round.
         /// The points returned should be in the same scale as CCS points.
@@ -38,32 +36,10 @@ namespace CyberPatriot.Services
         public abstract double GetCiscoPointsPossible(CompetitionRound round, Division division, Tier? tier);
 
         public abstract CompetitionRound InferRound(DateTimeOffset date);
-
-        public abstract IList<ScoreboardSummaryEntry> GetPeerTeams(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamInfo);
-
+        
         private static Func<ScoreboardSummaryEntry, bool> BuildSummaryComparer(TeamId target) => sse => sse.TeamId == target;
-
-        public virtual TeamDetailRankingInformation GetRankingInformation(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamInfo)
-        {
-            divisionScoreboard = divisionScoreboard.Clone().WithFilter(teamInfo.Division, null);
-
-            // may be equal to division scoreboard, that's fine
-            var tierScoreboard = divisionScoreboard.Clone().WithFilter(teamInfo.Division, teamInfo.Tier);
-            var peers = GetPeerTeams(round, divisionScoreboard, teamInfo);
-
-            var summaryComparer = BuildSummaryComparer(teamInfo.TeamId);
-            return new TeamDetailRankingInformation()
-            {
-                TeamId = teamInfo.TeamId,
-                Peers = peers,
-                PeerIndex = peers.IndexOfWhere(summaryComparer),
-                PeerCount = peers.Count,
-                DivisionIndex = divisionScoreboard.TeamList.IndexOfWhere(summaryComparer),
-                DivisionCount = divisionScoreboard.TeamList.Count,
-                TierIndex = tierScoreboard.TeamList.IndexOfWhere(summaryComparer),
-                TierCount = tierScoreboard.TeamList.Count
-            };
-        }
+        
+        public abstract ScoreboardFilterInfo GetPeerFilter(CompetitionRound round, ScoreboardSummaryEntry teamInfo);
     }
 
     public class CyberPatriotTenCompetitionRoundLogicService : CyberPatriotCompetitionRoundLogicService
@@ -103,14 +79,12 @@ namespace CyberPatriot.Services
             return 0;
         }
 
-        public override IList<ScoreboardSummaryEntry> GetPeerTeams(CompetitionRound round, CompleteScoreboardSummary divisionScoreboard, ScoreboardSummaryEntry teamDetails)
+        public override ScoreboardFilterInfo GetPeerFilter(CompetitionRound round, ScoreboardSummaryEntry teamDetails)
         {
-            // make a clone because we'll mutate this later
-            divisionScoreboard = divisionScoreboard.Clone().WithFilter(teamDetails.Division, null);
             if (teamDetails.Division == Division.MiddleSchool)
             {
                 // middle school doesn't have tiers or categories
-                return divisionScoreboard.TeamList;
+                return new ScoreboardFilterInfo(Division.MiddleSchool, null);
             }
 
             // open/service
@@ -120,7 +94,7 @@ namespace CyberPatriot.Services
                 // In open past R2, tier matters, but that's it
                 // In all service R3, category doesn't* matter, just tier
                 // See issue #14
-                return divisionScoreboard.WithFilter(teamDetails.Division, teamDetails.Tier).TeamList;
+                return new ScoreboardFilterInfo(teamDetails.Division, teamDetails.Tier);
             }
 
             // open/service, service: category matters; open: no tiers
@@ -129,32 +103,28 @@ namespace CyberPatriot.Services
                 // unknown round - if our candidate team has a tier, filter by tier, otherwise return the whole division
                 if (round == 0 && teamDetails.Tier != null)
                 {
-                    return divisionScoreboard.WithFilter(teamDetails.Division, teamDetails.Tier).TeamList;
+                    return new ScoreboardFilterInfo(teamDetails.Division, teamDetails.Tier);
                 }
 
                 // either R1 or R2
                 // safe to return the whole division as a peer list
-                return divisionScoreboard.TeamList;
+                return new ScoreboardFilterInfo(Division.Open, null);
             }
 
             // all-service round where category matters ("R0" we default to factoring in category)
 
+            Tier? tierFilter = null;
+
             // filter by tier, where available
             if (round > CompetitionRound.Round2)
             {
-                divisionScoreboard.WithFilter(Division.AllService, teamDetails.Tier);
+                tierFilter = teamDetails.Tier;
             }
-
-            // just need to filter the list by category
-            if (teamDetails.Category == null)
-            {
-                // silent fail
-                return divisionScoreboard.TeamList;
-            }
-
+            
             // there might be some A.S. teams whose categories we don't know
             // they get treated as not-my-problem, that is, not part of my category
-            return divisionScoreboard.TeamList.Where(t => t.Category == teamDetails.Category).ToIList();
+            // unknown category -> null -> no filtering on that, a good enough fallback
+            return new ScoreboardFilterInfo(Division.AllService, tierFilter, teamDetails.Category, null);
         }
 
         public override double GetCiscoPointsPossible(CompetitionRound round, Division division, Tier? tier)

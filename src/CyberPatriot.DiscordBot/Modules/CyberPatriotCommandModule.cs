@@ -38,7 +38,8 @@ namespace CyberPatriot.DiscordBot.Modules
                     throw new Exception("Error obtaining team score.");
                 }
                 await ReplyAsync(string.Empty, embed: ScoreEmbedBuilder.CreateTeamDetailsEmbed(teamScore,
-                    rankingData: CompetitionRoundLogicService.GetRankingInformation(ScoreRetrievalService.Round, await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(teamScore.Summary.Division, null)).ConfigureAwait(false), teamScore.Summary),
+                    completeScoreboard: await ScoreRetrievalService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false),
+                    peerFilter: CompetitionRoundLogicService.GetPeerFilter(ScoreRetrievalService.Round, teamScore.Summary),
                     timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false)).Build()).ConfigureAwait(false);
             }
         }
@@ -101,19 +102,12 @@ namespace CyberPatriot.DiscordBot.Modules
                     throw new ArgumentOutOfRangeException(nameof(rank));
                 }
 
-                Division? division = divisionAndCat?.Division;
-                ServiceCategory? category = divisionAndCat?.Category;
+                var filter = new ScoreboardFilterInfo(divisionAndCat?.Division, tier, divisionAndCat?.Category, location);
 
-                var teams = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(division, tier)).ConfigureAwait(false);
+                var teams = await ScoreRetrievalService.GetScoreboardAsync(filter).ConfigureAwait(false);
                 System.Collections.Generic.IEnumerable<ScoreboardSummaryEntry> teamList = teams.TeamList;
-                if (location != null)
-                {
-                    teamList = teamList.Where(t => t.Location == location);
-                }
-                if (category.HasValue)
-                {
-                    teamList = teamList.Where(t => t.Category == category);
-                }
+                
+
                 var team = teamList.Skip(rank - 1).First();
                 ScoreboardDetails teamScore = await ScoreRetrievalService.GetDetailsAsync(team.TeamId).ConfigureAwait(false);
                 if (teamScore == null)
@@ -123,14 +117,15 @@ namespace CyberPatriot.DiscordBot.Modules
 
                 string classSpec = Utilities.JoinNonNullNonEmpty(", ",
                     LocationResolutionService.GetFullNameOrNull(location),
-                    division == null ? null : (division.Value.ToStringCamelCaseToSpace() + " Division"),
-                    !category.HasValue ? null : category.Value.ToCanonicalName(),
-                    tier == null ? null : (tier.Value.ToStringCamelCaseToSpace() + " Tier"));
+                    filter.Division.HasValue ? (filter.Division.Value.ToStringCamelCaseToSpace() + " Division") : null,
+                    filter.Category?.ToCanonicalName(),
+                    tier.HasValue ? (tier.Value.ToStringCamelCaseToSpace() + " Tier") : null);
 
                 await ReplyAsync(
                     "**" + Utilities.AppendOrdinalSuffix(rank) + " place " + (classSpec.Length == 0 ? "overall" : "in " + classSpec) + ": " + team.TeamId + "**",
                     embed: ScoreEmbedBuilder.CreateTeamDetailsEmbed(teamScore,
-                        rankingData: CompetitionRoundLogicService.GetRankingInformation(ScoreRetrievalService.Round, await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(teamScore.Summary.Division, null)).ConfigureAwait(false), teamScore.Summary),
+                        completeScoreboard: await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(null, null)).ConfigureAwait(false),
+                        peerFilter: CompetitionRoundLogicService.GetPeerFilter(ScoreRetrievalService.Round, team),
                         timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false)).Build()).ConfigureAwait(false);
             }
         }
@@ -159,21 +154,11 @@ namespace CyberPatriot.DiscordBot.Modules
                     throw new ArgumentOutOfRangeException(nameof(rank));
                 }
 
-                var teams = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(divAndCat?.Division, tier)).ConfigureAwait(false);
-                System.Collections.Generic.IEnumerable<ScoreboardSummaryEntry> teamListTentative = teams.TeamList;
-                //if (location != null)
-                //{
-                //    teamListTentative = teamListTentative.Where(t => t.Location == location);
-                //}
-                if (divAndCat?.Category != null)
-                {
-                    var category = divAndCat.Value.Category.Value;
-                    teamListTentative = teamListTentative.Where(t => t.Category == category);
-                }
-                var teamList = teamListTentative.ToIList();
+                var teams = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(divAndCat?.Division, tier, divAndCat?.Category, null)).ConfigureAwait(false);
+                
                 // teams list in descending order
-                int expectedIndex = ((int)Math.Round(((100 - rank) / 100) * teamList.Count)).Clamp(0, teamList.Count);
-                ScoreboardDetails teamScore = await ScoreRetrievalService.GetDetailsAsync(teamList[expectedIndex].TeamId).ConfigureAwait(false);
+                int expectedIndex = ((int)Math.Round(((100 - rank) / 100) * teams.TeamList.Count)).Clamp(0, teams.TeamList.Count);
+                ScoreboardDetails teamScore = await ScoreRetrievalService.GetDetailsAsync(teams.TeamList[expectedIndex].TeamId).ConfigureAwait(false);
                 if (teamScore == null)
                 {
                     throw new Exception("Error obtaining team score.");
@@ -181,7 +166,8 @@ namespace CyberPatriot.DiscordBot.Modules
 
                 await ReplyAsync(string.Empty,
                     embed: ScoreEmbedBuilder.CreateTeamDetailsEmbed(teamScore,
-                        rankingData: CompetitionRoundLogicService.GetRankingInformation(ScoreRetrievalService.Round, await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(teamScore.Summary.Division, null)).ConfigureAwait(false), teamScore.Summary),
+                        completeScoreboard: await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(null, null)).ConfigureAwait(false),
+                        peerFilter: CompetitionRoundLogicService.GetPeerFilter(ScoreRetrievalService.Round, teamScore.Summary), 
                         timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false)).Build()).ConfigureAwait(false);
             }
         }
@@ -190,32 +176,32 @@ namespace CyberPatriot.DiscordBot.Modules
         #region Scoreboard
 
         [Command("scoreboard"), Alias("leaderboard"), HideCommandHelp]
-        public Task GetLeaderboardAsync(int pageNumber = 1) => GetLeaderboardImplementationAsync(null, null, ScoreboardFilterInfo.NoFilter, pageNumber);
+        public Task GetLeaderboardAsync(int pageNumber = 1) => GetLeaderboardImplementationAsync(null, null, null, null, pageNumber);
 
         [Command("scoreboard"), Alias("leaderboard"), HideCommandHelp]
-        public Task GetLeaderboardAsync(LocationCode location, int pageNumber = 1) => GetLeaderboardImplementationAsync(location, null, ScoreboardFilterInfo.NoFilter, pageNumber);
+        public Task GetLeaderboardAsync(LocationCode location, int pageNumber = 1) => GetLeaderboardImplementationAsync(location, null, null, null, pageNumber);
 
         [Command("scoreboard"), Alias("leaderboard"), HideCommandHelp]
-        public Task GetLeaderboardAsync(DivisionWithCategory division, int pageNumber = 1) => GetLeaderboardImplementationAsync(null, division.Category, new ScoreboardFilterInfo(division.Division, null), pageNumber);
+        public Task GetLeaderboardAsync(DivisionWithCategory division, int pageNumber = 1) => GetLeaderboardImplementationAsync(null, division.Category, division.Division, null, pageNumber);
 
         [Command("scoreboard"), Alias("leaderboard"), HideCommandHelp]
-        public Task GetLeaderboardAsync(LocationCode location, DivisionWithCategory division, int pageNumber = 1) => GetLeaderboardImplementationAsync(location, division.Category, new ScoreboardFilterInfo(division.Division, null), pageNumber);
+        public Task GetLeaderboardAsync(LocationCode location, DivisionWithCategory division, int pageNumber = 1) => GetLeaderboardImplementationAsync(location, division.Category, division.Division, null, pageNumber);
 
         [Command("scoreboard"), Alias("leaderboard"), HideCommandHelp]
-        public Task GetLeaderboardAsync(Tier tier, int pageNumber = 1) => GetLeaderboardImplementationAsync(null, null, new ScoreboardFilterInfo(null, tier), pageNumber);
+        public Task GetLeaderboardAsync(Tier tier, int pageNumber = 1) => GetLeaderboardImplementationAsync(null, null, null, tier, pageNumber);
 
         [Command("scoreboard"), Alias("leaderboard"), HideCommandHelp]
-        public Task GetLeaderboardAsync(LocationCode location, Tier tier, int pageNumber = 1) => GetLeaderboardImplementationAsync(location, null, new ScoreboardFilterInfo(null, tier), pageNumber);
+        public Task GetLeaderboardAsync(LocationCode location, Tier tier, int pageNumber = 1) => GetLeaderboardImplementationAsync(location, null, null, tier, pageNumber);
 
         [Command("scoreboard"), Alias("leaderboard"), HideCommandHelp]
-        public Task GetLeaderboardAsync(DivisionWithCategory division, Tier tier, int pageNumber = 1) => GetLeaderboardImplementationAsync(null, division.Category, new ScoreboardFilterInfo(division.Division, tier), pageNumber);
+        public Task GetLeaderboardAsync(DivisionWithCategory division, Tier tier, int pageNumber = 1) => GetLeaderboardImplementationAsync(null, division.Category, division.Division, tier, pageNumber);
 
         [Command("scoreboard"), Alias("leaderboard"), Summary("Returns the current CyberPatriot leaderboard.")]
         public Task GetLeaderboardAsync(
             [Summary("The location to which scoreboard display should be filtered, if provided."), AlterParameterDisplay(DisplayAsOptional = true)] LocationCode location,
             [Summary("The division (and optionally category) to which scoreboard display should be filtered, if provided."), AlterParameterDisplay(DisplayAsOptional = true)] DivisionWithCategory division,
             [Summary("The tier to which scoreboard display should be filtered, if provided."), AlterParameterDisplay(DisplayAsOptional = true)] Tier tier,
-            int pageNumber = 1) => GetLeaderboardImplementationAsync(location, division.Category, new ScoreboardFilterInfo(division.Division, tier), pageNumber);
+            int pageNumber = 1) => GetLeaderboardImplementationAsync(location, division.Category, division.Division, tier, pageNumber);
 
         [Command("scoreboard"), Alias("leaderboard", "peerboard", "peerleaderboard", "peerscoreboard"), Summary("Shows the given team's placement on the current CyberPatriot leaderboard consisting only of its peers."), Priority(5)]
         public async Task GeneratePeerLeaderboardAsync(TeamId team)
@@ -228,31 +214,23 @@ namespace CyberPatriot.DiscordBot.Modules
                     throw new Exception("Error obtaining team score.");
                 }
 
-                CompleteScoreboardSummary scoreboard = await ScoreRetrievalService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false);
+                CompleteScoreboardSummary peerScoreboard = await ScoreRetrievalService.GetScoreboardAsync(CompetitionRoundLogicService.GetPeerFilter(ScoreRetrievalService.Round, teamDetails.Summary)).ConfigureAwait(false);
 
-                await ReplyAsync(ScoreEmbedBuilder.CreatePeerLeaderboardEmbed(teamDetails.TeamId, scoreboard, CompetitionRoundLogicService.GetPeerTeams(ScoreRetrievalService.Round, scoreboard, teamDetails.Summary), timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false))).ConfigureAwait(false);
+                await ReplyAsync(ScoreEmbedBuilder.CreatePeerLeaderboardEmbed(teamDetails.TeamId, peerScoreboard, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false))).ConfigureAwait(false);
             }
         }
 
-        public async Task GetLeaderboardImplementationAsync(string location, ServiceCategory? category, ScoreboardFilterInfo filterInfo, int pageNumber)
+        public async Task GetLeaderboardImplementationAsync(string location, ServiceCategory? category, Division? divFilter, Tier? tierFilter, int pageNumber)
         {
             using (Context.Channel.EnterTypingState())
             {
-                CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(filterInfo).ConfigureAwait(false);
+                CompleteScoreboardSummary teamScore = await ScoreRetrievalService.GetScoreboardAsync(new ScoreboardFilterInfo(divFilter, tierFilter, category, location)).ConfigureAwait(false);
                 if (teamScore == null)
                 {
                     throw new Exception("Error obtaining scoreboard.");
                 }
-
-                string filterDesc = Utilities.JoinNonNullNonEmpty(", ",
-                    !category.HasValue ? null : category.Value.ToCanonicalName(),
-                    LocationResolutionService.GetFullNameOrNull(location));
-
-                await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, customFilter: location == null && !category.HasValue ? null : new ScoreboardMessageBuilderService.CustomFiltrationInfo()
-                {
-                    Predicate = t => (location == null ? true : t.Location == location) && (category.HasValue ? t.Category == category : true),
-                    FilterDescription = filterDesc
-                }, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false))).ConfigureAwait(false);
+                
+                await ReplyAsync(ScoreEmbedBuilder.CreateTopLeaderboardEmbed(teamScore, pageNumber: pageNumber, timeZone: await Preferences.GetTimeZoneAsync(Context.Guild, Context.User).ConfigureAwait(false))).ConfigureAwait(false);
             }
         }
         #endregion
