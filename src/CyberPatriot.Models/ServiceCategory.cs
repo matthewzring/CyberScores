@@ -46,7 +46,7 @@ namespace CyberPatriot.Models
         [Shorthands("MCJROTC", "Marines", "Marine Corps", "marinecorps", PreferredAbbreviation = "Marines")]
         MarineCorps,
         [CanonicalName("Naval Sea Cadet Corps")]
-        [Shorthands("naval", "Naval Sea Cadets", "navalseacadets", "Sea Cadets", "seacadets", "seacadetcorps", PreferredAbbreviation = "Naval")]
+        [Shorthands("naval", "Naval Sea Cadets", "navalseacadets", "Sea Cadets", "seacadets", "seacadetcorps", "NSC", PreferredAbbreviation = "Naval")]
         NavalSeaCadets,
         [CanonicalName("Navy JROTC")]
         [Shorthands("Navy", "NJROTC", PreferredAbbreviation = "Navy")]
