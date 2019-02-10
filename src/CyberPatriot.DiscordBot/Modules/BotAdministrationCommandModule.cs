@@ -76,7 +76,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 .WithDescription("**Purpose:** A bot for interaction with CyberPatriot scoreboards.\n"
                 + $"[**Add me to your server!**](https://discordapp.com/oauth2/authorize?client_id={appinfo.Id}&permissions={CyberPatriotDiscordBot.RequiredPermissions}&scope=bot) Don't forget to set a prefix!\n"
                 + $"**Code:** [On GitHub](https://github.com/glen3b/CyPatScoreboardBot) under the [GNU AGPL](https://www.gnu.org/licenses/agpl.html) v3 or later\n"
-                + "Copyright (C) 2017, 2018, 2019 Glen Husman and contributors\n"
+                + "Copyright (C) 2017, 2018, 2019 glen3b and contributors\n"
                 + "**Disclaimer:** This bot is not affiliated with the Air Force Association nor the CyberPatriot program. All scores displayed, even those marked \"official,\" are non-binding unofficial scores and should be treated as such. Official scores can only be found [on the CyberPatriot website](http://www.uscyberpatriot.org/competition/current-competition/scores). This program comes with ABSOLUTELY NO WARRANTY. Refer to the README and LICENSE documents for more information.")
                 .WithFooter("Made by glen3b | Written in C# using Discord.Net", "https://avatars.githubusercontent.com/glen3b")
                 .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Prefix").WithValue((Context.Guild != null ? (await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id).ConfigureAwait(false))?.Prefix?.AppendPrepend("`") : null) ?? Context.Client.CurrentUser.Mention))
