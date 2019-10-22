@@ -50,7 +50,11 @@ namespace CyberPatriot.Models.Serialization
 
     public class TeamIdTypeConverter : TypeConverter
     {
-        public const string DefaultCompetition = "11";
+        /// <summary>
+        /// The default competition identifier to assume, when user input of just a team number is given.
+        /// </summary>
+        public const string DefaultCompetition = "12";
+
         private static readonly int DefaultCompetitionNumericIdLength;
 
         static TeamIdTypeConverter()
