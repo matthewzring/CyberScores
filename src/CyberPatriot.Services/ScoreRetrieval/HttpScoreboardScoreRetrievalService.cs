@@ -201,7 +201,7 @@ namespace CyberPatriot.Services.ScoreRetrieval
                 summary.Tier = tier;
             }
             summary.ImageCount = int.Parse(dataEntries[5]);
-            summary.PlayTime = Utilities.ParseHourMinuteTimespan(dataEntries[6]);
+            summary.PlayTime = Utilities.ParseHourMinuteSecondTimespan(dataEntries[6]);
             summary.TotalScore = double.Parse(dataEntries.Last());
             summary.Warnings |= dataEntries[7].Contains("T") ? ScoreWarnings.TimeOver : 0;
             summary.Warnings |= dataEntries[7].Contains("M") ? ScoreWarnings.MultiImage : 0;
@@ -234,8 +234,8 @@ namespace CyberPatriot.Services.ScoreRetrieval
             // number of images
             summary.ImageCount = int.Parse(dataEntries[4].Trim());
             // times
-            summary.PlayTime = Utilities.ParseHourMinuteTimespan(dataEntries[5]);
-            details.ScoreTime = Utilities.ParseHourMinuteTimespan(dataEntries[6]);
+            summary.PlayTime = Utilities.ParseHourMinuteSecondTimespan(dataEntries[5]);
+            details.ScoreTime = Utilities.ParseHourMinuteSecondTimespan(dataEntries[6]);
             // warnings and total score
             string warnStr = dataEntries[7];
             summary.Warnings |= warnStr.Contains("T") ? ScoreWarnings.TimeOver : 0;
@@ -305,7 +305,7 @@ namespace CyberPatriot.Services.ScoreRetrieval
                 ScoreboardImageDetails image = new ScoreboardImageDetails();
                 image.PointsPossible = 100;
                 image.ImageName = dataEntries[0];
-                image.PlayTime = Utilities.ParseHourMinuteTimespan(dataEntries[1]);
+                image.PlayTime = Utilities.ParseHourMinuteSecondTimespan(dataEntries[1]);
                 image.VulnerabilitiesFound = int.Parse(dataEntries[2]);
                 image.VulnerabilitiesRemaining = int.Parse(dataEntries[3]);
                 image.Penalties = int.Parse(dataEntries[4]);

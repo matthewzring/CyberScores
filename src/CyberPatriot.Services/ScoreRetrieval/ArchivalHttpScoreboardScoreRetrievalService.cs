@@ -65,7 +65,7 @@ namespace CyberPatriot.Services.ScoreRetrieval
                 summary.Tier = tier;
             }
             summary.ImageCount = int.Parse(dataEntries[4]);
-            summary.PlayTime = Utilities.ParseHourMinuteTimespan(dataEntries[5]);
+            summary.PlayTime = Utilities.ParseHourMinuteSecondTimespan(dataEntries[5]);
             summary.TotalScore = int.Parse(dataEntries[6]);
             summary.Warnings |= dataEntries[7].Contains("T") ? ScoreWarnings.TimeOver : 0;
             summary.Warnings |= dataEntries[7].Contains("M") ? ScoreWarnings.MultiImage : 0;
@@ -89,13 +89,13 @@ namespace CyberPatriot.Services.ScoreRetrieval
                 summary.Tier = tier;
             }
             summary.ImageCount = int.Parse(dataEntries[4].Trim());
-            summary.PlayTime = Utilities.ParseHourMinuteTimespan(dataEntries[5]);
+            summary.PlayTime = Utilities.ParseHourMinuteSecondTimespan(dataEntries[5]);
             string scoreTimeText = dataEntries[6];
             // to deal with legacy scoreboards
             int scoreTimeIndOffset = 0;
             if (scoreTimeText.Contains(":"))
             {
-                details.ScoreTime = Utilities.ParseHourMinuteTimespan(dataEntries[6]);
+                details.ScoreTime = Utilities.ParseHourMinuteSecondTimespan(dataEntries[6]);
             }
             else
             {
