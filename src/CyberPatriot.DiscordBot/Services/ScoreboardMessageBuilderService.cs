@@ -77,7 +77,7 @@ namespace CyberPatriot.DiscordBot.Services
         {
             string divisionFormatString = useAbbreviatedDivision ? "{0,6}" : "  {0,-10}";
 
-            return $"{prefix}{friendlyIndex,-5}{team.TeamId,-7}{team.Location,4}" + string.Format(divisionFormatString, AbbreviateDivision(team)) + $"{team.Tier,10}{ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore),16}{((showAdvancement && team.Advancement.HasValue) ? team.Advancement.Value.ToConciseString() : (ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.TimeDisplay, team.PlayTime) ? team.PlayTime.ToHoursMinutesString() : "")),7}{team.Warnings.ToConciseString(),4}";
+            return $"{prefix}{friendlyIndex,-5}{team.TeamId,-7}{team.Location,4}" + string.Format(divisionFormatString, AbbreviateDivision(team)) + $"{team.Tier,10}{ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore),16}{((showAdvancement && team.Advancement.HasValue) ? team.Advancement.Value.ToConciseString() : (ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.TimeDisplay, team.PlayTime) ? team.PlayTime.ToHoursMinutesSecondsString() : "")),7}{team.Warnings.ToConciseString(),4}";
         }
 
         private string GetImageLeaderboardEntry(ScoreboardSummaryEntry team, ScoreboardImageDetails image, int friendlyIndex, bool useAbbreviatedDivision = false, string prefix = "#")
@@ -93,7 +93,7 @@ namespace CyberPatriot.DiscordBot.Services
                 string.Format(divisionFormatString, AbbreviateDivision(team)) + $"{team.Tier,10}" +
                 $"{ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(image.Score),13}" +
                 vulnPenString +
-                $"{(ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.TimeDisplay, image.PlayTime) ? image.PlayTime.ToHoursMinutesString() : ""),7}" +
+                $"{(ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.TimeDisplay, image.PlayTime) ? image.PlayTime.ToHoursMinutesSecondsString() : ""),7}" +
                 $"{image.Warnings.ToConciseString(),4}";
         }
 
@@ -367,14 +367,14 @@ namespace CyberPatriot.DiscordBot.Services
                     warningAppendage += multiimage ? multiImageStr : overTimeStr;
                 }
                 string vulnsString = ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.VulnerabilityDisplay, item.VulnerabilitiesFound, item.VulnerabilitiesRemaining + item.VulnerabilitiesFound) ? $" ({item.VulnerabilitiesFound}/{item.VulnerabilitiesFound + item.VulnerabilitiesRemaining} vulns{penaltyAppendage})" : string.Empty;
-                string playTimeStr = ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.TimeDisplay, item.PlayTime) ? $" in {item.PlayTime.ToHoursMinutesString()}" : string.Empty;
+                string playTimeStr = ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.TimeDisplay, item.PlayTime) ? $" in {item.PlayTime.ToHoursMinutesSecondsString()}" : string.Empty;
                 builder.AddField('`' + item.ImageName + $": {ScoreRetrieverMetadata.FormattingOptions.FormatScore(item.Score)}pts`", $"{ScoreRetrieverMetadata.FormattingOptions.FormatScore(item.Score)} points{vulnsString}{playTimeStr}{warningAppendage}");
             }
 
             string totalScoreTimeAppendage = string.Empty;
             if (ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.TimeDisplay, teamScore.Summary.PlayTime))
             {
-                totalScoreTimeAppendage = $" in {teamScore.Summary.PlayTime.ToHoursMinutesString()}";
+                totalScoreTimeAppendage = $" in {teamScore.Summary.PlayTime.ToHoursMinutesSecondsString()}";
             }
 
             string totalPointsAppendage = string.Empty;
@@ -420,7 +420,7 @@ namespace CyberPatriot.DiscordBot.Services
                 {
                     timingFieldBuilder.AppendLine();
                 }
-                timingFieldBuilder.AppendFormat("Score achieved in {0}", teamScore.ScoreTime.ToHoursMinutesString());
+                timingFieldBuilder.AppendFormat("Score achieved in {0}", teamScore.ScoreTime.ToHoursMinutesSecondsString());
             }
 
             DateTimeOffset? maxImageTime = null;
@@ -562,7 +562,7 @@ namespace CyberPatriot.DiscordBot.Services
             TimeSpan graphPlayTime = teamScore.ImageScoresOverTime.Values.Select(x => x.Keys.Last()).Max() - teamScore.ImageScoresOverTime.Values.Select(x => x.Keys.First()).Min();
             long graphPlayTimeTicks = graphPlayTime.Ticks;
 
-            string axisLabels = $"|0:00|{new TimeSpan(graphPlayTimeTicks / 6).ToHoursMinutesString(1)}|{new TimeSpan(graphPlayTimeTicks / 3).ToHoursMinutesString(1)}|{new TimeSpan(graphPlayTimeTicks / 2).ToHoursMinutesString(1)}|{new TimeSpan(graphPlayTimeTicks / 3 * 2).ToHoursMinutesString(1)}|{new TimeSpan(graphPlayTimeTicks / 6 * 5).ToHoursMinutesString(1)}|{graphPlayTime.ToHoursMinutesString(1)}";
+            string axisLabels = $"|0:00|{new TimeSpan(graphPlayTimeTicks / 6).ToHoursMinutesSecondsString(1)}|{new TimeSpan(graphPlayTimeTicks / 3).ToHoursMinutesSecondsString(1)}|{new TimeSpan(graphPlayTimeTicks / 2).ToHoursMinutesSecondsString(1)}|{new TimeSpan(graphPlayTimeTicks / 3 * 2).ToHoursMinutesSecondsString(1)}|{new TimeSpan(graphPlayTimeTicks / 6 * 5).ToHoursMinutesSecondsString(1)}|{graphPlayTime.ToHoursMinutesSecondsString(1)}";
 
             string queryString = $"cht=lc&chco=F44336,03A9F4,4CAF50,FFEB3B&chf=bg,s,32363B&chdls=FFFFFF,16&chxs=1,FFFFFF&chs=900x325&chd=t:{WebUtility.UrlEncode(data)}&chxt=x,y&chxl=0:{WebUtility.UrlEncode(axisLabels)}&chdl={WebUtility.UrlEncode(images)}&chxs=1,FFFFFF,12,1,lt,FFFFFF%7C0,FFFFFF,12,0,lt,FFFFFF&chtt=Team+{WebUtility.UrlEncode(teamScore.TeamId.ToString())}&chts=FFFFFF,20&chls=3%7C3%7C3%7C3&chg=16.66666,10&chds={min},{max}&chxr=1,{min},{max}";
 
