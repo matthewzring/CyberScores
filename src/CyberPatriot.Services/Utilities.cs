@@ -48,9 +48,9 @@ namespace CyberPatriot.Services
 
             string[] hhmmssSplit = hhmmss.Split(':');
 
-            return new TimeSpan(int.Parse(hhmmssSplit[0]),                      // hours
-                           int.Parse(hhmmssSplit[1]),                           // minutes
-                           hhmmss.Length > 2 ? int.Parse(hhmmssSplit[2]) : 0);  // seconds
+            return new TimeSpan(int.Parse(hhmmssSplit[0]),                             // hours
+                           int.Parse(hhmmssSplit[1]),                                // minutes
+                           hhmmssSplit.Length > 2 ? int.Parse(hhmmssSplit[2]) : 0);  // seconds
         }
 
         public static TimeSpan MultiplyBy(this TimeSpan span, int factor) => new TimeSpan(span.Ticks * factor);

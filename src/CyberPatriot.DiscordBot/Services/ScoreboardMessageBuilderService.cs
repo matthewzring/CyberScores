@@ -77,7 +77,7 @@ namespace CyberPatriot.DiscordBot.Services
         {
             string divisionFormatString = useAbbreviatedDivision ? "{0,6}" : "  {0,-10}";
 
-            return $"{prefix}{friendlyIndex,-5}{team.TeamId,-7}{team.Location,4}" + string.Format(divisionFormatString, AbbreviateDivision(team)) + $"{team.Tier,10}{ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore),16}{((showAdvancement && team.Advancement.HasValue) ? team.Advancement.Value.ToConciseString() : (ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.TimeDisplay, team.PlayTime) ? team.PlayTime.ToHoursMinutesSecondsString() : "")),7}{team.Warnings.ToConciseString(),4}";
+            return $"{prefix}{friendlyIndex,-5}{team.TeamId,-7}{team.Location,4}" + string.Format(divisionFormatString, AbbreviateDivision(team)) + $"{team.Tier,10}{ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(team.TotalScore),16}{((showAdvancement && team.Advancement.HasValue) ? team.Advancement.Value.ToConciseString() : (ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.TimeDisplay, team.PlayTime) ? team.PlayTime.ToHoursMinutesSecondsString() : "")),10}{team.Warnings.ToConciseString(),4}";
         }
 
         private string GetImageLeaderboardEntry(ScoreboardSummaryEntry team, ScoreboardImageDetails image, int friendlyIndex, bool useAbbreviatedDivision = false, string prefix = "#")
