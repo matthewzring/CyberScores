@@ -40,6 +40,9 @@ namespace CyberPatriot.DiscordBot.Modules
     [Group("admin")]
     public class GuildAdministrationCommandModule : ModuleBase
     {
+        public IDataPersistenceService Database { get; set; }
+        public LogService Log { get; set; }
+
         [Group("prefix")]
         [RequireUserPermission(GuildPermission.ManageGuild, Group = "RolePermission")]
         [RequireOwner(Group = "RolePermission")]
@@ -207,6 +210,26 @@ namespace CyberPatriot.DiscordBot.Modules
                     await dbContext.WriteAsync().ConfigureAwait(false);
                 }
             }
+        }
+
+        [Command("clearprefs"), Alias("deleteprefs", "deletedata", "clearpreferences")]
+        [RequireUserPermission(GuildPermission.ManageGuild, Group = "RolePermission")]
+        [RequireOwner(Group = "RolePermission")]
+        [RequireContext(ContextType.Guild)]
+        [Summary("Clears storage of all per-guild information.")]
+        public async Task RemoveAsync()
+        {
+            int numDeleted = -1;
+            using (var context = Database.OpenContext<Guild>(true))
+            {
+                numDeleted = await context.DeleteAsync(g => g.Id == Context.Guild.Id).ConfigureAwait(false);
+                await context.WriteAsync().ConfigureAwait(false);
+            }
+
+            if (numDeleted < 0 || numDeleted > 1)
+                await Log.LogApplicationMessageAsync(LogSeverity.Warning, $"Deleted {numDeleted} entries when clearing data for guild ID {Context.Guild.Id}", source: nameof(GuildAdministrationCommandModule));
+
+            await ReplyAsync("Deleted all stored guild preferences. It's as if you were never there.\nNote you may have to set a new prefix.").ConfigureAwait(false);
         }
     }
 }

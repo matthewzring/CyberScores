@@ -42,6 +42,11 @@ namespace CyberPatriot.DiscordBot.Services
         Task<TModel> FindOneAsync(Expression<Func<TModel, bool>> predicate);
         Task<TModel> FindOneOrNewAsync(Expression<Func<TModel, bool>> predicate, Func<TModel> factory);
         Task<TModel> FindOneOrNewAsync(Expression<Func<TModel, bool>> predicate, Func<Task<TModel>> asyncFactory);
+        /// <summary>
+        /// Deletes rows matching the given predicate.
+        /// </summary>
+        /// <returns>The number of rows deleted.</returns>
+        Task<int> DeleteAsync(Expression<Func<TModel, bool>> predicate);
         IAsyncEnumerable<TModel> FindAllAsync();
         IAsyncEnumerable<TModel> FindAllAsync(Expression<Func<TModel, bool>> predicate);
         Task SaveAsync(TModel model);

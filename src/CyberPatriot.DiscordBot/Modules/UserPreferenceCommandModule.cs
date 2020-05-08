@@ -39,6 +39,9 @@ namespace CyberPatriot.DiscordBot.Modules
     [Group("user")]
     public class UserPreferenceCommandModule : ModuleBase
     {
+        public IDataPersistenceService Database { get; set; }
+        public LogService Log { get; set; }
+
         [Group("timezone"), Alias("tz")]
         public class TimezoneModule : ModuleBase
         {
@@ -118,6 +121,23 @@ namespace CyberPatriot.DiscordBot.Modules
 
                 await ReplyAsync("Removed theme preference.").ConfigureAwait(false);
             }
+        }
+
+        [Command("clearprefs"), Alias("deleteprefs", "deletedata", "clearpreferences")]
+        [Summary("Clears storage of all per-user information.")]
+        public async Task RemoveAsync()
+        {
+            int numDeleted = -1;
+            using (var context = Database.OpenContext<User>(true))
+            {
+                numDeleted = await context.DeleteAsync(usr => usr.Id == Context.User.Id).ConfigureAwait(false);
+                await context.WriteAsync().ConfigureAwait(false);
+            }
+
+            if (numDeleted < 0 || numDeleted > 1)
+                await Log.LogApplicationMessageAsync(LogSeverity.Warning, $"Deleted {numDeleted} entries when clearing data for user ID {Context.User.Id}", source: nameof(UserPreferenceCommandModule));
+
+            await ReplyAsync("Deleted all stored user preferences. It's as if you were never there.").ConfigureAwait(false);
         }
     }
 }

@@ -191,6 +191,17 @@ namespace CyberPatriot.DiscordBot.Services
                     toWrite.Clear();
                 }
             }
+
+            public Task<int> DeleteAsync(Expression<Func<TModel, bool>> predicate)
+            {
+                try
+                {
+                    return Task.FromResult(Collection.Delete(predicate));
+                } catch (Exception ex)
+                {
+                    return Task.FromException<int>(ex);
+                }
+            }
         }
     }
 }
