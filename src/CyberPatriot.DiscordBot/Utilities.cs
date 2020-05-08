@@ -90,12 +90,12 @@ namespace CyberPatriot.DiscordBot
         /// <param name="timespan"></param>
         /// <param name="minDigits">The minimum number of hours digits to display.</param>
         /// <returns></returns>
-        public static string ToHoursMinutesString(this TimeSpan timespan, int minDigits = 2)
+        public static string ToHoursMinutesSecondsString(this TimeSpan timespan, int minDigits = 2)
         {
             long hourTicks = timespan.Ticks - (timespan.Minutes * TimeSpan.TicksPerMinute + timespan.Seconds * TimeSpan.TicksPerSecond + timespan.Milliseconds * TimeSpan.TicksPerMillisecond);
             int hours = (int)(hourTicks / TimeSpan.TicksPerHour);
 
-            return $"{hours.ToString(new string('0', minDigits))}:{timespan.Minutes:00}";
+            return $"{hours.ToString(new string('0', minDigits))}:{timespan.Minutes:00}:{timespan.Seconds:00}";
         }
 
         public static int Clamp(this int i, int lowerInclusive, int upperExclusive)

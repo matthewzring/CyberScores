@@ -45,7 +45,7 @@ namespace CyberPatriot.BitmapProvider
 
         public static HistogramColorPreset DiscordDark { get; } = new HistogramColorPreset()
         {
-            BackgroundColor = Color.Parse("#32363B"),
+            BackgroundColor = Color.Parse("#2F3136"),
             BarFillColor = Color.Parse("#7289DA"),
             LabelTextColor = Color.White,
             GridLineColor = Color.Gray
@@ -53,7 +53,7 @@ namespace CyberPatriot.BitmapProvider
 
         public static HistogramColorPreset DiscordLight { get; } = new HistogramColorPreset()
         {
-            BackgroundColor = Color.White,
+            BackgroundColor = Color.Parse("#F2F3F5"),
             BarFillColor = Color.Parse("#7289DA"),
             LabelTextColor = Color.Parse("#4F545C"),
             GridLineColor = Color.Parse("#CACBCE")

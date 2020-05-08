@@ -34,23 +34,23 @@ namespace CyberPatriot.Services
     internal static class Utilities
     {
         public static bool TryParseEnumSpaceless<TEnum>(string value, out TEnum @enum) where TEnum : struct => Enum.TryParse<TEnum>(value.Replace(" ", string.Empty), out @enum);
-        public static TimeSpan ParseHourMinuteTimespan(string hhmm)
+        public static TimeSpan ParseHourMinuteSecondTimespan(string hhmmss)
         {
             // works nicely in normal cases but we put it here in case it doesn't
-            //return TimeSpan.Parse(hhmm?.Trim() ?? throw new ArgumentNullException(nameof(hhmm)));
+            //return TimeSpan.Parse(hhmmss?.Trim() ?? throw new ArgumentNullException(nameof(hhmmss)));
 
             // some teams run > 24 hours
             // these time penalties mean I need an additional half dozen lines of code :(
-            if (string.IsNullOrWhiteSpace(hhmm))
+            if (string.IsNullOrWhiteSpace(hhmmss))
             {
-                throw new ArgumentNullException(nameof(hhmm));
+                throw new ArgumentNullException(nameof(hhmmss));
             }
 
-            string[] hhmmSplit = hhmm.Split(':');
+            string[] hhmmssSplit = hhmmss.Split(':');
 
-            return new TimeSpan(int.Parse(hhmmSplit[0]),    // hours
-                           int.Parse(hhmmSplit[1]),         // minutes
-                           0);                              // seconds
+            return new TimeSpan(int.Parse(hhmmssSplit[0]),                             // hours
+                           int.Parse(hhmmssSplit[1]),                                // minutes
+                           hhmmssSplit.Length > 2 ? int.Parse(hhmmssSplit[2]) : 0);  // seconds
         }
 
         public static TimeSpan MultiplyBy(this TimeSpan span, int factor) => new TimeSpan(span.Ticks * factor);
@@ -164,7 +164,7 @@ namespace CyberPatriot.Services
                 return await filereader.ReadToEndAsync().ConfigureAwait(false);
             }
         }
-        
+
         public static IList<T> ToIList<T>(this IEnumerable<T> enumerable)
         {
             if (enumerable is IList<T> list)

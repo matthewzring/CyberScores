@@ -1,6 +1,8 @@
 # CyberPatriot Discord bot
 A Discord bot for interaction with the CyberPatriot scoreboard.
 
+**To report security issues or otherwise privately contact the developers, please email cyberscores [at] glen3b.me.**
+
 Features include:
 - Team information in fancy embeds (standings, percentile ranking, etc)
 - Integration of outside (e.g. service category) information with scoreboard details
