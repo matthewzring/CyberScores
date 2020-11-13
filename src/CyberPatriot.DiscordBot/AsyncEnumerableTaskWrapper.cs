@@ -39,9 +39,9 @@ namespace CyberPatriot.DiscordBot
             EnumerableRetrieveTask = enumerableRetrieveTask ?? throw new ArgumentNullException(nameof(enumerableRetrieveTask));
         }
 
-        public IAsyncEnumerator<T> GetEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken ctoken)
         {
-            return new SyncEnumerableWrapper(EnumerableRetrieveTask.ContinueWith(r => r.Result.GetEnumerator()));
+            return new SyncEnumerableWrapper(ctoken, EnumerableRetrieveTask.ContinueWith(r => r.Result.GetEnumerator()));
         }
 
         class SyncEnumerableWrapper : IAsyncEnumerator<T>
@@ -50,31 +50,39 @@ namespace CyberPatriot.DiscordBot
             public T Current => GetEnumerator.Result.Current;
 
             // this will be called FIRST in the use of the enumerator, so we can await the enumerator get task, the rest can use result safely
-            public async Task<bool> MoveNext(CancellationToken cancellationToken)
+            public ValueTask<bool> MoveNextAsync()
             {
-                return (await GetEnumerator.ConfigureAwait(false)).MoveNext();
+                if (CancellationToken.IsCancellationRequested)
+                {
+                    return new ValueTask<bool>(Task.FromCanceled<bool>(CancellationToken));
+                }
+                return new ValueTask<bool>(GetEnumerator.ContinueWith<bool>(x => x.Result.MoveNext()));
             }
 
             Task<IEnumerator<T>> GetEnumerator { get; set; }
+            CancellationToken CancellationToken { get; set; }
 
-            public SyncEnumerableWrapper(Task<IEnumerator<T>> getEnumerator)
+            public SyncEnumerableWrapper(CancellationToken ctoken, Task<IEnumerator<T>> getEnumerator)
             {
                 GetEnumerator = getEnumerator;
+                CancellationToken = ctoken;
             }
 
             #region IDisposable Support
             private bool disposedValue = false; // To detect redundant calls
 
-            public void Dispose()
+            public ValueTask DisposeAsync()
             {
                 if (disposedValue)
                 {
-                    return;
+                    return default(ValueTask);
                 }
 
                 GetEnumerator.Result.Dispose();
 
                 disposedValue = true;
+
+                return default(ValueTask);
             }
             #endregion
 

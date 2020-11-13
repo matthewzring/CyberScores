@@ -35,13 +35,14 @@ using CyberPatriot.BitmapProvider;
 using System.Linq;
 using CyberPatriot.Services.ScoreRetrieval;
 using CyberPatriot.Services;
+using Microsoft.Extensions.Logging;
 
 namespace CyberPatriot.DiscordBot
 {
     internal class CyberPatriotDiscordBot
     {
         // I don't like big static properties
-        public static DateTimeOffset StartupTime { get; private set; }
+        public static DateTimeOffset StartupTime { get; private set; } = DateTimeOffset.UtcNow;
         public const int RequiredPermissions = 510016;
 
         static void Main(string[] args)
@@ -85,12 +86,6 @@ namespace CyberPatriot.DiscordBot
                 };
             }
 
-            _client.Ready += () =>
-            {
-                StartupTime = DateTimeOffset.UtcNow;
-                return Task.CompletedTask;
-            };
-
             _client.Disconnected += (e) =>
             {
                 if (e != null)
@@ -116,7 +111,7 @@ namespace CyberPatriot.DiscordBot
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
                 // Logging
-                .AddLogging()
+                .AddLogging(x => x.AddConsole())
                 .AddSingleton<LogService>()
                 .AddSingleton<PostLogAsyncHandler>(x => x.GetRequiredService<LogService>().LogApplicationMessageAsync)
                 // Extra

@@ -45,7 +45,7 @@ namespace CyberPatriot.DiscordBot.Services
             _discord = discord;
             _commands = commands;
 
-            _loggerFactory = ConfigureLogging(loggerFactory);
+            _loggerFactory = loggerFactory;
             _discordLogger = _loggerFactory.CreateLogger("discord");
             _commandsLogger = _loggerFactory.CreateLogger("commands");
             _applicationLogger = _loggerFactory.CreateLogger("application");
@@ -88,12 +88,6 @@ namespace CyberPatriot.DiscordBot.Services
             });
 
             return Task.CompletedTask;
-        }
-
-        private ILoggerFactory ConfigureLogging(ILoggerFactory factory)
-        {
-            factory.AddConsole();
-            return factory;
         }
 
         private Task LogDiscord(LogMessage message)

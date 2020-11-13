@@ -423,7 +423,7 @@ namespace CyberPatriot.DiscordBot.Modules
                               .Select(t => t.Images.SingleOrDefault(i => i.ImageName == imageName))
                               .Where(i => i != null)
                               .Select(i => (decimal)i.Score))
-                    .ToArray().ConfigureAwait(false);
+                    .ToArrayAsync().ConfigureAwait(false);
                 Array.Sort(data);
 
                 Models.User userSettings = await Preferences.Database.FindOneAsync<Models.User>(u => u.Id == Context.User.Id).ConfigureAwait(false);

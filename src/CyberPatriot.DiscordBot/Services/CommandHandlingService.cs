@@ -143,7 +143,7 @@ namespace CyberPatriot.DiscordBot.Services
             CommandInfo[] cmds = await _commands.Commands
                 .Where(cmd => !cmd.Preconditions.Any(precond => precond is HideCommandHelpAttribute))
                 .ToAsyncEnumerable()
-                .WhereAsync(async cmd =>
+                .WhereAwait(async cmd =>
                 {
                     ModuleInfo rootModule = cmd.Module;
                     while (rootModule?.Parent != null)
@@ -166,7 +166,7 @@ namespace CyberPatriot.DiscordBot.Services
                     // all commands OK, except: generated help commands and commands where preconditions are not met
                     // only the overall help command should be displayed in help
                     return preconditionSuccess;
-                }).OrderBy(cmd => cmd.Aliases[0]).ToArray().ConfigureAwait(false);
+                }).OrderBy(cmd => cmd.Aliases[0]).ToArrayAsync().ConfigureAwait(false);
             int pageCount = Utilities.CeilingDivision(cmds.Length, pageSize);
 
             if (pageNumber < 1 || pageNumber > pageCount)

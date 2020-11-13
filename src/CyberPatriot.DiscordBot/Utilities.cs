@@ -158,11 +158,11 @@ namespace CyberPatriot.DiscordBot
 
         public static IAsyncEnumerable<T> ToTaskResultEnumerable<T>(this IEnumerable<Task<T>> rootEnum)
         {
-            return AsyncEnumerable.CreateEnumerable(() =>
+            return AsyncEnumerable.Create(_ =>
             {
                 IEnumerator<Task<T>> rootEnumerator = rootEnum.GetEnumerator();
                 T val = default(T);
-                return AsyncEnumerable.CreateEnumerator(async ct =>
+                return AsyncEnumerator.Create(async () =>
                 {
                     if (!rootEnumerator.MoveNext())
                     {
@@ -171,13 +171,13 @@ namespace CyberPatriot.DiscordBot
 
                     val = await rootEnumerator.Current.ConfigureAwait(false);
                     return true;
-                }, () => val, () => rootEnumerator.Dispose());
+                }, () => val, () => { rootEnumerator.Dispose(); return default; });
             });
         }
 
-        public static IAsyncEnumerable<T> WhereAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, Task<bool>> predicate)
+        /*public static IAsyncEnumerable<T> WhereAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, Task<bool>> predicate)
         {
-            return AsyncEnumerable.CreateEnumerable(() =>
+            return AsyncEnumerable.Create(_ =>
             {
                 IAsyncEnumerator<T> rootEnumerator = enumerable.GetEnumerator();
                 return AsyncEnumerable.CreateEnumerator(async ct =>
@@ -190,11 +190,11 @@ namespace CyberPatriot.DiscordBot
                     return isNext;
                 }, () => rootEnumerator.Current, () => rootEnumerator.Dispose());
             });
-        }
+        }*/
 
         public static async Task<int> SumParallelAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, Task<int>> transform)
         {
-            List<Task<int>> transformTasks = await enumerable.Select(transform).ToList().ConfigureAwait(false);
+            List<Task<int>> transformTasks = await enumerable.Select(transform).ToListAsync().ConfigureAwait(false);
             int sum = 0;
             while (transformTasks.Count > 0)
             {
@@ -563,17 +563,23 @@ namespace CyberPatriot.DiscordBot
             return enumerable.ToList();
         }
 
-        public static Task<IList<T>> ToIListAsync<T>(this IAsyncEnumerable<T> enumerable)
+        public static ValueTask<IList<T>> ToIListAsync<T>(this IAsyncEnumerable<T> enumerable)
         {
             if (enumerable is IList<T> list)
             {
-                return Task.FromResult(list);
+                return new ValueTask<IList<T>>(list);
             }
 
-            return enumerable.ToList().ToSuperTask<List<T>, IList<T>>();
+            return enumerable.ToListAsync().ToSuperTask<List<T>, IList<T>>();
         }
 
         public static async Task<TSuper> ToSuperTask<TDerived, TSuper>(this Task<TDerived> derivedTask, bool continueOnCapturedContext = false) where TDerived : TSuper
+        {
+            // feels like there should be a nicer way
+            return await derivedTask.ConfigureAwait(continueOnCapturedContext);
+        }
+
+        public static async ValueTask<TSuper> ToSuperTask<TDerived, TSuper>(this ValueTask<TDerived> derivedTask, bool continueOnCapturedContext = false) where TDerived : TSuper
         {
             // feels like there should be a nicer way
             return await derivedTask.ConfigureAwait(continueOnCapturedContext);
