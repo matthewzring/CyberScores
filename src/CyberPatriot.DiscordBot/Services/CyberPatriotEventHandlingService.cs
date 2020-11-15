@@ -93,19 +93,46 @@ namespace CyberPatriot.DiscordBot.Services
             };
             _discord.JoinedGuild += async sg =>
             {
-                IMessageChannel ch = await sg.Owner.GetOrCreateDMChannelAsync().ConfigureAwait(false);
-                await ch
-                    .SendMessageAsync(
-                        $"Hello! I am the __unofficial__ CyberPatriot scoreboard Discord bot{(ch is IDMChannel ? ", and I've just been added to your server " + sg.Name?.AppendPrepend("\"") : string.Empty)}. To get started, " +
-                        $"give me a prefix by running the following command in your server:\n**{_discord.CurrentUser.Mention} admin prefix set <your prefix here>**\n" +
-                        $"Prefixes are used to precede commands in chat. With a prefix (like `!`), you can more easily run commands, like \"!leaderboard\" or \"!help\".\n" +
-                        $"To set `!` as your prefix, copy `@{_discord.CurrentUser.Username}#{_discord.CurrentUser.Discriminator} admin prefix set !` into your server chat.\n" +
-                        $"You can say \"{_discord.CurrentUser.Mention} about\" to get more info about me, or run \"{_discord.CurrentUser.Mention} help\" for a list of commands.\n\n" +
-                        $"Please keep in mind this bot is 100% *unofficial*, and is not in any way affiliated with the Air Force Association or the CyberPatriot program. All scores " +
-                        $"reported by the bot, even those marked \"official\", are a best-effort representation of the corresponding AFA-published details - accuracy is not guaranteed. " +
-                        $"Refer to the about command for more information.").ConfigureAwait(false);
+                await foreach (IMessageChannel ch in GetCandidateNewMessageChannels(sg).ConfigureAwait(false))
+                {
+                    try
+                    {
+                        await ch
+                            .SendMessageAsync(
+                                $"Hello{(ch is IDMChannel ? "" : $" <@{sg.OwnerId}>")}! I am the __unofficial__ CyberPatriot scoreboard Discord bot{(ch is IDMChannel ? ", and I've just been added to your server " + sg.Name?.AppendPrepend("\"") : string.Empty)}. To get started, " +
+                                $"give me a prefix by running the following command in your server:\n**{_discord.CurrentUser.Mention} admin prefix set <your prefix here>**\n" +
+                                $"Prefixes are used to precede commands in chat. With a prefix (like `!`), you can more easily run commands, like \"!leaderboard\" or \"!help\".\n" +
+                                $"To set `!` as your prefix, copy `@{_discord.CurrentUser.Username}#{_discord.CurrentUser.Discriminator} admin prefix set !` into your server chat.\n" +
+                                $"You can say \"{_discord.CurrentUser.Mention} about\" to get more info about me, or run \"{_discord.CurrentUser.Mention} help\" for a list of commands.\n\n" +
+                                $"Please keep in mind this bot is 100% *unofficial*, and is not in any way affiliated with the Air Force Association or the CyberPatriot program. All scores " +
+                                $"reported by the bot, even those marked \"official\", are a best-effort representation of the corresponding AFA-published details - accuracy is not guaranteed. " +
+                                $"Refer to the about command for more information.").ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        // TODO log
+                        continue;
+                    }
+
+                    break;
+                }
             };
             return Task.CompletedTask;
+        }
+
+        private async IAsyncEnumerable<IMessageChannel> GetCandidateNewMessageChannels(IGuild newGuild)
+        {
+            IUser owner = (await newGuild.GetOwnerAsync()) ?? (IUser)_discord.GetUser(newGuild.OwnerId);
+
+            if (owner != null) yield return await owner.GetOrCreateDMChannelAsync().ConfigureAwait(false);
+            IMessageChannel defaultChannel = await newGuild.GetDefaultChannelAsync().ConfigureAwait(false);
+            if (defaultChannel != null) yield return defaultChannel;
+
+            foreach (var channel in await newGuild.GetTextChannelsAsync().ConfigureAwait(false))
+            {
+                if (channel.Id == newGuild.DefaultChannelId) continue;
+                if (channel != null) yield return channel;
+            }
         }
 
         async Task UpdateGameBasedOnBackend()

@@ -82,7 +82,14 @@ namespace CyberPatriot.DiscordBot
                     {
                         currentTime = TimeZoneInfo.ConvertTime(currentTime, ownerTz);
                     }
-                    await (await owner?.GetOrCreateDMChannelAsync())?.SendMessageAsync($"[{currentTime.ToString("g")}] Now online!");
+                    if (owner != null)
+                    {
+                        var dmChannel = await owner.GetOrCreateDMChannelAsync();
+                        if (dmChannel != null)
+                        {
+                            await dmChannel.SendMessageAsync($"[{currentTime.ToString("g")}] Now online!");
+                        }
+                    }
                 };
             }
 

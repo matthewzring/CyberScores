@@ -138,7 +138,7 @@ namespace CyberPatriot.DiscordBot.Modules
             foreach (var guild in guilds.Skip(pageNumber * guildsPerPage).Take(guildsPerPage))
             {
                 var owner = await guild.GetOwnerAsync().ConfigureAwait(false);
-                replyBuilder.AppendLine($"__{guild.Name}__ ({guild.Id}):\n- {Utilities.Pluralize("member", (await guild.GetUsersAsync().ConfigureAwait(false)).Count)}\n- {Utilities.Pluralize("text channel", (await guild.GetTextChannelsAsync().ConfigureAwait(false)).Count)}\n- Owned by: {owner.Username}#{owner.DiscriminatorValue} (<\\@{owner.Id}>)");
+                replyBuilder.AppendLine($"__{guild.Name}__ ({guild.Id}):\n- {Utilities.Pluralize("member", (await guild.GetUsersAsync().ConfigureAwait(false)).Count)}\n- {Utilities.Pluralize("text channel", (await guild.GetTextChannelsAsync().ConfigureAwait(false)).Count)}\n- Owned by: {(owner != null ? owner.Username + '#' + owner.DiscriminatorValue : "<unknown>")} (<\\@{guild.OwnerId}>)");
             }
 
             await ReplyAsync(replyBuilder.ToString()).ConfigureAwait(false);
