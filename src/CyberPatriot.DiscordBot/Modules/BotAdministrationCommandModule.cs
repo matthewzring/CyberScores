@@ -91,7 +91,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 .BuildAsync().ConfigureAwait(false)).ConfigureAwait(false);
         }
 
-        [Command("kill"), Alias("die"), RequireOwner]
+        [Command("kill"), Alias("die"), RequireTeamOwner]
         [Summary("Terminates the bot instance.")]
         public async Task KillAsync()
         {
@@ -99,7 +99,7 @@ namespace CyberPatriot.DiscordBot.Modules
             Environment.Exit(0);
         }
 
-        [Command("setavatar"), Alias("seticon"), RequireOwner]
+        [Command("setavatar"), Alias("seticon"), RequireTeamOwner]
         [Summary("Sets the avatar for the bot.")]
         public async Task SetIconAsync(string iconUrl)
         {
@@ -115,7 +115,7 @@ namespace CyberPatriot.DiscordBot.Modules
             await ReplyAsync("Avatar updated!").ConfigureAwait(false);
         }
 
-        [Command("getguilds"), Alias("guildlist", "listguilds"), RequireOwner]
+        [Command("getguilds"), Alias("guildlist", "listguilds"), RequireTeamOwner]
         [Summary("Lists the guilds this bot is a member of. Paginated.")]
         public async Task ListGuilds(int pageNumber = 1)
         {
@@ -130,7 +130,7 @@ namespace CyberPatriot.DiscordBot.Modules
 
             var replyBuilder = new System.Text.StringBuilder();
             replyBuilder.AppendLine($"**Guild List (Page {pageNumber} of {highestPage}):**");
-            replyBuilder.AppendFormat("*{0}*", Utilities.Pluralize("guild", guilds.Count)).AppendLine();
+            replyBuilder.AppendFormat("*{0}, member counts are likely inaccurate*", Utilities.Pluralize("guild", guilds.Count)).AppendLine();
             replyBuilder.AppendLine();
 
             pageNumber--;
@@ -138,7 +138,14 @@ namespace CyberPatriot.DiscordBot.Modules
             foreach (var guild in guilds.Skip(pageNumber * guildsPerPage).Take(guildsPerPage))
             {
                 var owner = await guild.GetOwnerAsync().ConfigureAwait(false);
-                replyBuilder.AppendLine($"__{guild.Name}__ ({guild.Id}):\n- {Utilities.Pluralize("member", (await guild.GetUsersAsync().ConfigureAwait(false)).Count)}\n- {Utilities.Pluralize("text channel", (await guild.GetTextChannelsAsync().ConfigureAwait(false)).Count)}\n- Owned by: {(owner != null ? owner.Username + '#' + owner.DiscriminatorValue : "<unknown>")} (<\\@{guild.OwnerId}>)");
+
+                int memberCt = -1;
+                try
+                {
+                    memberCt = (await guild.GetUsersAsync().ConfigureAwait(false)).Count;
+                } catch { }
+
+                replyBuilder.AppendLine($"__{guild.Name}__ ({guild.Id}):\n- {Utilities.Pluralize("member", memberCt)}\n- {Utilities.Pluralize("text channel", (await guild.GetTextChannelsAsync().ConfigureAwait(false)).Count)}\n- Owned by: {(owner != null ? owner.Username + '#' + owner.DiscriminatorValue : "<unknown>")} (<{(Context.Channel is IDMChannel ? "" : "\\")}@{guild.OwnerId}>)");
             }
 
             await ReplyAsync(replyBuilder.ToString()).ConfigureAwait(false);
@@ -146,7 +153,7 @@ namespace CyberPatriot.DiscordBot.Modules
 
         [Group("exportscoreboard")]
         [Alias("savescoreboard", "exportscoreboardjson", "downloadscoreboard")]
-        [RequireOwner]
+        [RequireTeamOwner]
         public class ExportScoreboardModule : ModuleBase
         {
             public ScoreboardDownloadService ScoreDownloader { get; set; }

@@ -45,7 +45,7 @@ namespace CyberPatriot.DiscordBot.Modules
 
         [Group("prefix")]
         [RequireUserPermission(GuildPermission.ManageGuild, Group = "RolePermission")]
-        [RequireOwner(Group = "RolePermission")]
+        [RequireTeamOwner(Group = "RolePermission")]
         [RequireContext(ContextType.Guild)]
         public class PrefixModule : ModuleBase
         {
@@ -80,7 +80,7 @@ namespace CyberPatriot.DiscordBot.Modules
 
         [Group("timezone"), Alias("tz")]
         [RequireUserPermission(GuildPermission.ManageGuild, Group = "RolePermission")]
-        [RequireOwner(Group = "RolePermission")]
+        [RequireTeamOwner(Group = "RolePermission")]
         [RequireContext(ContextType.Guild)]
         public class TimezoneModule : ModuleBase
         {
@@ -149,7 +149,7 @@ namespace CyberPatriot.DiscordBot.Modules
 
             [Command("remove"), Alias("delete", "unwatch")]
             [RequireUserPermission(ChannelPermission.ManageChannels, Group = "RolePermission")]
-            [RequireOwner(Group = "RolePermission")]
+            [RequireTeamOwner(Group = "RolePermission")]
             [Summary("Unwatches a team from placement change notifications in this channel.")]
             public async Task RemoveTeamAsync([Summary("The team to unwatch.")] TeamId team)
             {
@@ -179,7 +179,7 @@ namespace CyberPatriot.DiscordBot.Modules
 
             [Command("add"), Alias("watch")]
             [RequireUserPermission(ChannelPermission.ManageChannels, Group = "RolePermission")]
-            [RequireOwner(Group = "RolePermission")]
+            [RequireTeamOwner(Group = "RolePermission")]
             [Summary("Add a team for placement change monitoring. When this team changes placement (either rises or falls) on the scoreboard, an announcement will be made in this channel.")]
             public async Task WatchTeamAsync([Summary("The team to monitor.")] TeamId team)
             {
@@ -214,7 +214,7 @@ namespace CyberPatriot.DiscordBot.Modules
 
         [Command("clearprefs"), Alias("deleteprefs", "deletedata", "clearpreferences")]
         [RequireUserPermission(GuildPermission.ManageGuild, Group = "RolePermission")]
-        [RequireOwner(Group = "RolePermission")]
+        [RequireTeamOwner(Group = "RolePermission")]
         [RequireContext(ContextType.Guild)]
         [Summary("Clears storage of all per-guild information.")]
         public async Task RemoveAsync()
