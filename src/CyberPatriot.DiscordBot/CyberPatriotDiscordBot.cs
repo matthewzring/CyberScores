@@ -43,7 +43,7 @@ namespace CyberPatriot.DiscordBot
     {
         // I don't like big static properties
         public static DateTimeOffset StartupTime { get; private set; } = DateTimeOffset.UtcNow;
-        public const int RequiredPermissions = 510016;
+        public const int RequiredPermissions = 379968;
 
         static void Main(string[] args)
            => new CyberPatriotDiscordBot().MainAsync().GetAwaiter().GetResult();

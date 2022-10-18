@@ -80,6 +80,7 @@ namespace CyberPatriot.DiscordBot.Modules
                 // .WithFooter("Made by glen3b | Written in C# using Discord.Net", "https://avatars.githubusercontent.com/glen3b")
                 .WithDescription("Hello! I am **CyberScores**, a bot for interaction with the CyberPatriot scoreboard.\n"
                 + $"Type `@CyberScores help` for a list of my commands.\n\n"
+                + $"<:globe_with_meridians:1031956460248256523> [Github](https://github.com/matthewzring/CyberScores)\n"
                 + $"<:link:1031853124887007252> [Invite](https://discord.com/api/oauth2/authorize?client_id=911384435335790672&permissions=379968&scope=bot+applications.commands)\n"
                 + $"<:discord:1031849735226667008> [Support Server](https://discord.gg/FqPbspP)")
                 .WithFooter("Written in C# by glen3b using Discord.NET")
