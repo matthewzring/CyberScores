@@ -1,23 +1,25 @@
-# CyberPatriot Discord bot
+# CyberScores
+
+[![Stars](https://img.shields.io/github/stars/matthewzring/CyberScores?label=Stars)](https://github.com/matthewzring/CyberScores/stargazers)
+[![License](https://img.shields.io/github/license/matthewzring/CyberScores?label=License)](https://github.com/matthewzring/CyberScores/blob/master/LICENSE)
+[![PrivacyPolicy](https://img.shields.io/badge/Privacy%20Policy--lightgrey.svg?style=social)](https://gist.github.com/matthewzring/3c470b4284d24f750f11681c21631117#privacy-policy)
+[![Discord](https://discordapp.com/api/guilds/301768361136750592/widget.png)](https://discord.gg/FqPbspP)
+
 A Discord bot for interaction with the CyberPatriot scoreboard.
 
-**To report security issues or otherwise privately contact the developers, please email cyberscores [at] glen3b.me.**
+## Invite
+If you'd like to add **CyberScores** to your server, use the following link:<br>
+🔗 **https://discord.com/api/oauth2/authorize?client_id=911384435335790672&permissions=379968&scope=bot+applications.commands**
 
-Features include:
-- Team information in fancy embeds (standings, percentile ranking, etc)
-- Integration of outside (e.g. service category) information with scoreboard details
-- Supports not only live CCS scoreboards, but also archived CCS scoreboards using a custom JSON format, as well as released score spreadsheets
-- All Service teams are shown rankings with categories taken into account
-- Get notifications in chat when your team changes in placement
+## Features
+  * Team information in fancy embeds (standings, percentile ranking, etc)
+  * Integration of outside (e.g. service category) information with scoreboard details
+  * Supports not only live CCS scoreboards, but also archived CCS scoreboards using a custom JSON format, as well as released score spreadsheets
+  * All Service teams are shown rankings with categories taken into account
+  * Get notifications in chat when your team changes in placement
 
-[Add me](https://discordapp.com/oauth2/authorize?client_id=389204961717649408&permissions=510016&scope=bot) to your Discord server.
+## Getting Support
+If you need help with the bot, please join [the support server](https://discord.gg/FqPbspP).
 
-*Note: This bot is affiliated with neither [Discord](https://discordapp.com) nor the [Air Force Association](https://www.afa.org/home) (the organization which runs the [CyberPatriot competition](http://www.uscyberpatriot.org)). All scores reported by the bot (even those marked "official") are and should be treated as unofficial. No predictions or assertions regarding advancement made by the bot are in any way binding - actual results can and do differ. Refer to the license for more information.*
-
-Copyright (C) 2017, 2018, 2019 Glen Husman and contributors
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
+## Disclaimer
+This bot is not affiliated with [Air & Space Forces Association](https://www.afa.org/) or the [CyberPatriot Program](https://www.uscyberpatriot.org/). Scores and standings on the CyberPatriot Competition System live scoreboard, and those reported by the bot, are unofficial and subject to review and adjustments.
