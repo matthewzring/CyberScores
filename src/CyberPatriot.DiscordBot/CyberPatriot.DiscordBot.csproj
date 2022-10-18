@@ -12,10 +12,10 @@
     <None Update="config.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Discord.Net" Version="2.3.0-dev-20201115.2" />
+    <PackageReference Include="Discord.Net" Version="2.4.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="Discord.Net.WebSocket" Version="2.3.0-dev-20201115.2" />
-    <PackageReference Include="Discord.Net.Commands" Version="2.3.0-dev-20201115.2" />
+    <PackageReference Include="Discord.Net.WebSocket" Version="2.4.0" />
+    <PackageReference Include="Discord.Net.Commands" Version="2.4.0" />
     <PackageReference Include="LiteDB" Version="4.1.4" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="5.0.0" />
