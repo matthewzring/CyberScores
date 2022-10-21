@@ -118,5 +118,4 @@ namespace CyberPatriot.DiscordBot.Services
             }
         }
     }
-
 }

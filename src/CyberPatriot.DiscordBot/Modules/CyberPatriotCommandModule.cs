@@ -131,7 +131,6 @@ namespace CyberPatriot.DiscordBot.Modules
                 var teams = await ScoreRetrievalService.GetScoreboardAsync(filter).ConfigureAwait(false);
                 System.Collections.Generic.IEnumerable<ScoreboardSummaryEntry> teamList = teams.TeamList;
                 
-
                 var team = teamList.Skip(rank - 1).First();
                 ScoreboardDetails teamScore = await ScoreRetrievalService.GetDetailsAsync(team.TeamId).ConfigureAwait(false);
                 if (teamScore == null)
@@ -290,7 +289,6 @@ namespace CyberPatriot.DiscordBot.Modules
             [Summary("The tier to which scoreboard display should be filtered, if provided."), AlterParameterDisplay(DisplayAsOptional = true)] Tier tier,
             int pageNumber = 1) => GetImageLeaderboardImplementationAsync(imageName, location, division.Category, division.Division, tier, pageNumber);
 
-
         public async Task GetImageLeaderboardImplementationAsync(string image, string location, ServiceCategory? category, Division? division, Tier? tier, int pageNumber)
         {
             using (Context.Channel.EnterTypingState())
@@ -378,7 +376,6 @@ namespace CyberPatriot.DiscordBot.Modules
         [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), HideCommandHelp]
         [Priority(-1)]
         public Task HistogramCommandAsync(string imageName, Tier tier) => GenerateHistogramAsync(null, tier, imageName, null);
-
 
         [Command(HistogramCommandName), Alias("scoregraph", "scorestats", "statistics"), HideCommandHelp]
         public Task HistogramCommandAsync(LocationCode location, Tier tier) => GenerateHistogramAsync(null, tier, null, location);

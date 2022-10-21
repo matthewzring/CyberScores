@@ -534,7 +534,6 @@ namespace CyberPatriot.DiscordBot.Services
                 builder.AddInlineField("Standing", standingFieldBuilder.ToString());
             }
 
-
             if (teamScore.ImageScoresOverTime != null)
             {
                 builder.ImageUrl = CreateChartUrl(teamScore);
@@ -566,7 +565,7 @@ namespace CyberPatriot.DiscordBot.Services
 
             string queryString = $"cht=lc&chco=F44336,03A9F4,4CAF50,FFEB3B&chf=bg,s,2F3136&chdls=FFFFFF,16&chxs=1,FFFFFF&chs=900x325&chd=t:{WebUtility.UrlEncode(data)}&chxt=x,y&chxl=0:{WebUtility.UrlEncode(axisLabels)}&chdl={WebUtility.UrlEncode(images)}&chxs=1,FFFFFF,12,1,lt,FFFFFF%7C0,FFFFFF,12,0,lt,FFFFFF&chtt=Team+{WebUtility.UrlEncode(teamScore.TeamId.ToString())}&chts=FFFFFF,20&chls=3%7C3%7C3%7C3&chg=16.66666,10&chds={min},{max}&chxr=1,{min},{max}";
 
-            return $"https://chart.googleapis.com/chart?{queryString}"; ;
+            return $"https://chart.googleapis.com/chart?{queryString}";
         }
     }
 }

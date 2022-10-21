@@ -60,7 +60,6 @@ namespace CyberPatriot.DiscordBot.Services
                     }
                     catch
                     {
-
                     }
                 }
             }
@@ -75,7 +74,6 @@ namespace CyberPatriot.DiscordBot.Services
                     }
                     catch
                     {
-
                     }
                 }
             }

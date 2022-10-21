@@ -39,7 +39,6 @@ namespace CyberPatriot.Models.Serialization.ParsingInformation
         public ShorthandsAttribute(params string[] permittedShorthands)
         {
             this.permittedShorthands = permittedShorthands;
-
         }
 
         public string[] PermittedShorthands

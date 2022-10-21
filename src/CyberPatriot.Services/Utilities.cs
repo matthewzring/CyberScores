@@ -174,6 +174,5 @@ namespace CyberPatriot.Services
 
             return enumerable.ToList();
         }
-
     }
 }

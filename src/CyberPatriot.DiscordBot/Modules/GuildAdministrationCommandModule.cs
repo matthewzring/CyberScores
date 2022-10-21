@@ -36,7 +36,6 @@ using CyberPatriot.Models;
 
 namespace CyberPatriot.DiscordBot.Modules
 {
-
     [Group("admin")]
     public class GuildAdministrationCommandModule : ModuleBase
     {

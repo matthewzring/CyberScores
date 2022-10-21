@@ -41,7 +41,6 @@ namespace CyberPatriot.Services.ScoreRetrieval
 
         public ArchivalHttpScoreboardScoreRetrievalService() : this(null)
         {
-
         }
 
         public ArchivalHttpScoreboardScoreRetrievalService(string hostname) : base(hostname)

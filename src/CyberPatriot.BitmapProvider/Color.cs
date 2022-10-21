@@ -86,7 +86,6 @@ namespace CyberPatriot.BitmapProvider
             A = a;
         }
 
-
         /// <summary>
         /// Constructs a color from an RGB(A) array of components.
         /// </summary>

@@ -29,7 +29,6 @@ using System.Threading.Tasks;
 
 namespace CyberPatriot.Services
 {
-
     public interface ILocationResolutionService
     {
         Task InitializeAsync(IServiceProvider provider);

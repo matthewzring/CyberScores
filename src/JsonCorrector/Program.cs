@@ -56,7 +56,6 @@ namespace JsonCorrector
 
             if (error != ErrorState.NoPrefix)
             {
-
                 Console.Write('[');
                 switch (error)
                 {

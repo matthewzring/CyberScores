@@ -30,10 +30,8 @@ using CyberPatriot.Models.Serialization;
 
 namespace CyberPatriot.DiscordBot.TypeReaders
 {
-
     public class TeamIdTypeReader : TypeReader
     {
-
         public override Task<TypeReaderResult> ReadAsync(ICommandContext context, string input, IServiceProvider services)
         {
             TeamId result;

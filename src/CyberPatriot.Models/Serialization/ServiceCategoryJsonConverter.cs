@@ -74,6 +74,5 @@ namespace CyberPatriot.Models.Serialization
         {
             return typeof(ServiceCategory).IsAssignableFrom(objectType) || typeof(ServiceCategory?).IsAssignableFrom(objectType);
         }
-
     }
 }

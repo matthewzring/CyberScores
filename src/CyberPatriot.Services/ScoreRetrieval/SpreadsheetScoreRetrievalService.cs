@@ -58,7 +58,6 @@ namespace CyberPatriot.Services.ScoreRetrieval
             }
         }
 
-
         public SpreadsheetScoreRetrievalService()
         {
             // hacky implementation of a decent idea
@@ -229,7 +228,6 @@ namespace CyberPatriot.Services.ScoreRetrieval
                             // exclusive index
                             int cumuScoreInd = headers.IndexOfWhere(s => s == "Cumulative" || s == "Cumulative Score");
                             advancementInd = headers.IndexOfWhere(s => s == "Advancement" || s == "Advances");
-
 
                             upperDataBound = Utilities.Min(headers.Length,
                                 cumuScoreInd == -1 ? int.MaxValue : cumuScoreInd,

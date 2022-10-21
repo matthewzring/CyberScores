@@ -93,8 +93,8 @@ namespace CyberPatriot.Models
             unchecked
             {
                 var hashCode = -1305224960;
-                hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(CompetitionIdentifier);
-                hashCode = hashCode * -1521134295 + TeamNumber.GetHashCode();
+                hashCode = (hashCode * -1521134295) + EqualityComparer<string>.Default.GetHashCode(CompetitionIdentifier);
+                hashCode = (hashCode * -1521134295) + TeamNumber.GetHashCode();
                 return hashCode;
             }
         }
@@ -159,7 +159,7 @@ namespace CyberPatriot.Models
                         break;
                     case 1:
                         // reading numeric ID
-                        if ('0' <= c && c <= '9')
+                        if (c >= '0' && c <= '9')
                         {
                             numericId *= 10;
                             numericId += c - '0';

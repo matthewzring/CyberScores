@@ -35,7 +35,6 @@ using SixLabors.Primitives;
 
 namespace CyberPatriot.BitmapProvider.ImageSharp
 {
-
     internal static class Utilities
     {
         public static PointF Position(this RectangleF rect)

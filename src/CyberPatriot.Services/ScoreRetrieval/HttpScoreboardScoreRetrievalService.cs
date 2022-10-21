@@ -68,7 +68,6 @@ namespace CyberPatriot.Services.ScoreRetrieval
 
         protected virtual HttpPassthroughScoreRetrieverMetadata Metadata { get; set; }
 
-
         // a service
         public IRateLimitProvider RateLimiter { get; protected set; } = new NoneRateLimitProvider();
         protected ICompetitionRoundLogicService _roundInferenceService = null;
@@ -78,7 +77,6 @@ namespace CyberPatriot.Services.ScoreRetrieval
 
         public HttpScoreboardScoreRetrievalService() : this(null)
         {
-
         }
 
         public HttpScoreboardScoreRetrievalService(string hostname)
@@ -130,7 +128,6 @@ namespace CyberPatriot.Services.ScoreRetrieval
 
         protected virtual Uri BuildScoreboardUri(Division? divisionFilter, Tier? tierFilter)
         {
-
             var builder = new UriBuilder();
             builder.Scheme = "http";
             builder.Host = Hostname;
@@ -143,7 +140,6 @@ namespace CyberPatriot.Services.ScoreRetrieval
             }
             if (tierFilter.HasValue)
             {
-
                 queryList.Add("tier=" + WebUtility.UrlEncode(tierFilter.Value.ToString()));
             }
 

@@ -160,6 +160,5 @@ namespace CyberPatriot.DiscordBot.Services
 
             throw new ArgumentOutOfRangeException();
         }
-
     }
 }

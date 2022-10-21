@@ -184,7 +184,6 @@ namespace CyberPatriot.Services
             }
         }
 
-
         protected TimedTokenProvider<byte> Awaiter { get; }
         private Timer Timer { get; }
 

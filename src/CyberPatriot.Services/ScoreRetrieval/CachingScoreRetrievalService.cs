@@ -47,7 +47,6 @@ namespace CyberPatriot.Services.ScoreRetrieval
 
         protected Timer PurgeTimer { get; private set; }
 
-
         public CachingScoreRetrievalService(IScoreRetrievalService backend)
         {
             Backend = backend;
@@ -193,7 +192,6 @@ namespace CyberPatriot.Services.ScoreRetrieval
                     teamCacheLock.Release();
                 }
             }
-
         }
 
         #endregion

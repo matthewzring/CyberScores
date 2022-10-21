@@ -208,7 +208,6 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
                         }
                     }
 
-
                     // start by drawing the data, we'll render on top of stuff that gets in our way
                     for (int i = 0; i < countsByBucket.Length; i++)
                     {
@@ -276,7 +275,7 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
                                 .Rotate(-90));
                         textRenderImage.MutateCropToColored();
 
-                        PointF renderPosition = new PointF(lowestRenderedX - textRenderImage.Width - labelAxisOffset, (imageHeight - drawRegionTopOffset - drawRegionBottomOffset) / 2 + drawRegionTopOffset - (textRenderImage.Height / 2));
+                        PointF renderPosition = new PointF(lowestRenderedX - textRenderImage.Width - labelAxisOffset, ((imageHeight - drawRegionTopOffset - drawRegionBottomOffset) / 2) + drawRegionTopOffset - (textRenderImage.Height / 2));
                         context.DrawImage(textRenderImage, (Point)renderPosition, 1f);
                     }
                 });

@@ -341,7 +341,6 @@ namespace CyberPatriot.DiscordBot.Services
             return ExecuteResult.FromSuccess();
         }
 
-
         private async Task MessageReceived(SocketMessage rawMessage)
         {
             // Ignore system messages and messages from bots
@@ -406,6 +405,5 @@ namespace CyberPatriot.DiscordBot.Services
                 });
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         }
-
     }
 }

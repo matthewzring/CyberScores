@@ -85,7 +85,6 @@ namespace CyberPatriot.DiscordBot
                 return default(ValueTask);
             }
             #endregion
-
         }
     }
 }

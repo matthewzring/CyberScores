@@ -58,7 +58,6 @@ namespace CyberPatriot.Services.ScoreRetrieval
         /// </summary>
         public FallbackScoreRetrievalService(IServiceProvider provider, Action<CachingScoreRetrievalService> cacheConfigurator, params IScoreRetrievalService[] backends) : this(provider, cacheConfigurator, backends.Where(b => b != null).Select<IScoreRetrievalService, Func<IServiceProvider, Task<IScoreRetrievalService>>>(b => _ => Task.FromResult(b)).ToArray())
         {
-
         }
 
         public FallbackScoreRetrievalService(IServiceProvider provider, params IScoreRetrievalService[] backends) : this(provider, csrs => { }, backends)
@@ -67,7 +66,6 @@ namespace CyberPatriot.Services.ScoreRetrieval
 
         public FallbackScoreRetrievalService(IServiceProvider provider, Action<CachingScoreRetrievalService> cacheConfigurator, params Func<IServiceProvider, Task<IScoreRetrievalService>>[] backends) : this(provider, cacheConfigurator, (IEnumerable<Func<IServiceProvider, Task<IScoreRetrievalService>>>)backends)
         {
-
         }
 
         public FallbackScoreRetrievalService(IServiceProvider provider, Action<CachingScoreRetrievalService> cacheConfigurator, IEnumerable<Func<IServiceProvider, Task<IScoreRetrievalService>>> backends)
@@ -234,6 +232,5 @@ namespace CyberPatriot.Services.ScoreRetrieval
             await RefreshBackendIfNeeded().ConfigureAwait(false);
             return await Backend.GetDetailsAsync(team).ConfigureAwait(false);
         }
-
     }
 }

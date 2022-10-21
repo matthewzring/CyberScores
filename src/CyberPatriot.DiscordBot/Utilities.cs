@@ -92,7 +92,7 @@ namespace CyberPatriot.DiscordBot
         /// <returns></returns>
         public static string ToHoursMinutesSecondsString(this TimeSpan timespan, int minDigits = 2)
         {
-            long hourTicks = timespan.Ticks - (timespan.Minutes * TimeSpan.TicksPerMinute + timespan.Seconds * TimeSpan.TicksPerSecond + timespan.Milliseconds * TimeSpan.TicksPerMillisecond);
+            long hourTicks = timespan.Ticks - ((timespan.Minutes * TimeSpan.TicksPerMinute) + (timespan.Seconds * TimeSpan.TicksPerSecond) + (timespan.Milliseconds * TimeSpan.TicksPerMillisecond));
             int hours = (int)(hourTicks / TimeSpan.TicksPerHour);
 
             return $"{hours.ToString(new string('0', minDigits))}:{timespan.Minutes:00}:{timespan.Seconds:00}";
@@ -292,7 +292,6 @@ namespace CyberPatriot.DiscordBot
             }
         }
 
-
         public static IEnumerable<T> Conditionally<T>(this IEnumerable<T> enumerable, bool condition, Func<IEnumerable<T>, IEnumerable<T>> action)
         {
             if (condition)
@@ -337,7 +336,6 @@ namespace CyberPatriot.DiscordBot
                 }
             }
         }
-
 
         public static Discord.EmbedBuilder Conditionally(this Discord.EmbedBuilder builder, bool condition, Func<Discord.EmbedBuilder, Discord.EmbedBuilder> action) => condition ? action(builder) : builder;
 
@@ -515,7 +513,6 @@ namespace CyberPatriot.DiscordBot
                 {
                     return (prependQuantity ? quantity + " " : string.Empty) + noun.Substring(0, noun.Length - 1) + "ies";
                 }
-
             }
             return (prependQuantity ? quantity + " " : string.Empty) + noun + "s";
         }
@@ -679,7 +676,6 @@ namespace CyberPatriot.DiscordBot
             }
         }
 
-
         private class OverlayServiceProvider : IServiceProvider
         {
             public Dictionary<Type, object> OverlayedServices { get; } = new Dictionary<Type, object>();
@@ -744,7 +740,6 @@ namespace CyberPatriot.DiscordBot
             }
 
             int center = sortedData.Length / 2;
-
 
             if (sortedData.Length % 2 == 0)
             {

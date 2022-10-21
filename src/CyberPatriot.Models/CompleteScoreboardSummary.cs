@@ -36,7 +36,6 @@ namespace CyberPatriot.Models
 
         public ScoreboardFilterInfo Filter { get; set; } = ScoreboardFilterInfo.NoFilter;
 
-
         public CompleteScoreboardSummary Clone()
         {
             return new CompleteScoreboardSummary

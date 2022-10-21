@@ -34,7 +34,6 @@ namespace CyberPatriot.DiscordBot.Services
         Task InitializeAsync(IServiceProvider provider);
 
         IDataPersistenceContext<TModel> OpenContext<TModel>(bool forWriting) where TModel : class;
-
     }
 
     public interface IDataPersistenceContext<TModel> : IDisposable where TModel : class

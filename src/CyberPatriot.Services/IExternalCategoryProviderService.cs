@@ -30,7 +30,6 @@ using System.Threading.Tasks;
 
 namespace CyberPatriot.Services
 {
-
     public interface IExternalCategoryProviderService
     {
         Task InitializeAsync(IServiceProvider provider);
@@ -40,5 +39,4 @@ namespace CyberPatriot.Services
         /// </summary>
         ServiceCategory? GetCategory(TeamId team);
     }
-
 }

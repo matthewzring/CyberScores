@@ -43,7 +43,6 @@ namespace CyberPatriot.DiscordBot.Services
 
         public LiteDbDataPersistenceService()
         {
-
         }
 
         public LiteDbDataPersistenceService(LiteDatabase db)
@@ -164,7 +163,6 @@ namespace CyberPatriot.DiscordBot.Services
             public async Task<TModel> FindOneOrNewAsync(Expression<Func<TModel, bool>> predicate,
                 Func<Task<TModel>> asyncFactory)
                 => FindOne(predicate) ?? await InvokeFactoryAsync(asyncFactory).ConfigureAwait(false);
-
 
             public Task SaveAsync(TModel model)
             {

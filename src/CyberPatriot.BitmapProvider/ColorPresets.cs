@@ -34,7 +34,6 @@ namespace CyberPatriot.BitmapProvider
         {
             internal HistogramColorPreset()
             {
-
             }
 
             public Color BackgroundColor { get; internal set; }
