@@ -152,7 +152,6 @@ namespace CyberPatriot.BitmapProvider.ImageSharp
                         float yVal = imageHeight - drawRegionBottomOffset - (i * pixelsPerUnitCount);
                         context.DrawLines(frequencyGraphLineColor.ToRgba32(), 1, new PointF[] { new PointF(drawRegionLeftOffset, yVal), new PointF(imageWidth - drawRegionRightOffset, yVal) });
 
-
                         const float axisDistance = 5;
                         // less imperative to do early, but render the labels here too - we already have the appropriate i
                         RectangleF textBounds = TextMeasurer.MeasureBounds(i.ToString(), new RendererOptions(font));

@@ -241,7 +241,6 @@ namespace CyberPatriot.DiscordBot.Modules
             {
                 await ReplyAsync("Downloading scoreboard...").ConfigureAwait(false);
 
-
                 using (Context.Channel.EnterTypingState())
                 {
                     IReadOnlyDictionary<TeamId, ScoreboardDetails> existingArchive = null;
@@ -285,7 +284,6 @@ namespace CyberPatriot.DiscordBot.Modules
                             $"{Utilities.Pluralize("team", retState.DownloadTasks.Length)} downloaded from \"{ScoreService.Metadata.StaticSummaryLine}\"\n" +
                             $"{downloadPercentSuccess:F1}% of downloads successful").ConfigureAwait(false);
                     }
-
                 }
             }
         }

@@ -526,7 +526,10 @@ namespace CyberPatriot.DiscordBot
 
             using (var enumerator = enumerable.GetEnumerator())
             {
-                while (enumerator.MoveNext()) ;
+                while (enumerator.MoveNext())
+                {
+                    ;
+                }
             }
         }
 
