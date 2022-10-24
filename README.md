@@ -23,8 +23,7 @@ If you'd like to add **CyberScores** to your server, use the following link:<br>
 If you need help with the bot, please join [the support server](https://discord.gg/FqPbspP).
 
 ## Note
-This is a forked version of CyberScores. The original repo can be found here: https://github.com/glen3b/CyPatScoreboardBot<br>
-Currently the original repo is not actively maintained so I decided to create this fork. If the main repo will be maintained again, this fork will follow up and include all updates from it.
+This is a forked version of CyberScores. The original repo can be found here: https://github.com/glen3b/CyPatScoreboardBot. Currently, the original repo is not actively maintained so I decided to create this fork. If the main repo will be maintained again, this fork will follow up and include all updates from it.
 
 ## Disclaimer
 This bot is not affiliated with [Air & Space Forces Association](https://www.afa.org/) or the [CyberPatriot Program](https://www.uscyberpatriot.org/). Scores and standings on the CyberPatriot Competition System live scoreboard, and those reported by the bot, are unofficial and subject to review and adjustments.
