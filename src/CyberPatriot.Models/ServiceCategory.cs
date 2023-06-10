@@ -34,19 +34,19 @@ namespace CyberPatriot.Models
     public enum ServiceCategory
     {
         [CanonicalName("Air Force JROTC")]
-        [Shorthands("Air Force", "airforce", "AF", "AFJROTC", PreferredAbbreviation = "AF")]
+        [Shorthands("Air Force", "airforce", "AF", "AFJROTC", "SF", "SFJROTC", PreferredAbbreviation = "AF")]
         AirForce,
         [CanonicalName("Army JROTC")]
-        [Shorthands("Army", PreferredAbbreviation = "Army")]
+        [Shorthands("Army", "AJROTC", PreferredAbbreviation = "Army")]
         Army,
         [CanonicalName("Civil Air Patrol")]
         [Shorthands("CAP", PreferredAbbreviation = "CAP")]
         CivilAirPatrol,
         [CanonicalName("Marine Corps JROTC")]
-        [Shorthands("MCJROTC", "Marines", "Marine Corps", "marinecorps", PreferredAbbreviation = "Marines")]
+        [Shorthands("MCJROTC", "Marines", "Marine Corps", "marinecorps", "MC JROTC", PreferredAbbreviation = "Marines")]
         MarineCorps,
         [CanonicalName("Naval Sea Cadet Corps")]
-        [Shorthands("naval", "Naval Sea Cadets", "navalseacadets", "Sea Cadets", "seacadets", "seacadetcorps", "NSC", PreferredAbbreviation = "Naval")]
+        [Shorthands("naval", "Naval Sea Cadets", "navalseacadets", "Sea Cadets", "seacadets", "seacadetcorps", "NSC", "USNSCC", PreferredAbbreviation = "Naval")]
         NavalSeaCadets,
         [CanonicalName("Navy JROTC")]
         [Shorthands("Navy", "NJROTC", PreferredAbbreviation = "Navy")]
