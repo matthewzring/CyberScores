@@ -93,6 +93,7 @@ namespace CyberPatriot.DiscordBot.Services
             };
             _discord.JoinedGuild += async sg =>
             {
+                /*
                 await foreach (IMessageChannel ch in GetCandidateNewMessageChannels(sg).ConfigureAwait(false))
                 {
                     try
@@ -119,7 +120,7 @@ namespace CyberPatriot.DiscordBot.Services
                     }
 
                     break;
-                }
+                }*/
             };
             return Task.CompletedTask;
         }
@@ -143,13 +144,14 @@ namespace CyberPatriot.DiscordBot.Services
         {
             try
             {
-                string staticSummary = _scoreRetriever.Metadata.StaticSummaryLine;
+                // string staticSummary = _scoreRetriever.Metadata.StaticSummaryLine;
+                string staticSummary = "";
                 if (staticSummary != null)
                 {
                     var summaryLineBuilder = new StringBuilder(staticSummary);
                     if (_scoreRetriever.Metadata.IsDynamic)
                     {
-                        summaryLineBuilder.Append(" - ");
+                        // summaryLineBuilder.Append(" - ");
                         var topTeam = (await _scoreRetriever.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false)).TeamList.FirstOrDefault();
                         if (topTeam == null)
                         {
@@ -157,11 +159,11 @@ namespace CyberPatriot.DiscordBot.Services
                         }
                         else
                         {
-                            summaryLineBuilder.AppendFormat("Top: {0}, {1}pts", topTeam.TeamId, _scoreRetriever.Metadata.FormattingOptions.FormatScore(topTeam.TotalScore));
+                            summaryLineBuilder.AppendFormat("team {0}, {1}pts", topTeam.TeamId, _scoreRetriever.Metadata.FormattingOptions.FormatScore(topTeam.TotalScore));
                         }
                     }
 
-                    await _discord.SetGameAsync(summaryLineBuilder.ToString()).ConfigureAwait(false);
+                    await _discord.SetGameAsync(summaryLineBuilder.ToString(), type: ActivityType.Watching).ConfigureAwait(false);
                 }
                 else
                 {
