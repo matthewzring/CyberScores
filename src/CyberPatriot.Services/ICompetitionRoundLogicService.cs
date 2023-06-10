@@ -51,6 +51,10 @@ namespace CyberPatriot.Services
         /// <exception cref="ArgumentException">Thrown if the Cisco worth for the given round is unknown.</exception>
         /// <returns>The number of Cisco points possible in the given round for the given division and tier.</returns>
         double GetCiscoPointsPossible(CompetitionRound round, Division division, Tier? tier);
+
+        double GetAdjustPointsPossible(CompetitionRound round, Division division, Tier? tier);
+
+        double GetChallengePointsPossible(CompetitionRound round, Division division, Tier? tier);
     }
 
     public abstract class CyberPatriotCompetitionRoundLogicService : ICompetitionRoundLogicService
@@ -58,6 +62,10 @@ namespace CyberPatriot.Services
         public virtual string GetEffectiveDivisionDescriptor(ScoreboardSummaryEntry team) => team.Category.HasValue ? CyberPatriot.Models.Serialization.ServiceCategoryExtensions.ToCanonicalName(team.Category.Value) : team.Division.ToStringCamelCaseToSpace();
 
         public abstract double GetCiscoPointsPossible(CompetitionRound round, Division division, Tier? tier);
+
+        public abstract double GetAdjustPointsPossible(CompetitionRound round, Division division, Tier? tier);
+
+        public abstract double GetChallengePointsPossible(CompetitionRound round, Division division, Tier? tier);
 
         public abstract CompetitionRound InferRound(DateTimeOffset date);
         
@@ -153,7 +161,17 @@ namespace CyberPatriot.Services
 
         public override double GetCiscoPointsPossible(CompetitionRound round, Division division, Tier? tier)
         {
-            throw new NotImplementedException("CP-X Cisco totals are not implemented.");
+            throw new NotImplementedException("CP-XV Cisco totals are not implemented.");
+        }
+
+        public override double GetAdjustPointsPossible(CompetitionRound round, Division division, Tier? tier)
+        {
+            throw new NotImplementedException("CP-XV Adjust totals are not implemented.");
+        }
+
+        public override double GetChallengePointsPossible(CompetitionRound round, Division division, Tier? tier)
+        {
+            throw new NotImplementedException("CP-XV Challenge totals are not implemented.");
         }
     }
 
@@ -201,13 +219,45 @@ namespace CyberPatriot.Services
             switch (round)
             {
                 case CompetitionRound.Round1:
-                    return division == Division.MiddleSchool ? 0 : 20;
+                    return division == Division.MiddleSchool ? 20 : 20;
                 case CompetitionRound.Round2:
-                    return division == Division.MiddleSchool ? 0 : 30;
+                    return division == Division.MiddleSchool ? 30 : 30;
                 case CompetitionRound.Round3:
                     return division == Division.MiddleSchool ? 30 : 100;
                 case CompetitionRound.Semifinals:
-                    return division == Division.MiddleSchool ? 30 : 100;
+                    return division == Division.MiddleSchool ? 30 : tier == Tier.Platinum ? 240 : 100;
+            }
+
+            throw new ArgumentException("Unknown round.");
+        }
+
+        public override double GetAdjustPointsPossible(CompetitionRound round, Division division, Tier? tier)
+        {
+            // http://www.uscyberpatriot.org/competition/competition-challenges-by-round
+            switch (round)
+            {
+                case CompetitionRound.Round1:
+                case CompetitionRound.Round2:
+                case CompetitionRound.Round3:
+                    return 0;
+                case CompetitionRound.Semifinals:
+                    return 0;
+            }
+
+            throw new ArgumentException("Unknown round.");
+        }
+
+        public override double GetChallengePointsPossible(CompetitionRound round, Division division, Tier? tier)
+        {
+            // http://www.uscyberpatriot.org/competition/competition-challenges-by-round
+            switch (round)
+            {
+                case CompetitionRound.Round1:
+                case CompetitionRound.Round2:
+                case CompetitionRound.Round3:
+                    return 0;
+                case CompetitionRound.Semifinals:
+                    return tier == Tier.Platinum ? 160 : 0;
             }
 
             throw new ArgumentException("Unknown round.");

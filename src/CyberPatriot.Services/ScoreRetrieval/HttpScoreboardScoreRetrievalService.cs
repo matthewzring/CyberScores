@@ -198,9 +198,10 @@ namespace CyberPatriot.Services.ScoreRetrieval
             }
             summary.ImageCount = int.Parse(dataEntries[5]);
             summary.PlayTime = Utilities.ParseHourMinuteSecondTimespan(dataEntries[6]);
-            summary.TotalScore = double.Parse(dataEntries.Last());
+            summary.TotalScore = dataEntries.Last() != "" ? double.Parse(dataEntries.Last()) : 0;
             summary.Warnings |= dataEntries[7].Contains("T") ? ScoreWarnings.TimeOver : 0;
             summary.Warnings |= dataEntries[7].Contains("M") ? ScoreWarnings.MultiImage : 0;
+            summary.Warnings |= dataEntries[7].Contains("W") ? ScoreWarnings.Withdrawn : 0;
 
             return summary;
         }
@@ -234,9 +235,10 @@ namespace CyberPatriot.Services.ScoreRetrieval
             details.ScoreTime = Utilities.ParseHourMinuteSecondTimespan(dataEntries[6]);
             // warnings and total score
             string warnStr = dataEntries[7];
-            summary.Warnings |= warnStr.Contains("T") ? ScoreWarnings.TimeOver : 0;
-            summary.Warnings |= warnStr.Contains("M") ? ScoreWarnings.MultiImage : 0;
-            summary.TotalScore = double.Parse(dataEntries.Last().Trim());
+            summary.Warnings |= dataEntries[7].Contains("T") ? ScoreWarnings.TimeOver : 0;
+            summary.Warnings |= dataEntries[7].Contains("M") ? ScoreWarnings.MultiImage : 0;
+            summary.Warnings |= dataEntries[7].Contains("W") ? ScoreWarnings.Withdrawn : 0;
+            summary.TotalScore = dataEntries.Last().Trim() != "" ? double.Parse(dataEntries.Last().Trim()) : 0;
         }
 
         protected virtual IEnumerable<ScoreboardSummaryEntry> ProcessSummaries(HtmlDocument doc, out DateTimeOffset processTimestamp)
@@ -302,19 +304,21 @@ namespace CyberPatriot.Services.ScoreRetrieval
                 image.PointsPossible = 100;
                 image.ImageName = dataEntries[0];
                 image.PlayTime = Utilities.ParseHourMinuteSecondTimespan(dataEntries[1]);
-                image.VulnerabilitiesFound = int.Parse(dataEntries[2]);
-                image.VulnerabilitiesRemaining = int.Parse(dataEntries[3]);
-                image.Penalties = int.Parse(dataEntries[4]);
-                image.Score = double.Parse(dataEntries[5]);
+                image.VulnerabilitiesFound = dataEntries[2] != "" ? int.Parse(dataEntries[2]) : 0;
+                image.VulnerabilitiesRemaining = dataEntries[3] != "" ? int.Parse(dataEntries[3]) : 0;
+                image.Penalties = dataEntries[4] != "" ? int.Parse(dataEntries[4]) : 0;
+                image.Score = dataEntries[5] != "" ? double.Parse(dataEntries[5]) : 0;
                 image.Warnings |= dataEntries[6].Contains("T") ? ScoreWarnings.TimeOver : 0;
                 image.Warnings |= dataEntries[6].Contains("M") ? ScoreWarnings.MultiImage : 0;
+                image.Warnings |= dataEntries[6].Contains("W") ? ScoreWarnings.Withdrawn : 0;
                 retVal.Images.Add(image);
             }
 
             // reparse summary table (CCS+Cisco case)
-            // pseudoimages: Cisco, administrative adjustment (usually penalty)
+            // pseudoimages: Cisco, administrative adjustment (usually penalty), Webbased challenge
             int ciscoIndex = summaryHeaderRowData.IndexOfWhere(x => x.ToLower().Contains("cisco"));
             int penaltyIndex = summaryHeaderRowData.IndexOfWhere(x => x.ToLower().Contains("adjust"));
+            int challengeIndex = summaryHeaderRowData.IndexOfWhere(x => x.ToLower().Contains("challenge"));
 
             ScoreboardImageDetails CreatePseudoImage(string name, double score, double possible)
             {
@@ -332,7 +336,7 @@ namespace CyberPatriot.Services.ScoreRetrieval
                 return image;
             }
 
-            if (ciscoIndex != -1)
+            if (ciscoIndex != -1 && summaryRowData[ciscoIndex] != "")
             {
                 // pseudoimage
                 // FIXME shouldn't display vulns and penalties and time
@@ -346,13 +350,44 @@ namespace CyberPatriot.Services.ScoreRetrieval
                 {
                     // probably because round 0; unknown total
                 }
-
-                retVal.Images.Add(CreatePseudoImage("Cisco (Total)", double.Parse(summaryRowData[ciscoIndex]), ciscoDenom));
+                if (summaryRowData[ciscoIndex] == "")
+                    retVal.Images.Add(CreatePseudoImage("Cisco (Total)", 0.0, ciscoDenom));
+                else
+                    retVal.Images.Add(CreatePseudoImage("Cisco (Total)", double.Parse(summaryRowData[ciscoIndex]), ciscoDenom));
             }
 
-            if (penaltyIndex != -1)
+            if (penaltyIndex != -1 && summaryRowData[penaltyIndex] != "")
             {
-                retVal.Images.Add(CreatePseudoImage("Administrative Adjustment", double.Parse(summaryRowData[penaltyIndex]), 0));
+                double penaltyDenom = -1;
+                try
+                {
+                    penaltyDenom = _roundInferenceService.GetAdjustPointsPossible(Round, retVal.Summary.Division, retVal.Summary.Tier);
+                }
+                catch
+                {
+                    // probably because round 0; unknown total
+                }
+                if (summaryRowData[penaltyIndex] == "")
+                    retVal.Images.Add(CreatePseudoImage("Administrative Adjustment", 0.0, penaltyDenom));
+                else
+                    retVal.Images.Add(CreatePseudoImage("Administrative Adjustment", double.Parse(summaryRowData[penaltyIndex]), penaltyDenom));
+            }
+
+            if (challengeIndex != -1)
+            {
+                double challengeDenom = -1;
+                try
+                {
+                    challengeDenom = _roundInferenceService.GetChallengePointsPossible(Round, retVal.Summary.Division, retVal.Summary.Tier);
+                }
+                catch
+                {
+                    // probably because round 0; unknown total
+                }
+                if (summaryRowData[challengeIndex] == "")
+                    retVal.Images.Add(CreatePseudoImage("Challenge Score", 0.0, challengeDenom));
+                else
+                    retVal.Images.Add(CreatePseudoImage("Challenge Score", double.Parse(summaryRowData[challengeIndex]), challengeDenom));
             }
 
             // score graph

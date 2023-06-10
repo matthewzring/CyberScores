@@ -123,6 +123,10 @@ namespace CyberPatriot.DiscordBot
             {
                 resBuild.Append('T');
             }
+            if ((warnings & ScoreWarnings.Withdrawn) == ScoreWarnings.Withdrawn)
+            {
+                resBuild.Append('W');
+            }
             return resBuild.ToString();
         }
 

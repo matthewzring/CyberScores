@@ -30,6 +30,7 @@ namespace CyberPatriot.Models
     public enum ScoreWarnings
     {
         MultiImage = 1 << 0,
-        TimeOver = 1 << 1
+        TimeOver = 1 << 1,
+        Withdrawn = 1 << 2
     }
 }
