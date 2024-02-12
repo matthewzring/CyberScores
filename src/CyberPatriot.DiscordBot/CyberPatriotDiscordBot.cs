@@ -52,7 +52,10 @@ namespace CyberPatriot.DiscordBot
 
         public async Task MainAsync()
         {
-            _client = new DiscordSocketClient();
+            _client = new DiscordSocketClient(new DiscordSocketConfig
+            {
+                GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent
+            });
             _config = BuildConfig();
 
             var services = ConfigureServices();
@@ -83,7 +86,7 @@ namespace CyberPatriot.DiscordBot
                     }
                     if (owner != null)
                     {
-                        var dmChannel = await owner.GetOrCreateDMChannelAsync();
+                        var dmChannel = await owner.CreateDMChannelAsync();
                         if (dmChannel != null)
                         {
                             await dmChannel.SendMessageAsync($"[{currentTime.ToString("g")}] Now online!");
@@ -103,7 +106,7 @@ namespace CyberPatriot.DiscordBot
                 return Task.CompletedTask;
             };
 
-            await _client.LoginAsync(Discord.TokenType.Bot, _config["token"]);
+            await _client.LoginAsync(TokenType.Bot, _config["token"]);
             await _client.StartAsync();
 
             await Task.Delay(-1);

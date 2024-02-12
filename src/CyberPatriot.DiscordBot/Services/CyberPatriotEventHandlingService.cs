@@ -87,9 +87,9 @@ namespace CyberPatriot.DiscordBot.Services
                 cts.Cancel();
                 return Task.CompletedTask;
             };
+            /*
             _discord.JoinedGuild += async sg =>
             {
-                /*
                 await foreach (IMessageChannel ch in GetCandidateNewMessageChannels(sg).ConfigureAwait(false))
                 {
                     try
@@ -116,16 +116,17 @@ namespace CyberPatriot.DiscordBot.Services
                     }
 
                     break;
-                }*/
-            };
+                }
+            };*/
             return Task.CompletedTask;
         }
 
+        /*
         private async IAsyncEnumerable<IMessageChannel> GetCandidateNewMessageChannels(IGuild newGuild)
         {
             IUser owner = (await newGuild.GetOwnerAsync()) ?? (IUser)_discord.GetUser(newGuild.OwnerId);
 
-            if (owner != null) yield return await owner.GetOrCreateDMChannelAsync().ConfigureAwait(false);
+            if (owner != null) yield return await owner.CreateDMChannelAsync().ConfigureAwait(false);
             IMessageChannel defaultChannel = await newGuild.GetDefaultChannelAsync().ConfigureAwait(false);
             if (defaultChannel != null) yield return defaultChannel;
 
@@ -135,6 +136,7 @@ namespace CyberPatriot.DiscordBot.Services
                 if (channel != null) yield return channel;
             }
         }
+        */
 
         async Task UpdateGameBasedOnBackend()
         {

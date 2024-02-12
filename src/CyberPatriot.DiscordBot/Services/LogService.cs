@@ -69,7 +69,7 @@ namespace CyberPatriot.DiscordBot.Services
             var _ = Task.Run(async () =>
             {
                 var appInfo = await _discord.GetApplicationInfoAsync().ConfigureAwait(false);
-                var ownerDmChannel = await appInfo?.Owner?.GetOrCreateDMChannelAsync().ConfigureAwait(false);
+                var ownerDmChannel = await appInfo?.Owner?.CreateDMChannelAsync().ConfigureAwait(false);
                 if (ownerDmChannel == null)
                 {
                     return;
