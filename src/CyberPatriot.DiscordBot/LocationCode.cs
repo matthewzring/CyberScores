@@ -22,8 +22,6 @@
 */
 #endregion
 
-using System;
-
 namespace CyberPatriot.DiscordBot
 {
     /// <summary>

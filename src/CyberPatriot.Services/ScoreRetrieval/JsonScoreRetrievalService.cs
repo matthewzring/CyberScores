@@ -1,4 +1,4 @@
-﻿#region License Header
+#region License Header
 /*
 
 
@@ -25,7 +25,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CyberPatriot.Models;

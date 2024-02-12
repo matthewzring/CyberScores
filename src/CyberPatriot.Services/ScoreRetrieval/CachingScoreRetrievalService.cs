@@ -23,13 +23,11 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading;
 using CyberPatriot.Models;
-using System.Collections;
 
 namespace CyberPatriot.Services.ScoreRetrieval
 {

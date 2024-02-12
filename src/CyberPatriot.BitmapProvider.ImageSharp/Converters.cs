@@ -22,7 +22,6 @@
 */
 #endregion
 
-using System;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace CyberPatriot.BitmapProvider.ImageSharp

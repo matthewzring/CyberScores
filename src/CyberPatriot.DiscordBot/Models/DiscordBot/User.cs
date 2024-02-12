@@ -22,8 +22,6 @@
 */
 #endregion
 
-using System.Collections.Generic;
-
 namespace CyberPatriot.DiscordBot.Models
 {
     public class User

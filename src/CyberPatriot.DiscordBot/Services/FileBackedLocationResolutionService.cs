@@ -1,4 +1,4 @@
-﻿#region License Header
+#region License Header
 /*
 
 
@@ -27,7 +27,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CyberPatriot.DiscordBot.Services

@@ -1,4 +1,4 @@
-﻿#region License Header
+#region License Header
 /*
 
 

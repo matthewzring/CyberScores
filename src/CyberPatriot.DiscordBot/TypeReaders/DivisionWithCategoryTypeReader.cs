@@ -24,12 +24,8 @@
 
 using System;
 using System.Threading.Tasks;
-using Discord;
 using Discord.Commands;
 using CyberPatriot.Models;
-using System.Collections.Generic;
-using System.Reflection;
-using CyberPatriot.Models.Serialization.ParsingInformation;
 using CyberPatriot.DiscordBot.Models;
 
 namespace CyberPatriot.DiscordBot.TypeReaders

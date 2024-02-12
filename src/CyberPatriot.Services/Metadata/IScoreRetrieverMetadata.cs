@@ -22,8 +22,6 @@
 */
 #endregion
 
-using System.Collections.Generic;
-
 namespace CyberPatriot.Services.Metadata
 {
     public interface IScoreRetrieverMetadata

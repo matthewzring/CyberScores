@@ -1,4 +1,4 @@
-﻿#region License Header
+#region License Header
 /*
 
 
@@ -24,10 +24,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Reflection;
 using CyberPatriot.Models.Serialization.ParsingInformation;
-using Newtonsoft.Json;
 
 namespace CyberPatriot.Models.Serialization
 {

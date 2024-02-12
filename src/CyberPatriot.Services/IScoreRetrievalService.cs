@@ -23,7 +23,6 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using CyberPatriot.Models;
 using Microsoft.Extensions.Configuration;
