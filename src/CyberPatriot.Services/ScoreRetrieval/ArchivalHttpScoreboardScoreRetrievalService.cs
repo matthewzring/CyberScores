@@ -51,8 +51,10 @@ namespace CyberPatriot.Services.ScoreRetrieval
         protected override ScoreboardSummaryEntry ParseSummaryEntry(string[] dataEntries)
         {
             // TODO more sophisticated logic to handle scoreboard tweaks over the years
-            ScoreboardSummaryEntry summary = new ScoreboardSummaryEntry();
-            summary.TeamId = TeamId.Parse(dataEntries[0]);
+            ScoreboardSummaryEntry summary = new ScoreboardSummaryEntry
+            {
+                TeamId = TeamId.Parse(dataEntries[0])
+            };
             summary.Category = _categoryProvider?.GetCategory(summary.TeamId);
             summary.Location = dataEntries[1];
             if (Utilities.TryParseEnumSpaceless<Division>(dataEntries[2], out Division division))

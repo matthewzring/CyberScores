@@ -35,6 +35,7 @@ namespace CyberPatriot.Models
         public Tier? Tier { get; set; }
         public int ImageCount { get; set; }
         public TimeSpan PlayTime { get; set; }
+        public TimeSpan ScoreTime { get; set; }
         public double TotalScore { get; set; }
         public ScoreWarnings Warnings { get; set; }
         public Advancement? Advancement { get; set; }

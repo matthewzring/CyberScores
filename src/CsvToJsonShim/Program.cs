@@ -1,4 +1,4 @@
-﻿#region License Header
+#region License Header
 /*
 
 
@@ -56,10 +56,12 @@ namespace CsvToJsonShim
 
             var lines = File.ReadAllLines(path);
 
-            CompleteScoreboardSummary summary = new CompleteScoreboardSummary();
-            summary.TeamList = new List<ScoreboardSummaryEntry>();
-            summary.SnapshotTimestamp = DateTimeOffset.Parse(timestamp);
-            summary.OriginUri = string.IsNullOrEmpty(originUri) ? null : new Uri(originUri);
+            CompleteScoreboardSummary summary = new CompleteScoreboardSummary
+            {
+                TeamList = new List<ScoreboardSummaryEntry>(),
+                SnapshotTimestamp = DateTimeOffset.Parse(timestamp),
+                OriginUri = string.IsNullOrEmpty(originUri) ? null : new Uri(originUri)
+            };
 
             Console.WriteLine("Loading score data");
 

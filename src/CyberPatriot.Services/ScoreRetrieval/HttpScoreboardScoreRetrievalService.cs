@@ -125,10 +125,12 @@ namespace CyberPatriot.Services.ScoreRetrieval
 
         protected virtual Uri BuildScoreboardUri(Division? divisionFilter, Tier? tierFilter)
         {
-            var builder = new UriBuilder();
-            builder.Scheme = "http";
-            builder.Host = Hostname;
-            builder.Path = "/";
+            var builder = new UriBuilder
+            {
+                Scheme = "http",
+                Host = Hostname,
+                Path = "/"
+            };
             // there doesn't appear to be a terribly clean way to do this
             List<string> queryList = new List<string>(2);
             if (divisionFilter.HasValue)
@@ -146,11 +148,13 @@ namespace CyberPatriot.Services.ScoreRetrieval
 
         protected virtual Uri BuildDetailsUri(TeamId team)
         {
-            var builder = new UriBuilder();
-            builder.Scheme = "http";
-            builder.Host = Hostname;
-            builder.Path = "/team.php";
-            builder.Query = "team=" + team.ToString();
+            var builder = new UriBuilder
+            {
+                Scheme = "http",
+                Host = Hostname,
+                Path = "/team.php",
+                Query = "team=" + team.ToString()
+            };
             return builder.Uri;
         }
 
@@ -181,24 +185,33 @@ namespace CyberPatriot.Services.ScoreRetrieval
 
         protected virtual ScoreboardSummaryEntry ParseSummaryEntry(string[] dataEntries)
         {
-            ScoreboardSummaryEntry summary = new ScoreboardSummaryEntry();
-            summary.TeamId = TeamId.Parse(dataEntries[1]);
+            ScoreboardSummaryEntry summary = new ScoreboardSummaryEntry
+            {
+                TeamId = TeamId.Parse(dataEntries[1])
+            };
             summary.Category = _categoryProvider?.GetCategory(summary.TeamId);
             summary.Location = dataEntries[2];
             if (Utilities.TryParseEnumSpaceless<Division>(dataEntries[3], out Division division))
             {
                 summary.Division = division;
             }
-            if (Enum.TryParse<Tier>(dataEntries[4]?.Trim(), true, out Tier tier))
+            var nextEntry = 4;
+            if (dataEntries[nextEntry].ToLower().Trim().Contains("school"))
+            {
+                nextEntry += 1;
+            }
+            else if (Enum.TryParse<Tier>(dataEntries[nextEntry]?.Trim(), true, out Tier tier))
             {
                 summary.Tier = tier;
+                nextEntry += 1;
             }
-            summary.ImageCount = int.Parse(dataEntries[5]);
-            summary.PlayTime = Utilities.ParseHourMinuteSecondTimespan(dataEntries[6]);
+            summary.ImageCount = int.Parse(dataEntries[nextEntry]);
+            summary.PlayTime = Utilities.ParseHourMinuteSecondTimespan(dataEntries[nextEntry + 1]);
+            summary.ScoreTime = Utilities.ParseHourMinuteSecondTimespan(dataEntries[nextEntry + 2]);
             summary.TotalScore = dataEntries.Last() != "" ? double.Parse(dataEntries.Last()) : 0;
-            summary.Warnings |= dataEntries[7].Contains("T") ? ScoreWarnings.TimeOver : 0;
-            summary.Warnings |= dataEntries[7].Contains("M") ? ScoreWarnings.MultiImage : 0;
-            summary.Warnings |= dataEntries[7].Contains("W") ? ScoreWarnings.Withdrawn : 0;
+            summary.Warnings |= dataEntries[nextEntry + 3].Contains("T") ? ScoreWarnings.TimeOver : 0;
+            summary.Warnings |= dataEntries[nextEntry + 3].Contains("M") ? ScoreWarnings.MultiImage : 0;
+            summary.Warnings |= dataEntries[nextEntry + 3].Contains("W") ? ScoreWarnings.Withdrawn : 0;
 
             return summary;
         }
@@ -211,39 +224,43 @@ namespace CyberPatriot.Services.ScoreRetrieval
         {
             var summary = new ScoreboardSummaryEntry();
             details.Summary = summary;
-            // ID, Division (labeled location, their bug), Location (labeled division, their bug), tier, scored image count, play time, score time, warnings, current score
+            // ID, Location, Division, tier, scored image count, play time, score time, warnings, current score
             summary.TeamId = TeamId.Parse(dataEntries[0]);
             // [not in data, matched from categoryProvider] all service category
             summary.Category = _categoryProvider?.GetCategory(summary.TeamId);
             // tier and division
+            summary.Location = dataEntries[1];
             if (Utilities.TryParseEnumSpaceless<Division>(dataEntries[2], out Division division))
             {
                 summary.Division = division;
             }
-            summary.Location = dataEntries[1];
-            if (Enum.TryParse<Tier>(dataEntries[3], true, out Tier tier))
+            var nextEntry = 3;
+            if (dataEntries[nextEntry].ToLower().Trim().Contains("school"))
+            {
+                nextEntry += 1;
+            }
+            else if (Enum.TryParse<Tier>(dataEntries[nextEntry]?.Trim(), true, out Tier tier))
             {
                 summary.Tier = tier;
+                nextEntry += 1;
             }
             // number of images
-            summary.ImageCount = int.Parse(dataEntries[4].Trim());
+            summary.ImageCount = int.Parse(dataEntries[nextEntry].Trim());
             // times
-            summary.PlayTime = Utilities.ParseHourMinuteSecondTimespan(dataEntries[5]);
-            details.ScoreTime = Utilities.ParseHourMinuteSecondTimespan(dataEntries[6]);
+            summary.PlayTime = Utilities.ParseHourMinuteSecondTimespan(dataEntries[nextEntry + 1]);
+            summary.ScoreTime = Utilities.ParseHourMinuteSecondTimespan(dataEntries[nextEntry + 2]);
             // warnings and total score
-            string warnStr = dataEntries[7];
-            summary.Warnings |= dataEntries[7].Contains("T") ? ScoreWarnings.TimeOver : 0;
-            summary.Warnings |= dataEntries[7].Contains("M") ? ScoreWarnings.MultiImage : 0;
-            summary.Warnings |= dataEntries[7].Contains("W") ? ScoreWarnings.Withdrawn : 0;
+            summary.Warnings |= dataEntries[nextEntry + 3].Contains("T") ? ScoreWarnings.TimeOver : 0;
+            summary.Warnings |= dataEntries[nextEntry + 3].Contains("M") ? ScoreWarnings.MultiImage : 0;
+            summary.Warnings |= dataEntries[nextEntry + 3].Contains("W") ? ScoreWarnings.Withdrawn : 0;
             summary.TotalScore = dataEntries.Last().Trim() != "" ? double.Parse(dataEntries.Last().Trim()) : 0;
         }
 
         protected virtual IEnumerable<ScoreboardSummaryEntry> ProcessSummaries(HtmlDocument doc, out DateTimeOffset processTimestamp)
         {
-            var timestampHeader = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/h2[2]")?.InnerText;
+            var timestampHeader = doc.DocumentNode.SelectSingleNode("/html/body/div[3]/div/h4")?.InnerText;
             processTimestamp = timestampHeader == null ? DateTimeOffset.UtcNow : DateTimeOffset.Parse(timestampHeader.Replace("Generated At: ", string.Empty).Replace("UTC", "+0:00"));
-
-            return doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/table").ChildNodes
+            return doc.DocumentNode.SelectSingleNode("/html/body/div[3]/div/div/div/div/div/table").ChildNodes
                 .Where(n => n.Name != "#text")
                 .Skip(1) // header
                 .Select(n => n.ChildNodes.Select(c => c.InnerText.Trim()).ToArray())
@@ -268,7 +285,7 @@ namespace CyberPatriot.Services.ScoreRetrieval
             {
                 detailsPage = await stringTask.ConfigureAwait(false);
                 // hacky, cause they don't return a proper error page for nonexistant teams
-                if (!detailsPage.Contains(@"<div id='chart_div' class='chart'>"))
+                if (!detailsPage.Contains("<td>" + team + "</td>"))
                 {
                     throw new ArgumentException("The given team does not exist.");
                 }
@@ -278,57 +295,62 @@ namespace CyberPatriot.Services.ScoreRetrieval
                 throw new InvalidOperationException("Error getting team details page, perhaps the scoreboard is offline?", e);
             }
 
-            ScoreboardDetails retVal = new ScoreboardDetails();
-            retVal.OriginUri = detailsUri;
+            ScoreboardDetails retVal = new ScoreboardDetails
+            {
+                OriginUri = detailsUri
+            };
 
             HtmlDocument doc = new HtmlDocument();
             doc.LoadHtml(detailsPage);
             var timestampHeader = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/h2[2]")?.InnerText;
             retVal.SnapshotTimestamp = timestampHeader == null ? DateTimeOffset.UtcNow : DateTimeOffset.Parse(timestampHeader.Replace("Generated At: ", string.Empty).Replace("UTC", "+0:00"));
-            var summaryHeaderRow = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/table[1]/tr[1]");
+            var summaryHeaderRow = doc.DocumentNode.SelectSingleNode("/html/body/div[3]/div/div/div[1]/div/div/table/tr[1]");
             var summaryHeaderRowData = summaryHeaderRow.ChildNodes.Select(x => x.InnerText).ToArray();
-            var summaryRow = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/table[1]/tr[2]");
+            var summaryRow = doc.DocumentNode.SelectSingleNode("/html/body/div[3]/div/div/div[1]/div/div/table/tr[2]");
             var summaryRowData = summaryRow.ChildNodes.Select(x => x.InnerText).ToArray();
             ParseDetailedSummaryEntry(retVal, summaryRowData);
 
             // summary parsed
-            var imagesTable = doc.DocumentNode.SelectSingleNode("/html/body/div[2]/div/table[2]").ChildNodes.Where(n => n.Name != "#text").ToArray();
+            var imagesTable = doc.DocumentNode.SelectSingleNode("/html/body/div[3]/div/div/div[2]/div/div/table").ChildNodes.Where(n => n.Name != "#text").ToArray();
             for (int i = 1; i < imagesTable.Length; i++)
             {
                 // skip team IDs to account for legacy scoreboards
                 string[] dataEntries = imagesTable[i].ChildNodes.Select(n => n.InnerText.Trim()).SkipWhile(s => TeamId.TryParse(s, out TeamId _)).ToArray();
-                ScoreboardImageDetails image = new ScoreboardImageDetails();
-                image.PointsPossible = 100;
-                image.ImageName = dataEntries[0];
-                image.PlayTime = Utilities.ParseHourMinuteSecondTimespan(dataEntries[1]);
-                image.VulnerabilitiesFound = dataEntries[2] != "" ? int.Parse(dataEntries[2]) : 0;
-                image.VulnerabilitiesRemaining = dataEntries[3] != "" ? int.Parse(dataEntries[3]) : 0;
-                image.Penalties = dataEntries[4] != "" ? int.Parse(dataEntries[4]) : 0;
-                image.Score = dataEntries[5] != "" ? double.Parse(dataEntries[5]) : 0;
-                image.Warnings |= dataEntries[6].Contains("T") ? ScoreWarnings.TimeOver : 0;
-                image.Warnings |= dataEntries[6].Contains("M") ? ScoreWarnings.MultiImage : 0;
-                image.Warnings |= dataEntries[6].Contains("W") ? ScoreWarnings.Withdrawn : 0;
+                ScoreboardImageDetails image = new ScoreboardImageDetails
+                {
+                    PointsPossible = 100,
+                    ImageName = dataEntries[0],
+                    PlayTime = Utilities.ParseHourMinuteSecondTimespan(dataEntries[1]),
+                    VulnerabilitiesFound = dataEntries[2] != "" ? int.Parse(dataEntries[2]) : 0,
+                    VulnerabilitiesRemaining = dataEntries[3] != "" ? int.Parse(dataEntries[3]) : 0,
+                    Penalties = dataEntries[4] != "" ? int.Parse(dataEntries[4]) : 0,
+                    Score = dataEntries.Last() != "" ? double.Parse(dataEntries.Last()) : 0
+                };
+                image.Warnings |= dataEntries[5].Contains("T") ? ScoreWarnings.TimeOver : 0;
+                image.Warnings |= dataEntries[5].Contains("M") ? ScoreWarnings.MultiImage : 0;
+                image.Warnings |= dataEntries[5].Contains("W") ? ScoreWarnings.Withdrawn : 0;
                 retVal.Images.Add(image);
             }
 
             // reparse summary table (CCS+Cisco case)
-            // pseudoimages: Cisco, administrative adjustment (usually penalty), Webbased challenge
+            // pseudoimages: Cisco, administrative adjustment (usually penalty), Web-based challenge
             int ciscoIndex = summaryHeaderRowData.IndexOfWhere(x => x.ToLower().Contains("cisco"));
             int penaltyIndex = summaryHeaderRowData.IndexOfWhere(x => x.ToLower().Contains("adjust"));
-            int challengeIndex = summaryHeaderRowData.IndexOfWhere(x => x.ToLower().Contains("challenge"));
+            int challengeIndex = summaryHeaderRowData.IndexOfWhere(x => x.ToLower().Contains("chall"));
 
             ScoreboardImageDetails CreatePseudoImage(string name, double score, double possible)
             {
-                var image = new ScoreboardImageDetails();
-                image.PointsPossible = possible;
-                image.ImageName = name;
-                image.Score = score;
-
-                image.VulnerabilitiesFound = 0;
-                image.VulnerabilitiesRemaining = 0;
-                image.Penalties = 0;
-                image.Warnings = 0;
-                image.PlayTime = TimeSpan.Zero;
+                var image = new ScoreboardImageDetails
+                {
+                    PointsPossible = possible,
+                    ImageName = name,
+                    Score = score,
+                    VulnerabilitiesFound = 0,
+                    VulnerabilitiesRemaining = 0,
+                    Penalties = 0,
+                    Warnings = 0,
+                    PlayTime = TimeSpan.Zero
+                };
 
                 return image;
             }
@@ -446,8 +468,7 @@ namespace CyberPatriot.Services.ScoreRetrieval
             await RateLimiter.GetWorkAuthorizationAsync().ConfigureAwait(false);
             var docTask = GetHtmlForScoreboardUri(scoreboardUri);
             RateLimiter.AddPrerequisite(docTask);
-
-            var doc = await ParseHtmlDocumentAsync(await docTask).ConfigureAwait(false);
+            var doc = await ParseHtmlDocumentAsync(await docTask).ConfigureAwait(true);
             var summaries = ProcessSummaries(doc, out DateTimeOffset snapshotTime).Where(x => filter.Matches(x));
 
             return new CompleteScoreboardSummary()

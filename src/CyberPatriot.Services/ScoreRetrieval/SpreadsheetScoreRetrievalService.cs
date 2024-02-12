@@ -60,11 +60,13 @@ namespace CyberPatriot.Services.ScoreRetrieval
             // hacky implementation of a decent idea
             // add decimals at format level to embed creator
             // set format options to display decimals, overriding anything else that may have been set :(
-            var formattingOptions = new Metadata.ScoreFormattingOptions();
-            formattingOptions.TimeDisplay = Services.Metadata.ScoreFormattingOptions.NumberDisplayCriteria.Never;
-            formattingOptions.VulnerabilityDisplay = Services.Metadata.ScoreFormattingOptions.NumberDisplayCriteria.Never;
-            formattingOptions.FormatScore = i => i.ToString("0.00");
-            formattingOptions.FormatLabeledScoreDifference = i => i.ToString("0.00") + " points";
+            var formattingOptions = new Metadata.ScoreFormattingOptions
+            {
+                TimeDisplay = Services.Metadata.ScoreFormattingOptions.NumberDisplayCriteria.Never,
+                VulnerabilityDisplay = Services.Metadata.ScoreFormattingOptions.NumberDisplayCriteria.Never,
+                FormatScore = i => i.ToString("0.00"),
+                FormatLabeledScoreDifference = i => i.ToString("0.00") + " points"
+            };
             Metadata.FormattingOptions = formattingOptions;
         }
 
@@ -256,12 +258,16 @@ namespace CyberPatriot.Services.ScoreRetrieval
                             // data
                             string[] data = line.Split(',');
 
-                            ScoreboardDetails teamInfo = new ScoreboardDetails();
-                            teamInfo.Summary = new ScoreboardSummaryEntry();
-                            teamInfo.Summary.ImageCount = upperDataBound - lowerDataBound;
-                            teamInfo.Summary.Location = data[locInd];
-                            teamInfo.Summary.PlayTime = TimeSpan.Zero;
-                            teamInfo.Summary.Tier = tierInd == -1 || !Enum.TryParse<Tier>(data[tierInd], true, out Tier tier) ? null : (Tier?)tier;
+                            ScoreboardDetails teamInfo = new ScoreboardDetails
+                            {
+                                Summary = new ScoreboardSummaryEntry
+                                {
+                                    ImageCount = upperDataBound - lowerDataBound,
+                                    Location = data[locInd],
+                                    PlayTime = TimeSpan.Zero,
+                                    Tier = tierInd == -1 || !Enum.TryParse<Tier>(data[tierInd], true, out Tier tier) ? null : (Tier?)tier
+                                }
+                            };
                             if (catInd >= 0 && !string.IsNullOrWhiteSpace(data[catInd]))
                             {
                                 teamInfo.Summary.Category = CyberPatriot.Models.Serialization.ServiceCategoryExtensions.ParseAliasName(data[catInd]);
@@ -332,9 +338,11 @@ namespace CyberPatriot.Services.ScoreRetrieval
                 }
 
                 // we've built our team list, now build the summary
-                CompleteScoreboardSummary scoreboardSummary = new CompleteScoreboardSummary();
-                scoreboardSummary.SnapshotTimestamp = snapshotTimestamp;
-                scoreboardSummary.TeamList = scoreDetailsOrdered.Select(details => details.Summary).ToIList();
+                CompleteScoreboardSummary scoreboardSummary = new CompleteScoreboardSummary
+                {
+                    SnapshotTimestamp = snapshotTimestamp,
+                    TeamList = scoreDetailsOrdered.Select(details => details.Summary).ToIList()
+                };
                 scoreboardSummary.Filter = new ScoreboardFilterInfo(
                     scoreboardSummary.TeamList.Select(sum => sum.Division).Distinct().Cast<Division?>().SingleIfOne(),
                     scoreboardSummary.TeamList.Select(sum => sum.Tier).Distinct().SingleIfOne());

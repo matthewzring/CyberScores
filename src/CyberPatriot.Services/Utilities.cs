@@ -1,4 +1,4 @@
-﻿#region License Header
+#region License Header
 /*
 
 
@@ -43,7 +43,7 @@ namespace CyberPatriot.Services
             // these time penalties mean I need an additional half dozen lines of code :(
             if (string.IsNullOrWhiteSpace(hhmmss))
             {
-                throw new ArgumentNullException(nameof(hhmmss));
+                hhmmss = "00:00:00";
             }
 
             string[] hhmmssSplit = hhmmss.Split(':');

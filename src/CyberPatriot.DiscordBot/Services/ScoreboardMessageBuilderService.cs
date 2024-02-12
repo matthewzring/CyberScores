@@ -349,8 +349,8 @@ namespace CyberPatriot.DiscordBot.Services
                 bool overtime = (item.Warnings & ScoreWarnings.TimeOver) == ScoreWarnings.TimeOver;
                 bool multiimage = (item.Warnings & ScoreWarnings.MultiImage) == ScoreWarnings.MultiImage;
                 string warningAppendage = string.Empty;
-                const string multiImageStr = "**M**ulti-instance";
-                const string overTimeStr = "**T**ime";
+                const string multiImageStr = "**M**ultiple Instances";
+                const string overTimeStr = "**T**ime Exceeded";
                 if (overtime || multiimage)
                 {
                     warningAppendage = "\nWarnings: ";

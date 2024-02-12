@@ -155,17 +155,17 @@ namespace CyberPatriot.Services
 
         public override double GetCiscoPointsPossible(CompetitionRound round, Division division, Tier? tier)
         {
-            throw new NotImplementedException("CP-XV Cisco totals are not implemented.");
+            throw new NotImplementedException("CP-XVI Cisco totals are not implemented.");
         }
 
         public override double GetAdjustPointsPossible(CompetitionRound round, Division division, Tier? tier)
         {
-            throw new NotImplementedException("CP-XV Adjust totals are not implemented.");
+            throw new NotImplementedException("CP-XVI Adjust totals are not implemented.");
         }
 
         public override double GetChallengePointsPossible(CompetitionRound round, Division division, Tier? tier)
         {
-            throw new NotImplementedException("CP-XV Challenge totals are not implemented.");
+            throw new NotImplementedException("CP-XVI Challenge totals are not implemented.");
         }
     }
 
@@ -209,11 +209,11 @@ namespace CyberPatriot.Services
 
         public override double GetCiscoPointsPossible(CompetitionRound round, Division division, Tier? tier)
         {
-            // http://www.uscyberpatriot.org/competition/competition-challenges-by-round
+            // https://www.uscyberpatriot.org/competition/current-competition/challenges-by-round
             switch (round)
             {
                 case CompetitionRound.Round1:
-                    return division == Division.MiddleSchool ? 20 : 20;
+                    return division == Division.MiddleSchool ? 0 : 30;
                 case CompetitionRound.Round2:
                     return division == Division.MiddleSchool ? 30 : 30;
                 case CompetitionRound.Round3:
@@ -227,7 +227,7 @@ namespace CyberPatriot.Services
 
         public override double GetAdjustPointsPossible(CompetitionRound round, Division division, Tier? tier)
         {
-            // http://www.uscyberpatriot.org/competition/competition-challenges-by-round
+            // https://www.uscyberpatriot.org/competition/current-competition/challenges-by-round
             switch (round)
             {
                 case CompetitionRound.Round1:
@@ -243,7 +243,7 @@ namespace CyberPatriot.Services
 
         public override double GetChallengePointsPossible(CompetitionRound round, Division division, Tier? tier)
         {
-            // http://www.uscyberpatriot.org/competition/competition-challenges-by-round
+            // https://www.uscyberpatriot.org/competition/current-competition/challenges-by-round
             switch (round)
             {
                 case CompetitionRound.Round1:

@@ -1,4 +1,4 @@
-﻿#region License Header
+#region License Header
 /*
 
 
@@ -241,10 +241,12 @@ namespace JsonCorrector
             string cSharpCode = cSharpScript.ToString();
             if (!string.IsNullOrWhiteSpace(cSharpCode))
             {
-                var globals = new InterpretedGlobals();
-                globals.Details = teamDetails;
-                globals.Summary = summary;
-                globals.Round = round;
+                var globals = new InterpretedGlobals
+                {
+                    Details = teamDetails,
+                    Summary = summary,
+                    Round = round
+                };
                 try
                 {
                     CSharpScript.RunAsync(cSharpCode,
