@@ -1,4 +1,4 @@
-﻿#region License Header
+#region License Header
 /*
 
 
@@ -22,15 +22,10 @@
 */
 #endregion
 
-using CyberPatriot.DiscordBot.Models;
 using CyberPatriot.DiscordBot.Services;
-using CyberPatriot.Models;
 using CyberPatriot.Services;
 using Discord.Commands;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 

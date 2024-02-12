@@ -25,12 +25,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 using CyberPatriot.Models;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace CyberPatriot.Services.ScoreRetrieval
 {

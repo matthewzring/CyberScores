@@ -1,4 +1,4 @@
-﻿#region License Header
+#region License Header
 /*
 
 
@@ -23,8 +23,6 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using CyberPatriot.Models;
 
 namespace CyberPatriot.Services

@@ -23,7 +23,6 @@
 #endregion
 
 using System;
-using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -33,8 +32,6 @@ using CyberPatriot.Models;
 using HtmlAgilityPack;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Concurrent;
-using System.Threading;
 using System.Text.RegularExpressions;
 
 namespace CyberPatriot.Services.ScoreRetrieval

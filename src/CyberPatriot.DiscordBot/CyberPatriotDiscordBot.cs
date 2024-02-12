@@ -29,7 +29,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using LiteDB;
 using CyberPatriot.DiscordBot.Services;
 using CyberPatriot.BitmapProvider;
 using System.Linq;

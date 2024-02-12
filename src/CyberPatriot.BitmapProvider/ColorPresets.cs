@@ -1,4 +1,4 @@
-﻿#region License Header
+#region License Header
 /*
 
 
@@ -21,10 +21,6 @@
 
 */
 #endregion
-
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace CyberPatriot.BitmapProvider
 {

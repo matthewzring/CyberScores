@@ -1,4 +1,4 @@
-﻿#region License Header
+#region License Header
 /*
 
 
@@ -26,7 +26,6 @@ using CyberPatriot.Models;
 using CyberPatriot.Models.Serialization;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace CyberPatriot.DiscordBot.Models
 {
