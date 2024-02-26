@@ -10,7 +10,7 @@ A Discord bot for interaction with the CyberPatriot scoreboard.
 
 ## Invite
 If you'd like to add **CyberScores** to your server, use the following link:<br>
-🔗 **https://discord.com/api/oauth2/authorize?client_id=911384435335790672&permissions=379968&scope=bot+applications.commands**
+🔗 **https://cyberscores.cypat.gg/invite**
 
 ## Features
   * Team information in fancy embeds (standings, percentile ranking, etc)
