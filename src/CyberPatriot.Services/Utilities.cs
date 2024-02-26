@@ -43,6 +43,7 @@ namespace CyberPatriot.Services
             // these time penalties mean I need an additional half dozen lines of code :(
             if (string.IsNullOrWhiteSpace(hhmmss))
             {
+                // TODO: 00:00:00 is not very accurate since teams did not boot up an image
                 hhmmss = "00:00:00";
             }
 

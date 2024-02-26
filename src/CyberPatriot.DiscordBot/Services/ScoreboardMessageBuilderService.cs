@@ -67,7 +67,7 @@ namespace CyberPatriot.DiscordBot.Services
                 return team.Division.ToConciseString();
             }
 
-            return "AS:" + CyberPatriot.Models.Serialization.ServiceCategoryExtensions.Abbreviate(team.Category.Value);
+            return "AS:" + ServiceCategoryExtensions.Abbreviate(team.Category.Value);
         }
 
         private string GetTeamLeaderboardEntry(ScoreboardSummaryEntry team, int friendlyIndex, bool useAbbreviatedDivision = false, string prefix = "#", bool showAdvancement = true)
@@ -90,7 +90,7 @@ namespace CyberPatriot.DiscordBot.Services
                 string.Format(divisionFormatString, AbbreviateDivision(team)) + $"{team.Tier,10}" +
                 $"{ScoreRetrieverMetadata.FormattingOptions.FormatScoreForLeaderboard(image.Score),13}" +
                 vulnPenString +
-                $"{(ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.TimeDisplay, image.PlayTime) ? image.PlayTime.ToHoursMinutesSecondsString() : ""),7}" +
+                $"{(ScoreFormattingOptions.EvaluateNumericDisplay(ScoreRetrieverMetadata.FormattingOptions.TimeDisplay, image.PlayTime) ? image.PlayTime.ToHoursMinutesSecondsString() : ""),11}" +
                 $"{image.Warnings.ToConciseString(),4}";
         }
 
