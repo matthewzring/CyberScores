@@ -3,7 +3,7 @@
 [![Stars](https://img.shields.io/github/stars/matthewzring/CyberScores?label=Stars)](https://github.com/matthewzring/CyberScores/stargazers)
 [![License](https://img.shields.io/github/license/matthewzring/CyberScores?label=License)](https://github.com/matthewzring/CyberScores/blob/master/LICENSE)
 [![CodeFactor](https://www.codefactor.io/repository/github/matthewzring/CyberScores/badge)](https://www.codefactor.io/repository/github/matthewzring/CyberScores)
-[![PrivacyPolicy](https://img.shields.io/badge/Privacy%20Policy--lightgrey.svg?style=social)](https://gist.github.com/matthewzring/3c470b4284d24f750f11681c21631117#privacy-policy)
+[![PrivacyPolicy](https://img.shields.io/badge/Privacy%20Policy--lightgrey.svg?style=social)](https://cyberscores.cypat.gg/privacy-policy)
 [![Discord](https://discordapp.com/api/guilds/301768361136750592/widget.png)](https://discord.gg/cyberpatriot)
 
 A Discord bot for interaction with the CyberPatriot scoreboard.
