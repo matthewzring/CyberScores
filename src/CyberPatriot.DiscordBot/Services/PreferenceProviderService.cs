@@ -22,79 +22,78 @@ using System;
 using System.Threading.Tasks;
 using Discord;
 
-namespace CyberPatriot.DiscordBot.Services
+namespace CyberPatriot.DiscordBot.Services;
+
+public class PreferenceProviderService
 {
-    public class PreferenceProviderService
+    public IDataPersistenceService Database { get; set; }
+
+    public PreferenceProviderService(IDataPersistenceService database)
     {
-        public IDataPersistenceService Database { get; set; }
+        Database = database;
+    }
 
-        public PreferenceProviderService(IDataPersistenceService database)
+    #region Timezone
+
+    /// <summary>
+    /// Gets a non-null TimeZoneInfo object for the preferred timezone of the given user (if given) in the given guild (if given). 
+    /// The timezone of last resort is UTC.
+    /// </summary>
+    public async Task<TimeZoneInfo> GetTimeZoneAsync(IGuild guild = null, IUser user = null)
+    {
+        // Bot default
+        TimeZoneInfo val = TimeZoneInfo.Utc;
+        if (guild != null)
         {
-            Database = database;
-        }
-
-        #region Timezone
-
-        /// <summary>
-        /// Gets a non-null TimeZoneInfo object for the preferred timezone of the given user (if given) in the given guild (if given). 
-        /// The timezone of last resort is UTC.
-        /// </summary>
-        public async Task<TimeZoneInfo> GetTimeZoneAsync(IGuild guild = null, IUser user = null)
-        {
-            // Bot default
-            TimeZoneInfo val = TimeZoneInfo.Utc;
-            if (guild != null)
+            string tzStringGuild = (await Database.FindOneAsync<Models.Guild>(g => g.Id == guild.Id).ConfigureAwait(false))?.TimeZone;
+            if (tzStringGuild != null)
             {
-                string tzStringGuild = (await Database.FindOneAsync<Models.Guild>(g => g.Id == guild.Id).ConfigureAwait(false))?.TimeZone;
-                if (tzStringGuild != null)
+                try
                 {
-                    try
-                    {
-                        val = TimeZoneInfo.FindSystemTimeZoneById(tzStringGuild);
-                    }
-                    catch
-                    {
-                    }
+                    val = TimeZoneInfo.FindSystemTimeZoneById(tzStringGuild);
+                }
+                catch
+                {
                 }
             }
-            if (user != null)
+        }
+        if (user != null)
+        {
+            string tzStringUser = (await Database.FindOneAsync<Models.User>(u => u.Id == user.Id).ConfigureAwait(false))?.TimeZone;
+            if (tzStringUser != null)
             {
-                string tzStringUser = (await Database.FindOneAsync<Models.User>(u => u.Id == user.Id).ConfigureAwait(false))?.TimeZone;
-                if (tzStringUser != null)
+                try
                 {
-                    try
-                    {
-                        val = TimeZoneInfo.FindSystemTimeZoneById(tzStringUser);
-                    }
-                    catch
-                    {
-                    }
+                    val = TimeZoneInfo.FindSystemTimeZoneById(tzStringUser);
+                }
+                catch
+                {
                 }
             }
-            return val;
         }
+        return val;
+    }
 
-        public async Task SetTimeZoneAsync(IGuild guild, TimeZoneInfo tz)
+    public async Task SetTimeZoneAsync(IGuild guild, TimeZoneInfo tz)
+    {
+        using (var context = Database.OpenContext<Models.Guild>(true))
         {
-            using (var context = Database.OpenContext<Models.Guild>(true))
-            {
-                var guildSettings = await context.FindOneOrNewAsync(g => g.Id == guild.Id, () => new Models.Guild() { Id = guild.Id }).ConfigureAwait(false);
-                guildSettings.TimeZone = tz?.Id;
-                await context.SaveAsync(guildSettings).ConfigureAwait(false);
-                await context.WriteAsync().ConfigureAwait(false);
-            }
-        }
-
-        public async Task SetTimeZoneAsync(IUser user, TimeZoneInfo tz)
-        {
-            using (var context = Database.OpenContext<Models.User>(true))
-            {
-                var userSettings = await context.FindOneOrNewAsync(u => u.Id == user.Id, () => new Models.User() { Id = user.Id }).ConfigureAwait(false);
-                userSettings.TimeZone = tz?.Id;
-                await context.SaveAsync(userSettings).ConfigureAwait(false);
-                await context.WriteAsync().ConfigureAwait(false);
-            }
+            var guildSettings = await context.FindOneOrNewAsync(g => g.Id == guild.Id, () => new Models.Guild() { Id = guild.Id }).ConfigureAwait(false);
+            guildSettings.TimeZone = tz?.Id;
+            await context.SaveAsync(guildSettings).ConfigureAwait(false);
+            await context.WriteAsync().ConfigureAwait(false);
         }
     }
-    #endregion
+
+    public async Task SetTimeZoneAsync(IUser user, TimeZoneInfo tz)
+    {
+        using (var context = Database.OpenContext<Models.User>(true))
+        {
+            var userSettings = await context.FindOneOrNewAsync(u => u.Id == user.Id, () => new Models.User() { Id = user.Id }).ConfigureAwait(false);
+            userSettings.TimeZone = tz?.Id;
+            await context.SaveAsync(userSettings).ConfigureAwait(false);
+            await context.WriteAsync().ConfigureAwait(false);
+        }
+    }
 }
+#endregion

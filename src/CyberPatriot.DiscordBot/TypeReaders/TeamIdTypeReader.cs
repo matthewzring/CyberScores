@@ -24,23 +24,22 @@ using System.Threading.Tasks;
 using CyberPatriot.Models;
 using CyberPatriot.Models.Serialization;
 
-namespace CyberPatriot.DiscordBot.TypeReaders
-{
-    public class TeamIdTypeReader : TypeReader
-    {
-        public override Task<TypeReaderResult> ReadAsync(ICommandContext context, string input, IServiceProvider services)
-        {
-            TeamId result;
-            if (TeamId.TryParse(input, out result))
-            {
-                return Task.FromResult(TypeReaderResult.FromSuccess(result));
-            }
-            else if (input != null && input.Length == 4 && int.TryParse(input, out int teamNumber) && teamNumber >= 0)
-            {
-                return Task.FromResult(TypeReaderResult.FromSuccess(new TeamId(TeamIdTypeConverter.DefaultCompetition, teamNumber)));
-            }
+namespace CyberPatriot.DiscordBot.TypeReaders;
 
-            return Task.FromResult(TypeReaderResult.FromError(CommandError.ParseFailed, "Input could not be parsed as a team ID."));
+public class TeamIdTypeReader : TypeReader
+{
+    public override Task<TypeReaderResult> ReadAsync(ICommandContext context, string input, IServiceProvider services)
+    {
+        TeamId result;
+        if (TeamId.TryParse(input, out result))
+        {
+            return Task.FromResult(TypeReaderResult.FromSuccess(result));
         }
+        else if (input != null && input.Length == 4 && int.TryParse(input, out int teamNumber) && teamNumber >= 0)
+        {
+            return Task.FromResult(TypeReaderResult.FromSuccess(new TeamId(TeamIdTypeConverter.DefaultCompetition, teamNumber)));
+        }
+
+        return Task.FromResult(TypeReaderResult.FromError(CommandError.ParseFailed, "Input could not be parsed as a team ID."));
     }
 }

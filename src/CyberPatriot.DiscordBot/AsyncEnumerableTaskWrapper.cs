@@ -23,63 +23,62 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace CyberPatriot.DiscordBot
+namespace CyberPatriot.DiscordBot;
+
+public class AsyncEnumerableTaskWrapper<T> : IAsyncEnumerable<T>
 {
-    public class AsyncEnumerableTaskWrapper<T> : IAsyncEnumerable<T>
+    protected Task<IEnumerable<T>> EnumerableRetrieveTask { get; set; }
+
+    public AsyncEnumerableTaskWrapper(Task<IEnumerable<T>> enumerableRetrieveTask)
     {
-        protected Task<IEnumerable<T>> EnumerableRetrieveTask { get; set; }
+        EnumerableRetrieveTask = enumerableRetrieveTask ?? throw new ArgumentNullException(nameof(enumerableRetrieveTask));
+    }
 
-        public AsyncEnumerableTaskWrapper(Task<IEnumerable<T>> enumerableRetrieveTask)
+    public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken ctoken)
+    {
+        return new SyncEnumerableWrapper(ctoken, EnumerableRetrieveTask.ContinueWith(r => r.Result.GetEnumerator()));
+    }
+
+    class SyncEnumerableWrapper : IAsyncEnumerator<T>
+    {
+        // 
+        public T Current => GetEnumerator.Result.Current;
+
+        // this will be called FIRST in the use of the enumerator, so we can await the enumerator get task, the rest can use result safely
+        public ValueTask<bool> MoveNextAsync()
         {
-            EnumerableRetrieveTask = enumerableRetrieveTask ?? throw new ArgumentNullException(nameof(enumerableRetrieveTask));
+            if (CancellationToken.IsCancellationRequested)
+            {
+                return new ValueTask<bool>(Task.FromCanceled<bool>(CancellationToken));
+            }
+            return new ValueTask<bool>(GetEnumerator.ContinueWith<bool>(x => x.Result.MoveNext()));
         }
 
-        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken ctoken)
+        Task<IEnumerator<T>> GetEnumerator { get; set; }
+        CancellationToken CancellationToken { get; set; }
+
+        public SyncEnumerableWrapper(CancellationToken ctoken, Task<IEnumerator<T>> getEnumerator)
         {
-            return new SyncEnumerableWrapper(ctoken, EnumerableRetrieveTask.ContinueWith(r => r.Result.GetEnumerator()));
+            GetEnumerator = getEnumerator;
+            CancellationToken = ctoken;
         }
 
-        class SyncEnumerableWrapper : IAsyncEnumerator<T>
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        public ValueTask DisposeAsync()
         {
-            // 
-            public T Current => GetEnumerator.Result.Current;
-
-            // this will be called FIRST in the use of the enumerator, so we can await the enumerator get task, the rest can use result safely
-            public ValueTask<bool> MoveNextAsync()
+            if (disposedValue)
             {
-                if (CancellationToken.IsCancellationRequested)
-                {
-                    return new ValueTask<bool>(Task.FromCanceled<bool>(CancellationToken));
-                }
-                return new ValueTask<bool>(GetEnumerator.ContinueWith<bool>(x => x.Result.MoveNext()));
-            }
-
-            Task<IEnumerator<T>> GetEnumerator { get; set; }
-            CancellationToken CancellationToken { get; set; }
-
-            public SyncEnumerableWrapper(CancellationToken ctoken, Task<IEnumerator<T>> getEnumerator)
-            {
-                GetEnumerator = getEnumerator;
-                CancellationToken = ctoken;
-            }
-
-            #region IDisposable Support
-            private bool disposedValue = false; // To detect redundant calls
-
-            public ValueTask DisposeAsync()
-            {
-                if (disposedValue)
-                {
-                    return default(ValueTask);
-                }
-
-                GetEnumerator.Result.Dispose();
-
-                disposedValue = true;
-
                 return default(ValueTask);
             }
-            #endregion
+
+            GetEnumerator.Result.Dispose();
+
+            disposedValue = true;
+
+            return default(ValueTask);
         }
+        #endregion
     }
 }
