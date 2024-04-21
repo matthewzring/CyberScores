@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32929.385
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CyberPatriot.DiscordBot", "src\CyberPatriot.DiscordBot\CyberPatriot.DiscordBot.csproj", "{4316457B-D0C7-41C4-A4A6-BC4C03D5FE40}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CyberScores", "src\CyberScores\CyberScores.csproj", "{4316457B-D0C7-41C4-A4A6-BC4C03D5FE40}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CyberPatriot.Models", "src\CyberPatriot.Models\CyberPatriot.Models.csproj", "{C4517923-3517-4AB6-9EB3-074869BCF38C}"
 EndProject

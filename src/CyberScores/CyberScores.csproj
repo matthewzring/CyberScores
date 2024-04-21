@@ -2,8 +2,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
-    <AssemblyName>CyberPatriot.DiscordBot</AssemblyName>
-    <RootNamespace>CyberPatriot.DiscordBot</RootNamespace>
+    <AssemblyName>CyberScores</AssemblyName>
+    <RootNamespace>CyberScores</RootNamespace>
   </PropertyGroup>
   <PropertyGroup>
     <LangVersion>latestMajor</LangVersion>
