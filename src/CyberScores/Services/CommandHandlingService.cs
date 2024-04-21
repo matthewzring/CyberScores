@@ -24,12 +24,12 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using CyberPatriot.DiscordBot.TypeReaders;
+using CyberScores.TypeReaders;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
-namespace CyberPatriot.DiscordBot.Services;
+namespace CyberScores.Services;
 
 public class CommandHandlingService
 {

@@ -22,7 +22,7 @@ using System;
 using System.Threading.Tasks;
 using Discord.Commands;
 
-namespace CyberPatriot.DiscordBot;
+namespace CyberScores;
 
 [System.AttributeUsage(System.AttributeTargets.Parameter, Inherited = false, AllowMultiple = true)]
 public class InclusiveRangeAttribute : ParameterPreconditionAttribute

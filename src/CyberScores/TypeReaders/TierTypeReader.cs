@@ -23,7 +23,7 @@ using System.Threading.Tasks;
 using Discord.Commands;
 using CyberPatriot.Models;
 
-namespace CyberPatriot.DiscordBot.TypeReaders;
+namespace CyberScores.TypeReaders;
 
 public class TierTypeReader : TypeReader
 {

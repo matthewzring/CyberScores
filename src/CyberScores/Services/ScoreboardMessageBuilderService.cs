@@ -29,7 +29,7 @@ using CyberPatriot.Models.Serialization;
 using CyberPatriot.Services;
 using CyberPatriot.Services.Metadata;
 
-namespace CyberPatriot.DiscordBot.Services;
+namespace CyberScores.Services;
 
 public class ScoreboardMessageBuilderService
 {

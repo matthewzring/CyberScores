@@ -24,7 +24,7 @@ using Discord.Commands;
 using Microsoft.Extensions.DependencyInjection;
 using CyberPatriot.Services;
 
-namespace CyberPatriot.DiscordBot.TypeReaders;
+namespace CyberScores.TypeReaders;
 
 public class LocationTypeReader : TypeReader
 {

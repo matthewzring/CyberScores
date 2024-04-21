@@ -24,7 +24,7 @@ using System.Threading.Tasks;
 using CyberPatriot.Models;
 using CyberPatriot.Models.Serialization;
 
-namespace CyberPatriot.DiscordBot.TypeReaders;
+namespace CyberScores.TypeReaders;
 
 public class TeamIdTypeReader : TypeReader
 {

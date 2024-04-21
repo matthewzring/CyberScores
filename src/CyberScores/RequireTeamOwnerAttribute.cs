@@ -23,7 +23,7 @@ using Discord.Commands;
 using System;
 using System.Threading.Tasks;
 
-namespace CyberPatriot.DiscordBot;
+namespace CyberScores;
 
 /// <summary>
 /// As a precondition, require that the command is invoked by the bot owner, or the owner of the bot's team if the bot is team-owned.

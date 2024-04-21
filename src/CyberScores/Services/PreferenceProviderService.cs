@@ -22,7 +22,7 @@ using System;
 using System.Threading.Tasks;
 using Discord;
 
-namespace CyberPatriot.DiscordBot.Services;
+namespace CyberScores.Services;
 
 public class PreferenceProviderService
 {

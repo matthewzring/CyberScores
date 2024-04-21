@@ -27,12 +27,12 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using CyberPatriot.Models;
-using CyberPatriot.DiscordBot.Services;
+using CyberScores.Services;
 using System.Net.Http;
 using System.Text;
 using CyberPatriot.Services;
 
-namespace CyberPatriot.DiscordBot.Modules;
+namespace CyberScores.Modules;
 
 public class BotAdministrationCommandModule : ModuleBase
 {
@@ -78,7 +78,7 @@ public class BotAdministrationCommandModule : ModuleBase
             .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Teams").WithValue((await ScoreService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false)).TeamList.Count))
             .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Guilds").WithValue((await Context.Client.GetGuildsAsync().ConfigureAwait(false)).Count))
             .AddField(fb => fb.WithIsInline(true).WithName("Uptime").WithValue(string.Join("\n",
-                (DateTimeOffset.UtcNow - CyberPatriotDiscordBot.StartupTime).ToLongString()
+                (DateTimeOffset.UtcNow - CyberScores.StartupTime).ToLongString()
                 .Split(' ')
                 .Select((v, i) => new { Value = v, Index = i })
                 .GroupBy(x => x.Index / 4)

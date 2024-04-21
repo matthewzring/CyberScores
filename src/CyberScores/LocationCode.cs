@@ -18,7 +18,7 @@
  */
 #endregion
 
-namespace CyberPatriot.DiscordBot;
+namespace CyberScores;
 
 /// <summary>
 /// This class is a NASTY WORKAROUND - see issue #43.

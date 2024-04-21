@@ -22,7 +22,7 @@ using Discord.Commands;
 using System;
 using System.Threading.Tasks;
 
-namespace CyberPatriot.DiscordBot;
+namespace CyberScores;
 
 /// <summary>
 /// A passthrough precondition. Used to indicate a mandatory parameter as optional and potentially subordinate to another parameter.

@@ -22,10 +22,10 @@ using System;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using CyberPatriot.DiscordBot.Models;
-using CyberPatriot.DiscordBot.Services;
+using CyberScores.Models;
+using CyberScores.Services;
 
-namespace CyberPatriot.DiscordBot.Modules;
+namespace CyberScores.Modules;
 
 [Group("user")]
 public class UserPreferenceCommandModule : ModuleBase

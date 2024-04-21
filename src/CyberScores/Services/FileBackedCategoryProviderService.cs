@@ -27,7 +27,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using CyberPatriot.Services;
 
-namespace CyberPatriot.DiscordBot.Services;
+namespace CyberScores.Services;
 
 public class FileBackedCategoryProviderService : IExternalCategoryProviderService
 {

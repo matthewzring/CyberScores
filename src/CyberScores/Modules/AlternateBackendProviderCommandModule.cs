@@ -18,14 +18,14 @@
  */
 #endregion
 
-using CyberPatriot.DiscordBot.Services;
+using CyberScores.Services;
 using CyberPatriot.Services;
 using Discord.Commands;
 using System;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CyberPatriot.DiscordBot.Modules;
+namespace CyberScores.Modules;
 
 public class AlternateBackendProviderCommandModule : ModuleBase
 {

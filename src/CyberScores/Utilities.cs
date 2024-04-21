@@ -25,13 +25,13 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using CyberPatriot.DiscordBot.Services;
+using CyberScores.Services;
 using CyberPatriot.Models;
 using CyberPatriot.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace CyberPatriot.DiscordBot;
+namespace CyberScores;
 
 public static class Utilities
 {

@@ -30,7 +30,7 @@ using CyberPatriot.Models;
 using CyberPatriot.Services;
 using CyberPatriot.Services.ScoreRetrieval;
 
-namespace CyberPatriot.DiscordBot.Services;
+namespace CyberScores.Services;
 
 public class ScoreboardDownloadService
 {

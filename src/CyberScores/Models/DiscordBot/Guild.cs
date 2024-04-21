@@ -20,7 +20,7 @@
 
 using System.Collections.Generic;
 
-namespace CyberPatriot.DiscordBot.Models;
+namespace CyberScores.Models;
 
 public class Guild
 {

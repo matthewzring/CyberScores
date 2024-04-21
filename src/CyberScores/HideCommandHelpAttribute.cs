@@ -22,7 +22,7 @@ using Discord.Commands;
 using System;
 using System.Threading.Tasks;
 
-namespace CyberPatriot.DiscordBot;
+namespace CyberScores;
 
 /// <summary>
 /// A passthrough precondition. Used to hide a command or overload in the help screen.

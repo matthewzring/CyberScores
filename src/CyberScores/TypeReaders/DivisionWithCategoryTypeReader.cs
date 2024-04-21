@@ -22,9 +22,9 @@ using System;
 using System.Threading.Tasks;
 using Discord.Commands;
 using CyberPatriot.Models;
-using CyberPatriot.DiscordBot.Models;
+using CyberScores.Models;
 
-namespace CyberPatriot.DiscordBot.TypeReaders;
+namespace CyberScores.TypeReaders;
 
 public class DivisionWithCategoryTypeReader : TypeReader
 {

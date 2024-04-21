@@ -24,11 +24,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using CyberPatriot.DiscordBot.Models;
-using CyberPatriot.DiscordBot.Services;
+using CyberScores.Models;
+using CyberScores.Services;
 using CyberPatriot.Models;
 
-namespace CyberPatriot.DiscordBot.Modules;
+namespace CyberScores.Modules;
 
 [Group("admin")]
 public class GuildAdministrationCommandModule : ModuleBase

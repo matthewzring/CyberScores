@@ -22,15 +22,15 @@ using System;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using CyberPatriot.DiscordBot.Services;
+using CyberScores.Services;
 using CyberPatriot.Models;
 using System.Linq;
 using CyberPatriot.BitmapProvider;
 using CyberPatriot.Models.Serialization;
-using CyberPatriot.DiscordBot.Models;
+using CyberScores.Models;
 using CyberPatriot.Services;
 
-namespace CyberPatriot.DiscordBot.Modules;
+namespace CyberScores.Modules;
 
 public class CyberPatriotCommandModule : ModuleBase
 {

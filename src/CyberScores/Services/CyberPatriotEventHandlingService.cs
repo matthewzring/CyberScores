@@ -30,7 +30,7 @@ using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 
-namespace CyberPatriot.DiscordBot.Services;
+namespace CyberScores.Services;
 
 public class CyberPatriotEventHandlingService
 {

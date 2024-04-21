@@ -23,7 +23,7 @@ using CyberPatriot.Models.Serialization;
 using System;
 using System.Collections.Generic;
 
-namespace CyberPatriot.DiscordBot.Models;
+namespace CyberScores.Models;
 
 /// <summary>
 /// Represents a division and optionally a category within that division.

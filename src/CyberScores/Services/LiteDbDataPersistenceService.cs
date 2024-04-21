@@ -28,7 +28,7 @@ using LiteDB;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace CyberPatriot.DiscordBot.Services;
+namespace CyberScores.Services;
 
 public class LiteDbDataPersistenceService : IDataPersistenceService
 {

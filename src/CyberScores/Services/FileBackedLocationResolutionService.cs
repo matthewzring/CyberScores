@@ -25,7 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace CyberPatriot.DiscordBot.Services;
+namespace CyberScores.Services;
 
 public class FileBackedLocationResolutionService : ILocationResolutionService
 {

@@ -25,7 +25,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 
-namespace CyberPatriot.DiscordBot.Services;
+namespace CyberScores.Services;
 
 public class LogService
 {

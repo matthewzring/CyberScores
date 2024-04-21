@@ -25,23 +25,23 @@ using Microsoft.Extensions.DependencyInjection;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using CyberPatriot.DiscordBot.Services;
+using CyberScores.Services;
 using CyberPatriot.BitmapProvider;
 using System.Linq;
 using CyberPatriot.Services.ScoreRetrieval;
 using CyberPatriot.Services;
 using Microsoft.Extensions.Logging;
 
-namespace CyberPatriot.DiscordBot;
+namespace CyberScores;
 
-internal class CyberPatriotDiscordBot
+internal class CyberScores
 {
     // I don't like big static properties
     public static DateTimeOffset StartupTime { get; private set; } = DateTimeOffset.UtcNow;
     public const int RequiredPermissions = 379968;
 
     static void Main(string[] args)
-       => new CyberPatriotDiscordBot().MainAsync().GetAwaiter().GetResult();
+       => new CyberScores().MainAsync().GetAwaiter().GetResult();
 
     private DiscordSocketClient _client;
     private IConfiguration _config;
@@ -123,7 +123,7 @@ internal class CyberPatriotDiscordBot
             .AddSingleton(_config)
             .AddSingleton<IDataPersistenceService, LiteDbDataPersistenceService>()
             .AddSingleton<PreferenceProviderService>()
-            .AddSingleton<IGraphProviderService, BitmapProvider.ImageSharp.ImageSharpGraphProviderService>()
+            .AddSingleton<IGraphProviderService, CyberPatriot.BitmapProvider.ImageSharp.ImageSharpGraphProviderService>()
             .AddSingleton<IRateLimitProvider, TimerRateLimitProvider>(prov => new PriorityTimerRateLimitProvider(2000, 1))
             // CyPat
             // Scoreboard trial order: live, JSON archive, CSV released archive
