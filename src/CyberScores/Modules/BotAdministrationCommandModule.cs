@@ -71,8 +71,8 @@ public class BotAdministrationCommandModule : ModuleBase
             .WithDescription("Hello! I am **CyberScores**, a bot for interaction with the CyberPatriot scoreboard.\n"
             + $"Type `@CyberScores help` for a list of my commands.\n\n"
             + $"<:globe_with_meridians:1031956460248256523> [Github](https://github.com/matthewzring/CyberScores)\n"
-            + $"<:link:1031853124887007252> [Invite](https://cyberscores.cypat.gg/invite)\n"
-            + $"<:discord:1031849735226667008> [Support Server](https://discord.gg/cyberpatriot)")
+            + $"<:link:1031853124887007252> [Invite](https://discord.com/api/oauth2/authorize?client_id=911384435335790672&permissions=379968&scope=bot+applications.commands)\n"
+            + $"<:discord:1031849735226667008> [Support Server](https://discord.com/invite/FqPbspP)")
             .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Prefix").WithValue((Context.Guild != null ? (await Database.FindOneAsync<Models.Guild>(g => g.Id == Context.Guild.Id).ConfigureAwait(false))?.Prefix?.AppendPrepend("`") : null) ?? Context.Client.CurrentUser.Mention))
             .AddField(fb => fb.WithIsInline(true).WithName("Score Provider").WithValue(ScoreService.Metadata.StaticSummaryLine))
             .AddFieldAsync(async fb => fb.WithIsInline(true).WithName("Teams").WithValue((await ScoreService.GetScoreboardAsync(ScoreboardFilterInfo.NoFilter).ConfigureAwait(false)).TeamList.Count))

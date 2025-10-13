@@ -49,7 +49,7 @@ namespace CyberPatriot.Models.Serialization
         /// <summary>
         /// The default competition identifier to assume, when user input of just a team number is given.
         /// </summary>
-        public const string DefaultCompetition = "16";
+        public const string DefaultCompetition = "18";
 
         private static readonly int DefaultCompetitionNumericIdLength;
 
